@@ -30,6 +30,32 @@ def test_add_kmers():
     mc.delete()
 
 
+def test_query_kmers():
+    mc = McDBG(ports=ports)
+
+    mc.add_sample('1234')
+    mc.add_sample('1235')
+    mc.add_sample('1236')
+
+    mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAT'], 0)
+    mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAG'], 1)
+    mc.set_kmers(['ATCGTAGAC', 'ATTGTAGAG'], 2)
+    assert mc.num_colours == 3
+    assert mc.query_kmers(['ATCGTAGAT', 'ATTGTAGAT']) == [
+        (1, 1, 0), (1, 0, 0)]
+    mc.delete()
+
+    mc.add_sample('1234')
+    mc.add_sample('1235')
+    mc.add_sample('1236')
+
+    mc.set_kmers(['ATCGTAGAT', 'CTTGTAGAT'], 0)
+    mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAG'], 1)
+    mc.set_kmers(['ATCGTAGAC', 'ATTGTAGAG'], 2)
+    assert mc.query_kmers(['ATCGTAGAT', 'CTTGTAGAT']) == [
+        (1, 1, 0), (1, 0, 0)]
+
+
 def test_stats():
     mc = McDBG(ports=ports)
     mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAT'], 1)

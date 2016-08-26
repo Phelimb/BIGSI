@@ -44,7 +44,7 @@ class McDBG(object):
             self.connections['kmers'][kmer_key] = redis.StrictRedis(
                 host='localhost', port=port, db=2)
 
-    def _create_kmer_pipeline(self):
+    def _create_kmer_pipeline(self, transaction=True):
         # kmers stored in DB 2
         # colour arrays in DB 1
         # stats in DB 0
@@ -52,26 +52,39 @@ class McDBG(object):
         for i, port in enumerate(self.ports):
             kmer_key = KMER_SHARDING[self.sharding_level][i]
             pipelines[kmer_key] = self.connections[
-                'kmers'][kmer_key].pipeline(transaction=False)
+                'kmers'][kmer_key].pipeline(transaction=transaction)
         return pipelines
 
     def _execute_pipeline(self, pipelines):
-        # pool = Pool(max((len(self.ports), 1)))
-        # results = pool.map(execute_pipeline, pipelines.values())
-        # # close the pool and wait for the work to finish
-        # pool.close()
-        # pool.join()
-        return [p.execute() for p in pipelines.values()]
+        out = {}
+        for kmer_key, p in pipelines.items():
+            out[kmer_key] = p.execute()
+        return out
 
     def set_kmer(self, kmer, colour):
         self.connections['kmers'][
             kmer[:self.sharding_level]].setbit(kmer, colour, 1)
 
     def set_kmers(self, kmers, colour):
-        pipelines = self._create_kmer_pipeline()
+        pipelines = self._create_kmer_pipeline(transaction=False)
         [pipelines[kmer[:self.sharding_level]].setbit(
             kmer, colour, 1) for kmer in kmers]
         self._execute_pipeline(pipelines)
+
+    def query_kmers(self, kmers):
+        pipelines = self._create_kmer_pipeline()
+        num_colours = self.num_colours
+        for kmer in kmers:
+            for colour in range(num_colours):
+                pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
+        result = self._execute_pipeline(pipelines)
+        outs = []
+        for kmer in kmers:
+            out = []
+            for _ in range(num_colours):
+                out.append(result[kmer[:self.sharding_level]].pop(0))
+            outs.append(tuple(out))
+        return outs
 
     # def set_colour(self, ckey, colour, v=1):
     #     shard = ckey % len(self.ports)

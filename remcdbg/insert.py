@@ -15,8 +15,8 @@ with open(args.kmer_file, 'r') as inf:
     kmers = inf.read().splitlines()
 
 mc = McDBG(ports=args.ports)
-mc.delete()
+# mc.delete()
 
-# i = mc.add_sample(args.sample_name)
-# mc.set_kmers(kmers, i)
-# print(i, mc.count_kmers(), mc.calculate_memory())
+i = mc.add_sample(args.sample_name)
+mc.set_kmers(kmers, i)
+print(i, mc.count_kmers(), mc.calculate_memory())
