@@ -40,7 +40,9 @@ def test_query_kmers():
     mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAT'], 0)
     mc.set_kmers(['ATCGTAGAT', 'ATTGTAGAG'], 1)
     mc.set_kmers(['ATCGTAGAC', 'ATTGTAGAG'], 2)
-    assert mc.num_colours == 3
+    assert mc.get_num_colours() == 3
+    print(mc.query_kmers(['ATCGTAGAT', 'ATTGTAGAT']))
+    mc.num_colours = mc.get_num_colours()
     assert mc.query_kmers(['ATCGTAGAT', 'ATTGTAGAT']) == [
         (1, 1, 0), (1, 0, 0)]
     mc.delete()
@@ -85,14 +87,14 @@ def test_stats():
 
 def test_samples():
     mc = McDBG(ports=ports)
-    assert mc.num_colours == 0
+    assert mc.get_num_colours() == 0
 
     mc.add_sample('1234')
     mc.add_sample('1235')
 
     assert mc.get_sample_colour('1234') == '0'
-    assert mc.num_colours == 2
+    assert mc.get_num_colours() == 2
 
     # mc.add_sample('1235')
     # assert mc.get_sample_colour('1235') == '1'
-    # assert mc.num_colours == 2
+    # assert mc.get_num_colours() == 2

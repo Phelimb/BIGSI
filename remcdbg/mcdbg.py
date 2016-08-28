@@ -1,8 +1,6 @@
 from __future__ import print_function
 import redis
 import math
-from pathos.multiprocessing import ProcessPool as Pool
-# pool = Pool()
 # set up redis connections
 KMER_SHARDING = {}
 
@@ -19,11 +17,11 @@ def execute_pipeline(p):
 
 
 def bits(f):
-    sbyes = list(f)
-    bytes = (ord(s) for s in sbyes)
-    for b in bytes:
-        for i in xrange(7, -1, -1):
-            yield (b >> i) & 1
+    return [(ord(s) >> i) & 1 for s in list(f) for i in xrange(7, -1, -1)]
+    # for s in list(f):
+    #     b = ord(s)
+    #     for i in xrange(7, -1, -1):
+    #         yield (b >> i) & 1
 
 
 class McDBG(object):
@@ -35,6 +33,7 @@ class McDBG(object):
         assert len(ports) in [0, 4, 64]
         self.connections = {}
         self._create_connections()
+        self.num_colours = self.get_num_colours()
 
     def _create_connections(self):
         # kmers stored in DB 2
@@ -100,20 +99,31 @@ class McDBG(object):
 
     def _byte_arrays_to_bits(self, _bytes):
         num_colours = self.num_colours
-        tmp_v = []
-        if _bytes is None:
-            tmp_v = [0]*num_colours
-        else:
-            for bit in bits(_bytes):
-                tmp_v.append(bit)
+        tmp_v = [0]*(num_colours)
+        if _bytes is not None:
+            tmp_v = bits(_bytes)
+        if len(tmp_v) < num_colours:
             tmp_v.extend([0]*(num_colours-len(tmp_v)))
+        elif len(tmp_v) > num_colours:
+            tmp_v = tmp_v[:num_colours]
+            # [b for b in bits(_bytes)]
+            # for i, bit in enumerate(bits(_bytes)):
+            #     tmp_v[i] = bit
         return tuple(tmp_v)
 
-    def kmers(self, k='*'):
-        for k, v in self.connections.items():
-            for i, connections in v.items():
-                for kmer in connections.scan_iter(k):
-                    yield kmer
+    def kmers(self, N=-1, k='*'):
+        i = 0
+        # for connections in self.connections['kmers'].values():
+        #     for kmer in connections.scan_iter(k):
+        #         i += 1
+        #         if (i > N and i > 0):
+        #             break
+        #         yield kmer
+        for kmer in self.connections['kmers'][k[:3]].scan_iter(k):
+            i += 1
+            if (i > N and i > 0):
+                break
+            yield kmer
 
     def delete(self):
         for k, v in self.connections.items():
@@ -165,8 +175,7 @@ class McDBG(object):
     def sample_redis(self):
         return self.connections['stats'][0]
 
-    @property
-    def num_colours(self):
+    def get_num_colours(self):
         try:
             return int(self.sample_redis.get('num_colours'))
         except TypeError:

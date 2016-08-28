@@ -3,7 +3,7 @@ from __future__ import print_function
 from mcdbg import McDBG
 import argparse
 import os.path
-
+import time
 parser = argparse.ArgumentParser()
 parser.add_argument("fasta")
 parser.add_argument("--ports", type=int, nargs='+')
@@ -19,14 +19,18 @@ def fasta_to_kmers(fasta):
                 seq = ""
             else:
                 seq = "".join([seq, line])
-    return [seq[i:i+63] for i in range(len(seq)-63+1)]
+                for i in range(len(seq)-63+1):
+                    yield seq[i:i+63]
 
 
-kmers = fasta_to_kmers(args.fasta)
+kmers = [k for k in fasta_to_kmers(args.fasta)]
 mc = McDBG(ports=args.ports)
 # print(len(kmers))
 # for res in mc.query_kmers(kmers):
 #     res
-for i, kmer in enumerate(mc.kmers()):
-    if i < 10:
-        print i, kmer
+
+start = time.time()
+for res in mc.query_kmers(kmers):
+    res
+end = time.time() - start
+print(end)
