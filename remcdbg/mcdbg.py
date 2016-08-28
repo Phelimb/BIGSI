@@ -18,6 +18,14 @@ def execute_pipeline(p):
     p.execute()
 
 
+def bits(f):
+    sbyes = list(f)
+    bytes = (ord(s) for s in sbyes)
+    for b in bytes:
+        for i in xrange(7, -1, -1):
+            yield (b >> i) & 1
+
+
 class McDBG(object):
 
     def __init__(self, ports):
@@ -75,16 +83,31 @@ class McDBG(object):
         pipelines = self._create_kmer_pipeline()
         num_colours = self.num_colours
         for kmer in kmers:
-            for colour in range(num_colours):
-                pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
+            # for colour in range(num_colours):
+                # pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
+            pipelines[kmer[:self.sharding_level]].get(kmer)
         result = self._execute_pipeline(pipelines)
+        # result = self._byte_arrays_to_bits(result)
+        # print(result)
         outs = []
         for kmer in kmers:
             out = []
-            for _ in range(num_colours):
-                out.append(result[kmer[:self.sharding_level]].pop(0))
-            outs.append(tuple(out))
+            # for _ in range(num_colours):
+            #     out.append(result[kmer[:self.sharding_level]].pop(0))
+            outs.append(
+                self._byte_arrays_to_bits(result[kmer[:self.sharding_level]].pop(0)))
         return outs
+
+    def _byte_arrays_to_bits(self, _bytes):
+        num_colours = self.num_colours
+        tmp_v = []
+        if _bytes is None:
+            tmp_v = [0]*num_colours
+        else:
+            for bit in bits(_bytes):
+                tmp_v.append(bit)
+            tmp_v.extend([0]*(num_colours-len(tmp_v)))
+        return tuple(tmp_v)
 
     # def set_colour(self, ckey, colour, v=1):
     #     shard = ckey % len(self.ports)
