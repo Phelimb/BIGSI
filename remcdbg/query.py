@@ -24,6 +24,9 @@ def fasta_to_kmers(fasta):
 
 kmers = fasta_to_kmers(args.fasta)
 mc = McDBG(ports=args.ports)
-print(len(kmers))
-for res in mc.query_kmers(kmers):
-    res
+# print(len(kmers))
+# for res in mc.query_kmers(kmers):
+#     res
+for i, kmer in enumerate(mc.kmers()):
+    if i < 10:
+        print i, kmer

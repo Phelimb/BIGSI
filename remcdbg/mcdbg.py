@@ -109,9 +109,11 @@ class McDBG(object):
             tmp_v.extend([0]*(num_colours-len(tmp_v)))
         return tuple(tmp_v)
 
-    # def set_colour(self, ckey, colour, v=1):
-    #     shard = ckey % len(self.ports)
-    #     self.connections['colours'][shard].setbit(ckey, colour, v)
+    def kmers(self, k='*'):
+        for k, v in self.connections.items():
+            for i, connections in v.items():
+                for kmer in connections.scan_iter(k):
+                    yield kmer
 
     def delete(self):
         for k, v in self.connections.items():
