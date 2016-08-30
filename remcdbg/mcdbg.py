@@ -1,8 +1,13 @@
 from __future__ import print_function
+from utils import min_lexo
+from utils import bits
+import pyximport
+pyximport.install(pyimport=True)
 import redis
 import math
-from Bio.Seq import Seq
-import numpy as np
+
+# from Bio.Seq import Seq
+# import numpy as np
 # set up redis connections
 KMER_SHARDING = {}
 
@@ -17,21 +22,18 @@ KMER_SHARDING[3] = {0: 'AAA', 1: 'AAT', 2: 'AAC', 3: 'AAG', 4: 'ATA', 5: 'ATT', 
 def execute_pipeline(p):
     p.execute()
 
-
-def bits(f):
-    return [(ord(s) >> i) & 1 for s in list(f) for i in xrange(7, -1, -1)]
     # for s in list(f):
     #     b = ord(s)
     #     for i in xrange(7, -1, -1):
     #         yield (b >> i) & 1
 
 
-def min_lexo(k):
-    if isinstance(k, str):
-        k = Seq(k)
-    l = [k, k.reverse_complement()]
-    l.sort()
-    return l[0]
+def logical_AND_reduce(list_of_bools):
+    return [all(l) for l in zip(*list_of_bools)]
+
+
+def logical_OR_reduce(list_of_bools):
+    return [any(l) for l in zip(*list_of_bools)]
 
 
 class McDBG(object):
@@ -89,7 +91,7 @@ class McDBG(object):
         self._execute_pipeline(pipelines)
 
     def _convert_query_kmers(self, kmers):
-        return [k for k in [min_lexo(k) for k in kmers] if k[:self.sharding_level] in self.connections['kmers']]
+        return [min_lexo(k) for k in kmers]
 
     def query_kmers(self, kmers):
         kmers = self._convert_query_kmers(kmers)
@@ -101,36 +103,61 @@ class McDBG(object):
             result[kmer[:self.sharding_level]].pop(0)) for kmer in kmers]
         return out
 
-    def _create_bitop_lists(self):
-        return dict((el, []) for el in self.connections['kmers'].keys())
-
-    def query_kmers_100_per(self, kmers):
-        kmers = self._convert_query_kmers(kmers)
-        bit_op_lists = self._create_bitop_lists()
+    def _create_bitop_lists(self, kmers):
+        bit_op_lists = dict((el, [])
+                            for el in self.connections['kmers'].keys())
         for kmer in kmers:
-            bit_op_lists[kmer[:self.sharding_level]].append(kmer)
+            try:
+                bit_op_lists[kmer[:self.sharding_level]].append(kmer)
+            except KeyError:
+                pass
+        return bit_op_lists
+
+    def bitops(self, kmers, op):
+        bit_op_lists = self._create_bitop_lists(kmers)
         temporary_bitarrays = []
         for shard_key, kmers in bit_op_lists.items():
             if kmers:
-                temporary_bitarrays.append(self._byte_arrays_to_bits(self.connections['kmers'][
-                    shard_key].get('tmp')))
-        return np.logical_and.reduce(temporary_bitarrays)
-        # print(bit_op_lists)
-        # r.bitop("AND",
+                temporary_bitarrays.append(
+                    self.single_bit_op(shard_key, op, kmers))
+        return temporary_bitarrays
 
-    def query_kmers_old(self, kmers):
+    def single_bit_op(self, shard_key, op, kmers):
+        self.connections['kmers'][
+            shard_key].bitop(op, 'tmp%s' % op, *kmers)
+        return self._byte_arrays_to_bits(self.connections['kmers'][
+            shard_key].get('tmp%s' % op))
+
+    def query_kmers_100_per(self, kmers, min_lexo=False):
+        if not min_lexo:
+            kmers = self._convert_query_kmers(kmers)
+        temporary_bitarrays = self.bitops(kmers, "AND")
+        return logical_AND_reduce(temporary_bitarrays)
+
+    def get_non_0_kmer_colours(self, kmers):
+        kmers = self._convert_query_kmers(kmers)
+        return [i for i, j in enumerate(
+                logical_OR_reduce(self.bitops(kmers, 'OR'))) if j == 1]
+
+    def query_kmers_colours(self, kmers, colours=None):
+        kmers = self._convert_query_kmers(kmers)
+
+        if colours is None:
+            colours = self.get_non_0_kmer_colours(kmers)
         pipelines = self._create_kmer_pipeline()
         num_colours = self.num_colours
-        for kmer in kmers:
-            for colour in range(num_colours):
-                pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
+        if colours:
+            for kmer in kmers:
+                for colour in colours:
+                    pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
         result = self._execute_pipeline(pipelines)
-        outs = []
-        for kmer in kmers:
-            out = []
-            for _ in range(num_colours):
-                out.append(result[kmer[:self.sharding_level]].pop(0))
-            outs.append(tuple(out))
+        outs = [colours]
+        if colours:
+            for kmer in kmers:
+                out = []
+                for _ in colours:
+                    out.append(result[kmer[:self.sharding_level]].pop(0))
+                outs.append(tuple(out))
         return outs
 
     def _byte_arrays_to_bits(self, _bytes):
@@ -142,9 +169,6 @@ class McDBG(object):
             tmp_v.extend([0]*(num_colours-len(tmp_v)))
         elif len(tmp_v) > num_colours:
             tmp_v = tmp_v[:num_colours]
-            # [b for b in bits(_bytes)]
-            # for i, bit in enumerate(bits(_bytes)):
-            #     tmp_v[i] = bit
         return tuple(tmp_v)
 
     def kmers(self, N=-1, k='*'):

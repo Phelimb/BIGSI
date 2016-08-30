@@ -1,4 +1,13 @@
+build/
 venv
 *~
 *.pyc
 ._*
+remcdbg/utils.c
+remcdbg/utils.so
+*.fasta
+*.json
+*.txt
+*.fai
+*.out
+.cache/
