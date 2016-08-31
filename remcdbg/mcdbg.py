@@ -236,6 +236,7 @@ class McDBG(object):
         try:
             return int(self.sample_redis.get('num_colours'))
         except TypeError:
+            print(self.sample_redis.get('num_colours'))
             return 0
 
     def count_kmers(self):
