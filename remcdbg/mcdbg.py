@@ -1,10 +1,11 @@
 from __future__ import print_function
 from utils import min_lexo
 from utils import bits
-import pyximport
-pyximport.install(pyimport=True)
+# import pyximport
+# pyximport.install(pyimport=True)
 import redis
 import math
+import sys
 
 # from Bio.Seq import Seq
 # import numpy as np
@@ -21,11 +22,6 @@ KMER_SHARDING[3] = {0: 'AAA', 1: 'AAT', 2: 'AAC', 3: 'AAG', 4: 'ATA', 5: 'ATT', 
 
 def execute_pipeline(p):
     p.execute()
-
-    # for s in list(f):
-    #     b = ord(s)
-    #     for i in xrange(7, -1, -1):
-    #         yield (b >> i) & 1
 
 
 def logical_AND_reduce(list_of_bools):
@@ -173,17 +169,12 @@ class McDBG(object):
 
     def kmers(self, N=-1, k='*'):
         i = 0
-        # for connections in self.connections['kmers'].values():
-        #     for kmer in connections.scan_iter(k):
-        #         i += 1
-        #         if (i > N and i > 0):
-        #             break
-        #         yield kmer
-        for kmer in self.connections['kmers'][k[:3]].scan_iter(k):
-            i += 1
-            if (i > N and i > 0):
-                break
-            yield kmer
+        for connections in self.connections['kmers'].values():
+            for kmer in connections.scan_iter(k):
+                i += 1
+                if (i > N and N > 0):
+                    break
+                yield kmer
 
     def delete(self):
         for k, v in self.connections.items():
@@ -255,3 +246,21 @@ class McDBG(object):
                       for r in self.connections['kmers'].values()])
         self.connections['stats'][1].set([self.count_kmers()], memory)
         return memory
+
+    def unique_colour_arrays(self):
+        # pipe = None
+        self.sample_redis.delete('sorted_set_cas')
+        # for i, kmer in enumerate(self.kmers()):
+        #     if i % 100000 == 0:
+        #         if pipe:
+        #             pipe.execute()
+        #         pipe = self.sample_redis.pipeline()
+        #         sys.stderr.write(
+        #             '%i of %i %f%%\n' % (i, self.count_kmers(), float(i)/self.count_kmers()))
+        #     try:
+        #         pipe.zincrby('sorted_set_cas', self.connections[
+        #             'kmers'][kmer[:self.sharding_level]].get(kmer), 1)
+        #     except KeyError:
+        #         pass
+        # return self.sample_redis.zrangebyscore('sorted_set_cas', 2,
+        # self.count_kmers(), withscores=True)

@@ -2,23 +2,12 @@
 from __future__ import print_function
 from utils import min_lexo
 from utils import seq_to_kmers
-import pyximport
-pyximport.install(pyimport=True)
 from mcdbg import McDBG
 import argparse
 import os.path
 import time
 from Bio import SeqIO
 import json
-
-
-# import numpy as np
-# np.set_printoptions(threshold=np.inf)
-
-parser = argparse.ArgumentParser()
-parser.add_argument("fasta")
-parser.add_argument("--ports", type=int, nargs='+')
-args = parser.parse_args()
 
 
 def per(i):
@@ -32,29 +21,28 @@ def parse_input(infile):
             gene_to_kmers[record.id] = [
                 min_lexo(k) for k in seq_to_kmers(str(record.seq)) if not "N" in k and not "Y" in k]
     return gene_to_kmers
-gene_to_kmers = parse_input(args.fasta)
-# print(gene_to_kmers.keys())
-# print(len(gene_to_kmers.values()[0]))
-mc = McDBG(ports=args.ports)
-colours_to_samples = mc.colours_to_sample_dict()
-# print(colours_to_samples)
-results = {}
-found = {}
-for gene, kmers in gene_to_kmers.items():
-    found[gene] = {}
-    found[gene] = {}
-    found[gene]['samples'] = []
 
-    results[gene] = []
-    # getbit
-    start = time.time()
-    _found = mc.query_kmers_100_per(kmers, min_lexo=True)
-    for i, p in enumerate(_found):
-        if p == 1:
-            found[gene]['samples'].append(
-                colours_to_samples.get(i, 'missing'))
-    diff = time.time() - start
-    found[gene]['time'] = diff
+
+def run(parser, args):
+    gene_to_kmers = parse_input(args.fasta)
+    mc = McDBG(ports=args.ports)
+    colours_to_samples = mc.colours_to_sample_dict()
+    results = {}
+    found = {}
+    for gene, kmers in gene_to_kmers.items():
+        found[gene] = {}
+        found[gene]['samples'] = []
+        results[gene] = []
+        start = time.time()
+        _found = mc.query_kmers_100_per(kmers, min_lexo=True)
+        for i, p in enumerate(_found):
+            if p == 1:
+                found[gene]['samples'].append(
+                    colours_to_samples.get(i, 'missing'))
+        diff = time.time() - start
+        found[gene]['time'] = diff
+        print(json.dumps(found, indent=4))
+
 
 ### Perf tests ###
 # found = {}
@@ -105,5 +93,4 @@ for gene, kmers in gene_to_kmers.items():
 #     found[gene]['100%']['time'] = diff
 
 
-with open('%s.json' % args.fasta, 'w') as outfile:
-    json.dump(found, outfile)
+# with open('%s.json' % args.fasta, 'w') as outfile:
