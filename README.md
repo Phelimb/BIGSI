@@ -1,6 +1,9 @@
 # remcdbg
 
 A redis backed kmer -> sample lookup. 
+# Install
+	
+	python setup.py install
 
 # Usage
 
@@ -13,16 +16,16 @@ A redis backed kmer -> sample lookup.
 
 ## Insert kmers
 
-	./remcdbg/main.py insert sample_kmers.txt --ports 6201 6202 6203 6204
+	remcdbg insert sample_kmers.txt --ports 6201 6202 6203 6204
 	
 Or in parallel
 	
-	parallel --gnu -j 20 ./remcdbg/main.py insert {} --ports 6201 6202 6203 6204
+	parallel --gnu -j 20 remcdbg insert {} --ports 6201 6202 6203 6204
  ::: kmers/* 
 	
 ## Search
 
-	time ./remcdbg/main.py query gn-amr-genes.fasta --ports 6201 6202 6203 6204
+	time remcdbg query gn-amr-genes.fasta --ports 6201 6202 6203 6204
 
 	
 or using the api
