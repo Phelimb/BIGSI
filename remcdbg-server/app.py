@@ -21,11 +21,6 @@ ports = sorted([int(os.environ.get(r)) for r in redis_envs])
 mc = McDBG(ports=ports)
 
 
-@app.route('/')
-def index():
-    return "Hello, World!"
-
-
 @app.route('/api/v1.0/search', methods=['POST'])
 def search():
     if not request.json or not 'seq' in request.json:
@@ -34,16 +29,13 @@ def search():
     found = {}
     for gene, seq in request.json['seq'].items():
         found[gene] = {}
-        found[gene]['samples'] = []
         start = time.time()
         kmers = [k for k in seq_to_kmers(str(seq))]
         _found = mc.query_kmers_100_per(kmers)
-        for i, p in enumerate(_found):
-            if p == 1:
-                found[gene]['samples'].append(
-                    colours_to_samples.get(i, 'missing'))
+        found[gene]['samples'] = [
+            colours_to_samples.get(i, 'missing') for i, p in enumerate(_found) if p == 1]
         diff = time.time() - start
-        found[gene]['time'] = diff
+        found[gene]['time'] = "%ims" % int(1000*diff)
     return jsonify(found)
 
 
