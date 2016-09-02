@@ -3,6 +3,7 @@ from remcdbg.utils import min_lexo
 from remcdbg.utils import bits
 from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
+from remcdbg.utils import kmer_to_bytes
 import redis
 import math
 import sys
@@ -68,6 +69,7 @@ class McDBG(object):
                 connection.shutdown()
 
     def _kmer_to_bytes(self, kmer):
+        return kmer_to_bytes(kmer, self.bitpadding)
         bitstring = kmer_to_bits(kmer)
         if not self.bitpadding == 0:
             bitstring = "".join([bitstring, '0'*self.bitpadding])
@@ -124,35 +126,9 @@ class McDBG(object):
             c = self.connections['kmers'][
                 kmer[:self.sharding_level]]
         if self.compress_kmers:
-            # logger.debug('setting %s' % list(self._kmer_to_bytes(kmer)))
-            # logger.debug('type is %s' % type(self._kmer_to_bytes(kmer)))
             c.setbit(self._kmer_to_bytes(kmer), colour, 1)
-            # print(" SETBIT", self._kmer_to_bytes(
-            #     kmer), colour, 1)
         else:
             c.setbit(kmer, colour, 1)
-            # print(" SETBIT", kmer, colour, 1)
-
-    # def _byte_encode(self, _bytes):
-    #     byte_string = _bytes.__repr__()[2:-1]
-    #     return self._bytestring_encode(byte_string)
-
-    # def _bytestring_encode(self, byte_string):
-    #     if '"' in byte_string:
-    #         return '"%s"' % self._bytestring_replace(byte_string)
-    #     elif "'" in byte_string:
-    #         return '"%s"' % self._bytestring_replace(byte_string)
-    #     elif " " in byte_string:
-    #         return '"%s"' % self._bytestring_replace(byte_string)
-    #     else:
-    #         return byte_string
-
-    # def _bytestring_replace(self, byte_string):
-    #     a = "".join([s.replace('"', '\"').replace("'", "\'").replace(" ", "\ ")
-    #                  for s in list(byte_string)])
-    #     # byte_string.replace('"', '\"', len(byte_string)).replace("'", "\'",
-    #     # len(byte_string)).replace(" ", "\ ", len(byte_string))
-    #     return a.replace("\\\\'", "\\\\\\'")
 
     def set_kmers(self, kmers, colour, min_lexo=False):
         if not min_lexo:
@@ -201,6 +177,7 @@ class McDBG(object):
             else:
                 c.get(kmer)
         result = self._execute_pipeline(pipelines)
+        print(result)
         out = [self._byte_arrays_to_bits(
             result[kmer[:self.sharding_level]].pop(0)) for kmer in kmers]
         return out

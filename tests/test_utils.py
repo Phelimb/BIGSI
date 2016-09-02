@@ -17,4 +17,4 @@ def test_bits_to_kmer():
 
 
 def test_redis_bitstring_to_bitstring():
-    assert bits('@') == [0, 1, 0, 0, 0, 0, 0, 0]
+    assert bits(b'@') == [0, 1, 0, 0, 0, 0, 0, 0]

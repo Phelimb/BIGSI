@@ -16,7 +16,7 @@ def seq_to_kmers(str seq):
         yield seq[i:i+31]
 
 def bits(f):
-    return [(ord(s) >> i) & 1 for s in list(f) for i in xrange(7, -1, -1)]
+    return [(s >> i) & 1 for s in f for i in xrange(7, -1, -1)]
 
 
 def kmer_to_bits(str kmer):
@@ -29,3 +29,10 @@ def bits_to_kmer(str bitstring, int l):
     return "".join(bases)
 
 
+def kmer_to_bytes(str kmer,int bitpadding=0):
+    bitstring = kmer_to_bits(kmer)
+    if not bitpadding == 0:
+        bitstring = "".join([bitstring, '0'*bitpadding])
+    list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
+    _bytes = [int(byte, 2) for byte in list_of_bytes]
+    return bytes(_bytes)

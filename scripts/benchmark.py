@@ -20,27 +20,20 @@ keys = []
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines())
 
-# print(" FLUSHALL")
-mc = McDBG(ports=['6379'], compress_kmers=False)
-mc.delete()
+# mc = McDBG(ports=['6379'], compress_kmers=False)
+# mc.delete()
+# start = time.time()
+# mc.set_kmers(keys, 1)
+# end = time.time()
+
+# print(mc.sample_redis.info('memory').get('used_memory_human'))
+# print(mc.count_kmers())
+# print(end - start)
+
 start = time.time()
-mc.set_kmers(keys, 1)
-end = time.time()
-# print(" INFO memory")
-# print(" DBSIZE")
-
-# print(" FLUSHALL")
-
-print(mc.sample_redis.info('memory').get('used_memory_human'))
-print(mc.count_kmers())
-
-print(end - start)
-# print 'NON compress performed in {0} seconds'.format()
-
-
 mc = McDBG(ports=['6379'], compress_kmers=True)
 mc.delete()
-mcstart = time.time()
+start = time.time()
 mc.set_kmers(keys, 1)
 # print(" INFO memory")
 # print(" DBSIZE")
