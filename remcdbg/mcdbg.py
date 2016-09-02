@@ -1,8 +1,8 @@
 from __future__ import print_function
-from utils import min_lexo
-from utils import bits
-from utils import kmer_to_bits
-from utils import bits_to_kmer
+from remcdbg.utils import min_lexo
+from remcdbg.utils import bits
+from remcdbg.utils import kmer_to_bits
+from remcdbg.utils import bits_to_kmer
 import redis
 import math
 import sys
@@ -49,14 +49,13 @@ class McDBG(object):
         # colour
         self.ports = ports
         self.sharding_level = int(math.log(len(ports), 4))
-        print(self.sharding_level)
         assert len(ports) in [1, 4, 64]
         self.connections = {}
         self._create_connections()
         self.num_colours = self.get_num_colours()
         self.kmer_size = kmer_size
         self.bitpadding = 2
-        self.compress_kmers = True
+        self.compress_kmers = compress_kmers
 
     def delete(self):
         for k, v in self.connections.items():
@@ -75,8 +74,11 @@ class McDBG(object):
         list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
         out = []
         for byte in list_of_bytes:
-            out.append(chr(int(byte, 2)))
-        return bytes("".join(out))
+            out.append(bytes([int(byte, 2)]))
+        _bytes = [int(byte, 2) for byte in list_of_bytes]
+        out = bytes(_bytes)
+
+        return out  # "".join(out)
 
     def _bytes_to_kmer(self, _bytes):
         a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
@@ -120,11 +122,14 @@ class McDBG(object):
             c = self.connections['kmers'][
                 kmer[:self.sharding_level]]
         if self.compress_kmers:
-            logger.debug('setting %s' % list(self._kmer_to_bytes(kmer)))
-            logger.debug('type is %s' % type(self._kmer_to_bytes(kmer)))
-            c.setbit(self._kmer_to_bytes(kmer), colour, 1)
+            # logger.debug('setting %s' % list(self._kmer_to_bytes(kmer)))
+            # logger.debug('type is %s' % type(self._kmer_to_bytes(kmer)))
+            # c.setbit(self._kmer_to_bytes(kmer), colour, 1)
+            print(" SETBIT", self._kmer_to_bytes(
+                kmer).__repr__()[2:-1], colour, 1)
         else:
-            c.setbit(kmer, colour, 1)
+            # c.setbit(kmer, colour, 1)
+            print(" SETBIT", kmer, colour, 1)
 
     def set_kmers(self, kmers, colour, min_lexo=False):
         if not min_lexo:
@@ -261,7 +266,6 @@ class McDBG(object):
         try:
             return int(self.sample_redis.get('num_colours'))
         except TypeError:
-            print(self.sample_redis.get('num_colours'))
             return 0
 
     def count_kmers(self):

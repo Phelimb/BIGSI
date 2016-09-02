@@ -20,14 +20,6 @@ keys = []
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines())
 
-print(" FLUSHALL")
-mc = McDBG(ports=['6379'], compress_kmers=False)
-mc.delete()
-start = time.time()
-mc.set_kmers(keys, 1)
-end = time.time()
-print(" INFO memory")
-print(" FLUSHALL")
 
 # print(mc.sample_redis.execute_command('info', 'memory'))
 # print 'NON compress performed in {0} seconds'.format(end - start)
