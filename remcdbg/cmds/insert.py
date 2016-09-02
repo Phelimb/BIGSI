@@ -20,7 +20,7 @@ def run(parser, args):
         logger.info("%i\t%i\t%i" %
                     (i, mc.count_kmers(), mc.calculate_memory()))
         print(json.dumps({"result": "success", "colour": i, "kmers": mc.count_kmers(
-        ), "memory": mc.calculate_memory()}, indent=4))
+        ), "memory": mc.calculate_memory()}))
     except ValueError as e:
         print(json.dumps({"result": "failed", "message": str(e), "kmers": mc.count_kmers(
-        ), "memory": mc.calculate_memory()}, indent=4))
+        ), "memory": mc.calculate_memory()}))

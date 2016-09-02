@@ -1,15 +1,19 @@
 from __future__ import print_function
 from utils import min_lexo
 from utils import bits
-# import pyximport
-# pyximport.install(pyimport=True)
+from utils import kmer_to_bits
+from utils import bits_to_kmer
 import redis
 import math
 import sys
+from collections import Counter
+import json
+import logging
+logging.basicConfig()
 
-# from Bio.Seq import Seq
-# import numpy as np
-# set up redis connections
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 KMER_SHARDING = {}
 
 KMER_SHARDING[0] = {0: ''}
@@ -32,9 +36,16 @@ def logical_OR_reduce(list_of_bools):
     return [any(l) for l in zip(*list_of_bools)]
 
 
+def byte_to_bitstring(byte):
+    a = str("{0:b}".format(ord(byte)))
+    if len(a) < 8:
+        a = "".join(['0'*(8-len(a)), a])
+    return a
+
+
 class McDBG(object):
 
-    def __init__(self, ports):
+    def __init__(self, ports, kmer_size=31, compress_kmers=True):
         # colour
         self.ports = ports
         self.sharding_level = int(math.log(len(ports), 4))
@@ -42,6 +53,33 @@ class McDBG(object):
         self.connections = {}
         self._create_connections()
         self.num_colours = self.get_num_colours()
+        self.kmer_size = kmer_size
+        self.bitpadding = 2
+        self.compress_kmers = True
+
+    def delete(self):
+        for k, v in self.connections.items():
+            for i, connection in v.items():
+                connection.flushall()
+
+    def shutdown(self):
+        for v in self.connections.values():
+            for connection in v.values():
+                connection.shutdown()
+
+    def _kmer_to_bytes(self, kmer):
+        bitstring = kmer_to_bits(kmer)
+        if not self.bitpadding == 0:
+            bitstring = "".join([bitstring, '0'*self.bitpadding])
+        list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
+        out = []
+        for byte in list_of_bytes:
+            out.append(chr(int(byte, 2)))
+        return "".join(out)
+
+    def _bytes_to_kmer(self, _bytes):
+        a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
+        return bits_to_kmer(a, self.kmer_size)
 
     def _create_connections(self):
         # kmers stored in DB 2
@@ -76,28 +114,26 @@ class McDBG(object):
             out[kmer_key] = p.execute()
         return out
 
-    def set_kmer(self, kmer, colour):
-        self.connections['kmers'][
-            kmer[:self.sharding_level]].setbit(kmer, colour, 1)
+    def set_kmer(self, kmer, colour, c=None):
+        if c is None:
+            c = self.connections['kmers'][
+                kmer[:self.sharding_level]]
+        if self.compress_kmers:
+            c.setbit(self._kmer_to_bytes(kmer), colour, 1)
+        else:
+            c.setbit(kmer, colour, 1)
 
-    def set_kmers(self, kmers, colour):
+    def set_kmers(self, kmers, colour, min_lexo=False):
+        if not min_lexo:
+            kmers = self._convert_query_kmers(kmers)
+        logger.debug('setting %s' % kmers)
         pipelines = self._create_kmer_pipeline(transaction=False)
-        [pipelines[kmer[:self.sharding_level]].setbit(
-            kmer, colour, 1) for kmer in kmers]
+        for kmer in kmers:
+            self.set_kmer(kmer, colour, pipelines[kmer[:self.sharding_level]])
         self._execute_pipeline(pipelines)
 
     def _convert_query_kmers(self, kmers):
         return [min_lexo(k) for k in kmers]
-
-    def query_kmers(self, kmers):
-        kmers = self._convert_query_kmers(kmers)
-        pipelines = self._create_kmer_pipeline()
-        for kmer in kmers:
-            pipelines[kmer[:self.sharding_level]].get(kmer)
-        result = self._execute_pipeline(pipelines)
-        out = [self._byte_arrays_to_bits(
-            result[kmer[:self.sharding_level]].pop(0)) for kmer in kmers]
-        return out
 
     def _create_bitop_lists(self, kmers):
         bit_op_lists = dict((el, [])
@@ -123,6 +159,20 @@ class McDBG(object):
             shard_key].bitop(op, 'tmp%s' % op, *kmers)
         return self._byte_arrays_to_bits(self.connections['kmers'][
             shard_key].get('tmp%s' % op))
+
+    def query_kmers(self, kmers):
+        kmers = self._convert_query_kmers(kmers)
+        pipelines = self._create_kmer_pipeline()
+        for kmer in kmers:
+            c = pipelines[kmer[:self.sharding_level]]
+            if self.compress_kmers:
+                c.get(self._kmer_to_bytes(kmer))
+            else:
+                c.get(kmer)
+        result = self._execute_pipeline(pipelines)
+        out = [self._byte_arrays_to_bits(
+            result[kmer[:self.sharding_level]].pop(0)) for kmer in kmers]
+        return out
 
     def query_kmers_100_per(self, kmers, min_lexo=False):
         if not min_lexo:
@@ -176,11 +226,6 @@ class McDBG(object):
                     break
                 yield kmer
 
-    def delete(self):
-        for k, v in self.connections.items():
-            for i, connection in v.items():
-                connection.flushall()
-
     def add_sample(self, sample_name):
         existing_index = self.get_sample_colour(sample_name)
         if existing_index is not None:
@@ -195,29 +240,6 @@ class McDBG(object):
             pipe.set('s%s' % sample_name, num_colours).incr('num_colours')
             pipe.execute()
             return num_colours
-# >>> with r.pipeline() as pipe:
-# ...     while 1:
-# ...         try:
-# ...             # put a WATCH on the key that holds our sequence value
-# ...             pipe.watch('OUR-SEQUENCE-KEY')
-# ...             # after WATCHing, the pipeline is put into immediate execution
-# ...             # mode until we tell it to start buffering commands again.
-# ...             # this allows us to get the current value of our sequence
-# ...             current_value = pipe.get('OUR-SEQUENCE-KEY')
-# ...             next_value = int(current_value) + 1
-# ...             # now we can put the pipeline back into buffered mode with MULTI
-# ...             pipe.multi()
-# ...             pipe.set('OUR-SEQUENCE-KEY', next_value)
-# ...             # and finally, execute the pipeline (the set command)
-# ...             pipe.execute()
-# ...             # if a WatchError wasn't raised during execution, everything
-# ...             # we just did happened atomically.
-# ...             break
-# ...        except WatchError:
-# ...             # another client must have changed 'OUR-SEQUENCE-KEY' between
-# ...             # the time we started WATCHing it and the pipeline's execution.
-# ...             # our best bet is to just retry.
-# ...             continue
 
     def get_sample_colour(self, sample_name):
         return self.sample_redis.get('s%s' % sample_name)
@@ -248,20 +270,46 @@ class McDBG(object):
         self.connections['stats'][1].set([self.count_kmers()], memory)
         return memory
 
-    def unique_colour_arrays(self):
-        # pipe = None
-        self.sample_redis.delete('sorted_set_cas')
-        # for i, kmer in enumerate(self.kmers()):
-        #     if i % 100000 == 0:
-        #         if pipe:
-        #             pipe.execute()
-        #         pipe = self.sample_redis.pipeline()
-        #         sys.stderr.write(
-        #             '%i of %i %f%%\n' % (i, self.count_kmers(), float(i)/self.count_kmers()))
-        #     try:
-        #         pipe.zincrby('sorted_set_cas', self.connections[
-        #             'kmers'][kmer[:self.sharding_level]].get(kmer), 1)
-        #     except KeyError:
-        #         pass
-        # return self.sample_redis.zrangebyscore('sorted_set_cas', 2,
-        # self.count_kmers(), withscores=True)
+    def bitcount_all(self):
+        count = Counter()
+        pipelines = None
+        for i, kmer in enumerate(self.kmers()):
+            if i % 100000*len(self.ports) == 0:
+                if pipelines:
+                    result = self._execute_pipeline(pipelines)
+                    [count.update(l) for l in result.values()]
+                    print(json.dumps(dict(count)))
+                pipelines = self._create_kmer_pipeline(transaction=False)
+                sys.stderr.write(
+                    '%i of %i %f%%\n' % (i, self.count_kmers(), float(i)/self.count_kmers()))
+            try:
+                pipelines[kmer[:self.sharding_level]].bitcount(kmer)
+            except KeyError:
+                pass
+
+        return dict(count)
+
+
+# >>> with r.pipeline() as pipe:
+# ...     while 1:
+# ...         try:
+# ...             # put a WATCH on the key that holds our sequence value
+# ...             pipe.watch('OUR-SEQUENCE-KEY')
+# ...             # after WATCHing, the pipeline is put into immediate execution
+# ...             # mode until we tell it to start buffering commands again.
+# ...             # this allows us to get the current value of our sequence
+# ...             current_value = pipe.get('OUR-SEQUENCE-KEY')
+# ...             next_value = int(current_value) + 1
+# ...             # now we can put the pipeline back into buffered mode with MULTI
+# ...             pipe.multi()
+# ...             pipe.set('OUR-SEQUENCE-KEY', next_value)
+# ...             # and finally, execute the pipeline (the set command)
+# ...             pipe.execute()
+# ...             # if a WatchError wasn't raised during execution, everything
+# ...             # we just did happened atomically.
+# ...             break
+# ...        except WatchError:
+# ...             # another client must have changed 'OUR-SEQUENCE-KEY' between
+# ...             # the time we started WATCHing it and the pipeline's execution.
+# ...             # our best bet is to just retry.
+# ...             continue

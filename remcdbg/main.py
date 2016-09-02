@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import os
 import argparse
+import redis
 # from remcdbg.version import __version__
 sys.path.append(
     os.path.realpath(
@@ -18,8 +19,16 @@ def run_subtool(parser, args):
         from remcdbg.cmds.query import run
     elif args.command == "stats":
         from remcdbg.cmds.stats import run
+    elif args.command == "shutdown":
+        from remcdbg.cmds.shutdown import run
+    elif args.command == "bitcount":
+        from remcdbg.cmds.bitcount import run
     # run the chosen submodule.
-    run(parser, args)
+    try:
+        run(parser, args)
+    except redis.exceptions.BusyLoadingError:
+        print(
+            "Redis is loading the dataset in memory. Please try again when finished. ")
 
 
 def main():
@@ -62,14 +71,26 @@ def main():
     parser_query.set_defaults(func=run_subtool)
 
     ##########
-    # Insert
+    # Stats
     ##########
     parser_stats = subparsers.add_parser(
         'stats',
         help='adds a set of kmers to the DB',
         parents=[db_parser_mixin])
     parser_stats.set_defaults(func=run_subtool)
+
+    parser_bitcount = subparsers.add_parser(
+        'bitcount',
+        help='What is the distribution of bitcounts',
+        parents=[db_parser_mixin])
+    parser_bitcount.set_defaults(func=run_subtool)
     ##
+    parser_shutdown = subparsers.add_parser(
+        'shutdown',
+        help='shutsdown all the redis instances',
+        parents=[db_parser_mixin])
+    parser_shutdown.set_defaults(func=run_subtool)
+
     args = parser.parse_args()
     args.func(parser, args)
 
