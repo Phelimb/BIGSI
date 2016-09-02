@@ -49,7 +49,8 @@ class McDBG(object):
         # colour
         self.ports = ports
         self.sharding_level = int(math.log(len(ports), 4))
-        assert len(ports) in [0, 4, 64]
+        print(self.sharding_level)
+        assert len(ports) in [1, 4, 64]
         self.connections = {}
         self._create_connections()
         self.num_colours = self.get_num_colours()
@@ -75,7 +76,7 @@ class McDBG(object):
         out = []
         for byte in list_of_bytes:
             out.append(chr(int(byte, 2)))
-        return "".join(out)
+        return bytes("".join(out))
 
     def _bytes_to_kmer(self, _bytes):
         a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
@@ -119,6 +120,8 @@ class McDBG(object):
             c = self.connections['kmers'][
                 kmer[:self.sharding_level]]
         if self.compress_kmers:
+            logger.debug('setting %s' % list(self._kmer_to_bytes(kmer)))
+            logger.debug('type is %s' % type(self._kmer_to_bytes(kmer)))
             c.setbit(self._kmer_to_bytes(kmer), colour, 1)
         else:
             c.setbit(kmer, colour, 1)
@@ -126,7 +129,7 @@ class McDBG(object):
     def set_kmers(self, kmers, colour, min_lexo=False):
         if not min_lexo:
             kmers = self._convert_query_kmers(kmers)
-        logger.debug('setting %s' % kmers)
+        # logger.debug('setting %s' % kmers)
         pipelines = self._create_kmer_pipeline(transaction=False)
         for kmer in kmers:
             self.set_kmer(kmer, colour, pipelines[kmer[:self.sharding_level]])
