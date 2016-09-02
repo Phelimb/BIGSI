@@ -71,13 +71,15 @@ class McDBG(object):
         bitstring = kmer_to_bits(kmer)
         if not self.bitpadding == 0:
             bitstring = "".join([bitstring, '0'*self.bitpadding])
+        # [self.sample_redis.setbit('tmp', int(i), int(j))
+        #  for i, j in enumerate(bitstring)]
+        # out = self.sample_redis.get('tmp')
         list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
         out = []
         for byte in list_of_bytes:
             out.append(bytes([int(byte, 2)]))
         _bytes = [int(byte, 2) for byte in list_of_bytes]
         out = bytes(_bytes)
-
         return out  # "".join(out)
 
     def _bytes_to_kmer(self, _bytes):
@@ -124,12 +126,33 @@ class McDBG(object):
         if self.compress_kmers:
             # logger.debug('setting %s' % list(self._kmer_to_bytes(kmer)))
             # logger.debug('type is %s' % type(self._kmer_to_bytes(kmer)))
-            # c.setbit(self._kmer_to_bytes(kmer), colour, 1)
-            print(" SETBIT", self._kmer_to_bytes(
-                kmer).__repr__()[2:-1], colour, 1)
+            c.setbit(self._kmer_to_bytes(kmer), colour, 1)
+            # print(" SETBIT", self._kmer_to_bytes(
+            #     kmer), colour, 1)
         else:
-            # c.setbit(kmer, colour, 1)
-            print(" SETBIT", kmer, colour, 1)
+            c.setbit(kmer, colour, 1)
+            # print(" SETBIT", kmer, colour, 1)
+
+    # def _byte_encode(self, _bytes):
+    #     byte_string = _bytes.__repr__()[2:-1]
+    #     return self._bytestring_encode(byte_string)
+
+    # def _bytestring_encode(self, byte_string):
+    #     if '"' in byte_string:
+    #         return '"%s"' % self._bytestring_replace(byte_string)
+    #     elif "'" in byte_string:
+    #         return '"%s"' % self._bytestring_replace(byte_string)
+    #     elif " " in byte_string:
+    #         return '"%s"' % self._bytestring_replace(byte_string)
+    #     else:
+    #         return byte_string
+
+    # def _bytestring_replace(self, byte_string):
+    #     a = "".join([s.replace('"', '\"').replace("'", "\'").replace(" ", "\ ")
+    #                  for s in list(byte_string)])
+    #     # byte_string.replace('"', '\"', len(byte_string)).replace("'", "\'",
+    #     # len(byte_string)).replace(" ", "\ ", len(byte_string))
+    #     return a.replace("\\\\'", "\\\\\\'")
 
     def set_kmers(self, kmers, colour, min_lexo=False):
         if not min_lexo:

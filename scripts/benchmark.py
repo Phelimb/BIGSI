@@ -20,27 +20,36 @@ keys = []
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines())
 
-print(" FLUSHALL")
+# print(" FLUSHALL")
 mc = McDBG(ports=['6379'], compress_kmers=False)
 mc.delete()
 start = time.time()
 mc.set_kmers(keys, 1)
 end = time.time()
-print(" INFO memory")
-print(" FLUSHALL")
+# print(" INFO memory")
+# print(" DBSIZE")
 
-# print(mc.sample_redis.execute_command('info', 'memory'))
-# print 'NON compress performed in {0} seconds'.format(end - start)
+# print(" FLUSHALL")
+
+print(mc.sample_redis.info('memory').get('used_memory_human'))
+print(mc.count_kmers())
+
+print(end - start)
+# print 'NON compress performed in {0} seconds'.format()
 
 
 mc = McDBG(ports=['6379'], compress_kmers=True)
 mc.delete()
 mcstart = time.time()
 mc.set_kmers(keys, 1)
-print(" INFO memory")
+# print(" INFO memory")
+# print(" DBSIZE")
 end = time.time()
-# print(mc.sample_redis.execute_command('info', 'memory'))
-# # print 'compress performed in {0} seconds'.format(end - start)
+print(mc.sample_redis.info('memory').get('used_memory_human'))
+print(mc.count_kmers())
+print(end - start)
+
+# print 'compress performed in {0} seconds'.format(end - start)
 # for i, k in enumerate(mc.kmers()):
 #     if i > 5:
 #         break
