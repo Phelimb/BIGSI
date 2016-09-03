@@ -108,9 +108,34 @@ class McDBG(object):
             out[kmer_key] = p.execute()
         return out
 
-    def add_kmer(self, kmer, colour):
-        if self.get_kmer(kmer) is None:
+    def add_kmer(self, kmer, colour, min_lexo=False):
+        if not min_lexo:
+            kmer = self._convert_query_kmer(kmer)
+        if self.get_kmer(kmer) is not None:
             self.set_kmer(kmer, colour)
+        else:
+            self.add_kmer_without_bitarray(kmer, colour)
+
+    def add_kmer_without_bitarray(self, kmer, colour):
+        colour_found = self.search_sets(kmer, colour)
+        print(colour_found)
+        if colour_found is not None:
+            self.set_kmer(kmer, colour_found)
+            self.set_kmer(kmer, colour)
+            self.srem_kmer(kmer, colour)
+        else:
+            self.sadd_kmer(kmer, colour)
+            # setbits
+
+    def search_sets(self, kmer, ignore_colour=-1):
+        print(self.num_colours)
+        for i in range(self.num_colours):
+            if not i == ignore_colour:
+                print(i)
+                res = self._get_set_connection(i).sismember(i, kmer)
+                if res == 1:
+                    return i
+        return None
 
     def set_kmer(self, kmer, colour, c=None):
         if c is None:
@@ -138,6 +163,14 @@ class McDBG(object):
         else:
             c.sadd(colour, kmer)
 
+    def srem_kmer(self, kmer, colour, c=None):
+        if c is None:
+            c = self.connections['colours'][colour % len(self.ports)]
+        if self.compress_kmers:
+            c.srem(colour, self._kmer_to_bytes(kmer))
+        else:
+            c.srem(colour, kmer)
+
     def add_kmers_to_set(self, kmers, colour, min_lexo=False):
         if not min_lexo:
             kmers = self._convert_query_kmers(kmers)
@@ -148,7 +181,10 @@ class McDBG(object):
         pipeline.execute()
 
     def _convert_query_kmers(self, kmers):
-        return [min_lexo(k) for k in kmers]
+        return [self._convert_query_kmer(k) for k in kmers]
+
+    def _convert_query_kmer(self, kmer):
+        return min_lexo(kmer)
 
     def _create_bitop_lists(self, kmers):
         bit_op_lists = dict((el, [])
@@ -181,6 +217,9 @@ class McDBG(object):
     def _get_kmer_connection(self, kmer):
         shard_key = self._shard_key(kmer)
         return self.connections['kmers'][shard_key]
+
+    def _get_set_connection(self, colour):
+        return self.connections['colours'][colour]
 
     def get_kmer(self, kmer, connection=None):
         if not connection:

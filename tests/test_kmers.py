@@ -43,8 +43,28 @@ def test_set_kmers():
 
 def test_add_kmer():
     mc = McDBG(ports=ports, compress_kmers=False)
+    mc.add_sample('s0')
+    mc.num_colours = mc.get_num_colours()
+    mc.add_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG', colour=0)
+    assert mc.get_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG') == None
+    assert mc._get_set_connection(0).sismember(
+        '0', 'ATCGTAGATATCGTAGATATCGTAGATATCG') == 1
+    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG']) == [(0,)]
+    assert mc.search_sets('ATCGTAGATATCGTAGATATCGTAGATATCG', -1) == 0
+    # Add the same kmer in another colour
+    mc.add_sample('s1')
+    mc.num_colours = mc.get_num_colours()
     mc.add_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG', colour=1)
     assert mc.get_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG') != None
+    assert mc._get_set_connection(1).sismember(
+        '1', 'ATCGTAGATATCGTAGATATCGTAGATATCG') == 0
+    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG']) == [(1, 1)]
+    # Add a third kmer
+    mc.add_kmer('ATCGTAGATATCGTAGGGATCGTAGATATCG', colour=1)
+    assert mc.get_kmer('ATCGTAGATATCGTAGGGATCGTAGATATCG') == None
+    assert mc._get_set_connection(1).sismember(
+        '1', 'ATCGTAGATATCGTAGGGATCGTAGATATCG') == 1
+    assert mc.query_kmers(['ATCGTAGATATCGTAGGGATCGTAGATATCG']) == [(0, 0)]
 
 
 def test_query_kmers():
