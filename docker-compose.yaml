@@ -1,0 +1,61 @@
+version: '2'
+
+services:
+  main:
+    image: phelimb/remcdbg
+    ports:
+      - "8001"      
+    links:
+        - redis1:redis1
+        - redis2:redis2
+        - redis3:redis3
+        - redis4:redis4
+    environment:
+        - REDIS_IP_1=redis1
+        - REDIS_PORT_1=6301
+        - REDIS_IP_2=redis2
+        - REDIS_PORT_2=6302
+        - REDIS_IP_3=redis3
+        - REDIS_PORT_3=6303
+        - REDIS_IP_4=redis4
+        - REDIS_PORT_4=6304     
+    volumes:
+        - scripts:/data
+                   
+    command: bash -c "cat /etc/hosts && env && tail -F -n0 /etc/hosts"
+  redis1:
+    image: redis:3.2.3-32bit
+    command: redis-server --port 6301 --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - 6301
+  redis2:
+    image: redis:3.2.3-32bit
+    command: redis-server --port 6302 --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - 6302
+  redis3:
+    image: redis:3.2.3-32bit
+    command: redis-server --port 6303 --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - 6303
+  redis4:
+    image: redis:3.2.3-32bit
+    command: redis-server --port 6304 --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:           
+      - 6304  
+
+
+volumes:
+  redis-data:
+    driver: local
+  scripts:
+    driver: local    
+

@@ -2,7 +2,7 @@
 from __future__ import print_function
 from utils import min_lexo
 from utils import seq_to_kmers
-from mcdbg import McDBG
+from remcdbg.mcdbg import McDBG
 import argparse
 import os.path
 import time
@@ -23,9 +23,9 @@ def parse_input(infile):
     return gene_to_kmers
 
 
-def run(parser, args):
+def run(parser, args, conn_config):
     gene_to_kmers = parse_input(args.fasta)
-    mc = McDBG(ports=args.ports)
+    mc = McDBG(conn_config=conn_config)
     colours_to_samples = mc.colours_to_sample_dict()
     results = {}
     found = {}

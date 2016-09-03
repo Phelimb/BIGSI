@@ -11,6 +11,16 @@ sys.path.append(
             os.path.dirname(__file__),
             "..")))
 
+CONN_CONFIG = []
+redis_envs = [env for env in os.environ if "REDIS" in env]
+if len(redis_envs) == 0:
+    CONN_CONFIG = [('localhost', 6379)]
+else:
+    for i in range(int(len(redis_envs)/2)):
+        hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
+        port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
+        CONN_CONFIG.append((hostname, port))
+
 
 def run_subtool(parser, args):
     if args.command == 'insert':
@@ -25,7 +35,7 @@ def run_subtool(parser, args):
         from remcdbg.cmds.bitcount import run
     # run the chosen submodule.
     try:
-        run(parser, args)
+        run(parser, args, CONN_CONFIG)
     except redis.exceptions.BusyLoadingError:
         print(
             "Redis is loading the dataset in memory. Please try again when finished. ")
@@ -47,7 +57,6 @@ def main():
         parser_class=argparse.ArgumentParser)
 
     db_parser_mixin = argparse.ArgumentParser(add_help=False)
-    db_parser_mixin.add_argument("--ports", type=int, nargs='+')
 
     ##########
     # Insert

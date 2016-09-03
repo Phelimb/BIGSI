@@ -46,11 +46,13 @@ def byte_to_bitstring(byte):
 
 class McDBG(object):
 
-    def __init__(self, ports, kmer_size=31, compress_kmers=True):
+    def __init__(self, conn_config, kmer_size=31, compress_kmers=True):
         # colour
-        self.ports = ports
-        self.sharding_level = int(math.log(len(ports), 4))
-        assert len(ports) in [1, 4, 64]
+        self.conn_config = conn_config
+        self.hostnames = [c[0] for c in conn_config]
+        self.ports = [c[1] for c in conn_config]
+        self.sharding_level = int(math.log(len(self.ports), 4))
+        assert len(self.ports) in [1, 4, 64]
         self.connections = {}
         self._create_connections()
         self.num_colours = self.get_num_colours()
@@ -82,14 +84,15 @@ class McDBG(object):
         self.connections['stats'] = {}
         self.connections['colours'] = {}
         self.connections['kmers'] = {}
-        for i, port in enumerate(self.ports):
+        for i, c in enumerate(self.conn_config):
+            host, port = c
             self.connections['stats'][i] = redis.StrictRedis(
-                host='localhost', port=port, db=0)
+                host=host, port=port, db=0)
             self.connections['colours'][i] = redis.StrictRedis(
-                host='localhost', port=port, db=1)
+                host=host, port=port, db=1)
             kmer_key = KMER_SHARDING[self.sharding_level][i]
             self.connections['kmers'][kmer_key] = redis.StrictRedis(
-                host='localhost', port=port, db=2)
+                host=host, port=port, db=2)
 
     def _create_kmer_pipeline(self, transaction=True):
         # kmers stored in DB 2
@@ -350,7 +353,7 @@ class McDBG(object):
     def calculate_memory(self):
         memory = sum([r.info().get('used_memory')
                       for r in self.connections['kmers'].values()])
-        self.connections['stats'][1].set([self.count_kmers()], memory)
+        self.connections['stats'][0].set([self.count_kmers()], memory)
         return memory
 
     def bitcount_all(self):
