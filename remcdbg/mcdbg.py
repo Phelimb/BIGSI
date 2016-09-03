@@ -38,7 +38,7 @@ def logical_OR_reduce(list_of_bools):
 
 
 def byte_to_bitstring(byte):
-    a = str("{0:b}".format(ord(byte)))
+    a = str("{0:b}".format(byte))
     if len(a) < 8:
         a = "".join(['0'*(8-len(a)), a])
     return a
@@ -70,19 +70,6 @@ class McDBG(object):
 
     def _kmer_to_bytes(self, kmer):
         return kmer_to_bytes(kmer, self.bitpadding)
-        bitstring = kmer_to_bits(kmer)
-        if not self.bitpadding == 0:
-            bitstring = "".join([bitstring, '0'*self.bitpadding])
-        # [self.sample_redis.setbit('tmp', int(i), int(j))
-        #  for i, j in enumerate(bitstring)]
-        # out = self.sample_redis.get('tmp')
-        list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
-        out = []
-        for byte in list_of_bytes:
-            out.append(bytes([int(byte, 2)]))
-        _bytes = [int(byte, 2) for byte in list_of_bytes]
-        out = bytes(_bytes)
-        return out  # "".join(out)
 
     def _bytes_to_kmer(self, _bytes):
         a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
@@ -98,8 +85,8 @@ class McDBG(object):
         for i, port in enumerate(self.ports):
             self.connections['stats'][i] = redis.StrictRedis(
                 host='localhost', port=port, db=0)
-            # self.connections['colours'][i] = redis.StrictRedis(
-            #     host='localhost', port=port, db=1)
+            self.connections['colours'][i] = redis.StrictRedis(
+                host='localhost', port=port, db=1)
             kmer_key = KMER_SHARDING[self.sharding_level][i]
             self.connections['kmers'][kmer_key] = redis.StrictRedis(
                 host='localhost', port=port, db=2)
@@ -121,10 +108,14 @@ class McDBG(object):
             out[kmer_key] = p.execute()
         return out
 
+    def add_kmer(self, kmer, colour):
+        if self.get_kmer(kmer) is None:
+            self.set_kmer(kmer, colour)
+
     def set_kmer(self, kmer, colour, c=None):
         if c is None:
             c = self.connections['kmers'][
-                kmer[:self.sharding_level]]
+                self._shard_key(kmer)]
         if self.compress_kmers:
             c.setbit(self._kmer_to_bytes(kmer), colour, 1)
         else:
@@ -136,8 +127,25 @@ class McDBG(object):
         # logger.debug('setting %s' % kmers)
         pipelines = self._create_kmer_pipeline(transaction=False)
         for kmer in kmers:
-            self.set_kmer(kmer, colour, pipelines[kmer[:self.sharding_level]])
+            self.set_kmer(kmer, colour, pipelines[self._shard_key(kmer)])
         self._execute_pipeline(pipelines)
+
+    def sadd_kmer(self, kmer, colour, c=None):
+        if c is None:
+            c = self.connections['colours'][colour % len(self.ports)]
+        if self.compress_kmers:
+            c.sadd(colour, self._kmer_to_bytes(kmer))
+        else:
+            c.sadd(colour, kmer)
+
+    def add_kmers_to_set(self, kmers, colour, min_lexo=False):
+        if not min_lexo:
+            kmers = self._convert_query_kmers(kmers)
+        pipeline = self.connections['colours'][
+            colour % len(self.ports)].pipeline()
+        for kmer in kmers:
+            self.sadd_kmer(kmer, colour, pipeline)
+        pipeline.execute()
 
     def _convert_query_kmers(self, kmers):
         return [min_lexo(k) for k in kmers]
@@ -147,7 +155,7 @@ class McDBG(object):
                             for el in self.connections['kmers'].keys())
         for kmer in kmers:
             try:
-                bit_op_lists[kmer[:self.sharding_level]].append(kmer)
+                bit_op_lists[self._shard_key(kmer)].append(kmer)
             except KeyError:
                 pass
         return bit_op_lists
@@ -167,19 +175,34 @@ class McDBG(object):
         return self._byte_arrays_to_bits(self.connections['kmers'][
             shard_key].get('tmp%s' % op))
 
-    def query_kmers(self, kmers):
-        kmers = self._convert_query_kmers(kmers)
+    def _shard_key(self, kmer):
+        return kmer[:self.sharding_level]
+
+    def _get_kmer_connection(self, kmer):
+        shard_key = self._shard_key(kmer)
+        return self.connections['kmers'][shard_key]
+
+    def get_kmer(self, kmer, connection=None):
+        if not connection:
+            c = self._get_kmer_connection(kmer)
+        if self.compress_kmers:
+            return c.get(self._kmer_to_bytes(kmer))
+        else:
+            return c.get(kmer)
+
+    def query_kmers(self, kmers, min_lexo=False):
+        if not min_lexo:
+            kmers = self._convert_query_kmers(kmers)
         pipelines = self._create_kmer_pipeline()
         for kmer in kmers:
-            c = pipelines[kmer[:self.sharding_level]]
+            c = pipelines[self._shard_key(kmer)]
             if self.compress_kmers:
                 c.get(self._kmer_to_bytes(kmer))
             else:
                 c.get(kmer)
         result = self._execute_pipeline(pipelines)
-        print(result)
         out = [self._byte_arrays_to_bits(
-            result[kmer[:self.sharding_level]].pop(0)) for kmer in kmers]
+            result[self._shard_key(kmer)].pop(0)) for kmer in kmers]
         return out
 
     def query_kmers_100_per(self, kmers, min_lexo=False):
@@ -203,14 +226,14 @@ class McDBG(object):
         if colours:
             for kmer in kmers:
                 for colour in colours:
-                    pipelines[kmer[:self.sharding_level]].getbit(kmer, colour)
+                    pipelines[self._shard_key(kmer)].getbit(kmer, colour)
         result = self._execute_pipeline(pipelines)
         outs = [colours]
         if colours:
             for kmer in kmers:
                 out = []
                 for _ in colours:
-                    out.append(result[kmer[:self.sharding_level]].pop(0))
+                    out.append(result[self._shard_key(kmer)].pop(0))
                 outs.append(tuple(out))
         return outs
 
@@ -250,7 +273,11 @@ class McDBG(object):
             return num_colours
 
     def get_sample_colour(self, sample_name):
-        return self.sample_redis.get('s%s' % sample_name)
+        c = self.sample_redis.get('s%s' % sample_name)
+        if c is not None:
+            return int(c)
+        else:
+            return c
 
     def colours_to_sample_dict(self):
         o = {}
@@ -290,7 +317,7 @@ class McDBG(object):
                 sys.stderr.write(
                     '%i of %i %f%%\n' % (i, self.count_kmers(), float(i)/self.count_kmers()))
             try:
-                pipelines[kmer[:self.sharding_level]].bitcount(kmer)
+                pipelines[self._shard_key(kmer)].bitcount(kmer)
             except KeyError:
                 pass
 
