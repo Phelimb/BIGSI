@@ -108,6 +108,19 @@ class McDBG(object):
             out[kmer_key] = p.execute()
         return out
 
+    def add_kmers(self, kmers, colour, min_lexo=False):
+        if not min_lexo:
+            kmers = self._convert_query_kmers(kmers)
+        presence = self.query_kmers(kmers, min_lexo=True)
+        set_pipeline = self._get_set_connection(colour).pipeline()
+        for kmer, presence in zip(kmers, presence):
+            if presence:
+                self.set_kmer(kmer, colour, min_lexo=True)
+            else:
+                self.add_kmer_without_bitarray(
+                    kmer, colour, connection=set_pipeline)
+        set_pipeline.execute()
+
     def add_kmer(self, kmer, colour, min_lexo=False):
         if not min_lexo:
             kmer = self._convert_query_kmer(kmer)
@@ -116,35 +129,32 @@ class McDBG(object):
         else:
             self.add_kmer_without_bitarray(kmer, colour)
 
-    def add_kmer_without_bitarray(self, kmer, colour):
+    def add_kmer_without_bitarray(self, kmer, colour, connection=None):
         colour_found = self.search_sets(kmer, colour)
-        print(colour_found)
         if colour_found is not None:
             self.set_kmer(kmer, colour_found)
             self.set_kmer(kmer, colour)
-            self.srem_kmer(kmer, colour)
+            self.srem_kmer(kmer, colour_found)
         else:
-            self.sadd_kmer(kmer, colour)
+            self.sadd_kmer(kmer, colour, connection)
             # setbits
 
     def search_sets(self, kmer, ignore_colour=-1):
-        print(self.num_colours)
         for i in range(self.num_colours):
             if not i == ignore_colour:
-                print(i)
                 res = self._get_set_connection(i).sismember(i, kmer)
                 if res == 1:
                     return i
         return None
 
-    def set_kmer(self, kmer, colour, c=None):
-        if c is None:
-            c = self.connections['kmers'][
+    def set_kmer(self, kmer, colour, connection=None):
+        if connection is None:
+            connection = self.connections['kmers'][
                 self._shard_key(kmer)]
         if self.compress_kmers:
-            c.setbit(self._kmer_to_bytes(kmer), colour, 1)
+            connection.setbit(self._kmer_to_bytes(kmer), colour, 1)
         else:
-            c.setbit(kmer, colour, 1)
+            connection.setbit(kmer, colour, 1)
 
     def set_kmers(self, kmers, colour, min_lexo=False):
         if not min_lexo:
@@ -219,7 +229,7 @@ class McDBG(object):
         return self.connections['kmers'][shard_key]
 
     def _get_set_connection(self, colour):
-        return self.connections['colours'][colour]
+        return self.connections['colours'][colour % len(self.ports)]
 
     def get_kmer(self, kmer, connection=None):
         if not connection:

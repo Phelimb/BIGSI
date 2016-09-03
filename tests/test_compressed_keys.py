@@ -7,17 +7,10 @@ KMERS = ['A', 'T', 'C', 'G']
 
 def test_add_kmer():
     mc = McDBG(ports=ports, compress_kmers=True)
-    kmer = 'AGAGATATAGACTTATTAAAAAATACAATAT'
+    kmer = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
     bitstring = kmer_to_bits(kmer)
-    # print(bitstring)
-    # print([mc.connections['kmers']['A'].setbit('tmp', int(i), int(j))
-    # for i, j in enumerate(bitstring)])
-    # print(mc.connections['kmers']['A'].get('tmp'))
-    # mc._kmer_to_bytes()
-    mc.set_kmer('AGAGATATAGACTTATTAAAAAATACAATAT', 1)
+    mc.set_kmer(kmer, 1)
     _bytes = b'6\xc8\xcd\xb23l\x8c\xd8'
-    # print(mc.connections['kmers']['A'].getbit(
-    # _bytes, 1))
     assert mc.connections['kmers']['A'].getbit(
         _bytes, 1) == 1
     assert mc.connections['kmers']['T'].getbit(
