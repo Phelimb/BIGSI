@@ -1,0 +1,32 @@
+version: '2'
+
+services:
+  main:
+    image: phelimb/remcdbg
+    ports:
+      - "8001"      
+    links:
+      {% for redis in redis_conf %}
+        - {{redis['host']}}:{{redis['host']}}
+      {% endfor %}
+    environment:
+      {% for redis in redis_conf %}
+        - REDIS_IP_{{redis['i']}}:{{redis['host']}}
+        - REDIS_PORT_{{redis['i']}}:{{redis['port']}}
+      {% endfor %}          
+    volumes:
+        - "$DATA_DIR:/data"                   
+    command: bash -c "cat /etc/hosts && env && tail -F -n0 /etc/hosts"
+  {% for redis in redis_conf %}
+  {{redis['host']}}:
+    image: phelimb/redis-mcdbg
+    environment:
+        - PORT={{redis['port']}}    
+    volumes:
+      - "$DATA_DIR:/data"
+    ports:
+      - {{redis['port']}}  
+  {% endfor %}  
+
+  
+

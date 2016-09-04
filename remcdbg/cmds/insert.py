@@ -16,7 +16,7 @@ def run(parser, args, conn_config):
     mc = McDBG(conn_config=conn_config)
     try:
         i = mc.add_sample(args.sample_name)
-        mc.set_kmers(kmers, i)
+        mc.add_kmers(kmers, i)
         logger.info("%i\t%i\t%i" %
                     (i, mc.count_kmers(), mc.calculate_memory()))
         print(json.dumps({"result": "success", "colour": i, "kmers": mc.count_kmers(
