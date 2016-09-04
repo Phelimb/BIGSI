@@ -3,9 +3,9 @@ env = Environment(loader=FileSystemLoader('.'))
 redis_conf = []
 for i in range(64):
     redis = {}
-    redis['i'] = i
-    redis['port'] = 6300+i
-    redis['host'] = 'redis%i' % i
+    redis['i'] = i+1
+    redis['port'] = 6300+i+1
+    redis['host'] = 'redis%i' % (i+1)
     redis_conf.append(redis)
 # print(redis_conf)
 template = env.get_template('docker-compose.template')

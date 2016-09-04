@@ -11,8 +11,8 @@ services:
       {% endfor %}
     environment:
       {% for redis in redis_conf %}
-        - REDIS_IP_{{redis['i']}}:{{redis['host']}}
-        - REDIS_PORT_{{redis['i']}}:{{redis['port']}}
+        - REDIS_IP_{{redis['i']}}={{redis['host']}}
+        - REDIS_PORT_{{redis['i']}}={{redis['port']}}
       {% endfor %}          
     volumes:
         - "$DATA_DIR:/data"                   

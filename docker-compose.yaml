@@ -7,8 +7,6 @@ services:
       - "8001"      
     links:
       
-        - redis0:redis0
-      
         - redis1:redis1
       
         - redis2:redis2
@@ -135,212 +133,205 @@ services:
       
         - redis63:redis63
       
+        - redis64:redis64
+      
     environment:
       
-        - REDIS_IP_0:redis0
-        - REDIS_PORT_0:6300
+        - REDIS_IP_1=redis1
+        - REDIS_PORT_1=6301
       
-        - REDIS_IP_1:redis1
-        - REDIS_PORT_1:6301
+        - REDIS_IP_2=redis2
+        - REDIS_PORT_2=6302
       
-        - REDIS_IP_2:redis2
-        - REDIS_PORT_2:6302
+        - REDIS_IP_3=redis3
+        - REDIS_PORT_3=6303
       
-        - REDIS_IP_3:redis3
-        - REDIS_PORT_3:6303
+        - REDIS_IP_4=redis4
+        - REDIS_PORT_4=6304
       
-        - REDIS_IP_4:redis4
-        - REDIS_PORT_4:6304
+        - REDIS_IP_5=redis5
+        - REDIS_PORT_5=6305
       
-        - REDIS_IP_5:redis5
-        - REDIS_PORT_5:6305
+        - REDIS_IP_6=redis6
+        - REDIS_PORT_6=6306
       
-        - REDIS_IP_6:redis6
-        - REDIS_PORT_6:6306
+        - REDIS_IP_7=redis7
+        - REDIS_PORT_7=6307
       
-        - REDIS_IP_7:redis7
-        - REDIS_PORT_7:6307
+        - REDIS_IP_8=redis8
+        - REDIS_PORT_8=6308
       
-        - REDIS_IP_8:redis8
-        - REDIS_PORT_8:6308
+        - REDIS_IP_9=redis9
+        - REDIS_PORT_9=6309
       
-        - REDIS_IP_9:redis9
-        - REDIS_PORT_9:6309
+        - REDIS_IP_10=redis10
+        - REDIS_PORT_10=6310
       
-        - REDIS_IP_10:redis10
-        - REDIS_PORT_10:6310
+        - REDIS_IP_11=redis11
+        - REDIS_PORT_11=6311
       
-        - REDIS_IP_11:redis11
-        - REDIS_PORT_11:6311
+        - REDIS_IP_12=redis12
+        - REDIS_PORT_12=6312
       
-        - REDIS_IP_12:redis12
-        - REDIS_PORT_12:6312
+        - REDIS_IP_13=redis13
+        - REDIS_PORT_13=6313
       
-        - REDIS_IP_13:redis13
-        - REDIS_PORT_13:6313
+        - REDIS_IP_14=redis14
+        - REDIS_PORT_14=6314
       
-        - REDIS_IP_14:redis14
-        - REDIS_PORT_14:6314
+        - REDIS_IP_15=redis15
+        - REDIS_PORT_15=6315
       
-        - REDIS_IP_15:redis15
-        - REDIS_PORT_15:6315
+        - REDIS_IP_16=redis16
+        - REDIS_PORT_16=6316
       
-        - REDIS_IP_16:redis16
-        - REDIS_PORT_16:6316
+        - REDIS_IP_17=redis17
+        - REDIS_PORT_17=6317
       
-        - REDIS_IP_17:redis17
-        - REDIS_PORT_17:6317
+        - REDIS_IP_18=redis18
+        - REDIS_PORT_18=6318
       
-        - REDIS_IP_18:redis18
-        - REDIS_PORT_18:6318
+        - REDIS_IP_19=redis19
+        - REDIS_PORT_19=6319
       
-        - REDIS_IP_19:redis19
-        - REDIS_PORT_19:6319
+        - REDIS_IP_20=redis20
+        - REDIS_PORT_20=6320
       
-        - REDIS_IP_20:redis20
-        - REDIS_PORT_20:6320
+        - REDIS_IP_21=redis21
+        - REDIS_PORT_21=6321
       
-        - REDIS_IP_21:redis21
-        - REDIS_PORT_21:6321
+        - REDIS_IP_22=redis22
+        - REDIS_PORT_22=6322
       
-        - REDIS_IP_22:redis22
-        - REDIS_PORT_22:6322
+        - REDIS_IP_23=redis23
+        - REDIS_PORT_23=6323
       
-        - REDIS_IP_23:redis23
-        - REDIS_PORT_23:6323
+        - REDIS_IP_24=redis24
+        - REDIS_PORT_24=6324
       
-        - REDIS_IP_24:redis24
-        - REDIS_PORT_24:6324
+        - REDIS_IP_25=redis25
+        - REDIS_PORT_25=6325
       
-        - REDIS_IP_25:redis25
-        - REDIS_PORT_25:6325
+        - REDIS_IP_26=redis26
+        - REDIS_PORT_26=6326
       
-        - REDIS_IP_26:redis26
-        - REDIS_PORT_26:6326
+        - REDIS_IP_27=redis27
+        - REDIS_PORT_27=6327
       
-        - REDIS_IP_27:redis27
-        - REDIS_PORT_27:6327
+        - REDIS_IP_28=redis28
+        - REDIS_PORT_28=6328
       
-        - REDIS_IP_28:redis28
-        - REDIS_PORT_28:6328
+        - REDIS_IP_29=redis29
+        - REDIS_PORT_29=6329
       
-        - REDIS_IP_29:redis29
-        - REDIS_PORT_29:6329
+        - REDIS_IP_30=redis30
+        - REDIS_PORT_30=6330
       
-        - REDIS_IP_30:redis30
-        - REDIS_PORT_30:6330
+        - REDIS_IP_31=redis31
+        - REDIS_PORT_31=6331
       
-        - REDIS_IP_31:redis31
-        - REDIS_PORT_31:6331
+        - REDIS_IP_32=redis32
+        - REDIS_PORT_32=6332
       
-        - REDIS_IP_32:redis32
-        - REDIS_PORT_32:6332
+        - REDIS_IP_33=redis33
+        - REDIS_PORT_33=6333
       
-        - REDIS_IP_33:redis33
-        - REDIS_PORT_33:6333
+        - REDIS_IP_34=redis34
+        - REDIS_PORT_34=6334
       
-        - REDIS_IP_34:redis34
-        - REDIS_PORT_34:6334
+        - REDIS_IP_35=redis35
+        - REDIS_PORT_35=6335
       
-        - REDIS_IP_35:redis35
-        - REDIS_PORT_35:6335
+        - REDIS_IP_36=redis36
+        - REDIS_PORT_36=6336
       
-        - REDIS_IP_36:redis36
-        - REDIS_PORT_36:6336
+        - REDIS_IP_37=redis37
+        - REDIS_PORT_37=6337
       
-        - REDIS_IP_37:redis37
-        - REDIS_PORT_37:6337
+        - REDIS_IP_38=redis38
+        - REDIS_PORT_38=6338
       
-        - REDIS_IP_38:redis38
-        - REDIS_PORT_38:6338
+        - REDIS_IP_39=redis39
+        - REDIS_PORT_39=6339
       
-        - REDIS_IP_39:redis39
-        - REDIS_PORT_39:6339
+        - REDIS_IP_40=redis40
+        - REDIS_PORT_40=6340
       
-        - REDIS_IP_40:redis40
-        - REDIS_PORT_40:6340
+        - REDIS_IP_41=redis41
+        - REDIS_PORT_41=6341
       
-        - REDIS_IP_41:redis41
-        - REDIS_PORT_41:6341
+        - REDIS_IP_42=redis42
+        - REDIS_PORT_42=6342
       
-        - REDIS_IP_42:redis42
-        - REDIS_PORT_42:6342
+        - REDIS_IP_43=redis43
+        - REDIS_PORT_43=6343
       
-        - REDIS_IP_43:redis43
-        - REDIS_PORT_43:6343
+        - REDIS_IP_44=redis44
+        - REDIS_PORT_44=6344
       
-        - REDIS_IP_44:redis44
-        - REDIS_PORT_44:6344
+        - REDIS_IP_45=redis45
+        - REDIS_PORT_45=6345
       
-        - REDIS_IP_45:redis45
-        - REDIS_PORT_45:6345
+        - REDIS_IP_46=redis46
+        - REDIS_PORT_46=6346
       
-        - REDIS_IP_46:redis46
-        - REDIS_PORT_46:6346
+        - REDIS_IP_47=redis47
+        - REDIS_PORT_47=6347
       
-        - REDIS_IP_47:redis47
-        - REDIS_PORT_47:6347
+        - REDIS_IP_48=redis48
+        - REDIS_PORT_48=6348
       
-        - REDIS_IP_48:redis48
-        - REDIS_PORT_48:6348
+        - REDIS_IP_49=redis49
+        - REDIS_PORT_49=6349
       
-        - REDIS_IP_49:redis49
-        - REDIS_PORT_49:6349
+        - REDIS_IP_50=redis50
+        - REDIS_PORT_50=6350
       
-        - REDIS_IP_50:redis50
-        - REDIS_PORT_50:6350
+        - REDIS_IP_51=redis51
+        - REDIS_PORT_51=6351
       
-        - REDIS_IP_51:redis51
-        - REDIS_PORT_51:6351
+        - REDIS_IP_52=redis52
+        - REDIS_PORT_52=6352
       
-        - REDIS_IP_52:redis52
-        - REDIS_PORT_52:6352
+        - REDIS_IP_53=redis53
+        - REDIS_PORT_53=6353
       
-        - REDIS_IP_53:redis53
-        - REDIS_PORT_53:6353
+        - REDIS_IP_54=redis54
+        - REDIS_PORT_54=6354
       
-        - REDIS_IP_54:redis54
-        - REDIS_PORT_54:6354
+        - REDIS_IP_55=redis55
+        - REDIS_PORT_55=6355
       
-        - REDIS_IP_55:redis55
-        - REDIS_PORT_55:6355
+        - REDIS_IP_56=redis56
+        - REDIS_PORT_56=6356
       
-        - REDIS_IP_56:redis56
-        - REDIS_PORT_56:6356
+        - REDIS_IP_57=redis57
+        - REDIS_PORT_57=6357
       
-        - REDIS_IP_57:redis57
-        - REDIS_PORT_57:6357
+        - REDIS_IP_58=redis58
+        - REDIS_PORT_58=6358
       
-        - REDIS_IP_58:redis58
-        - REDIS_PORT_58:6358
+        - REDIS_IP_59=redis59
+        - REDIS_PORT_59=6359
       
-        - REDIS_IP_59:redis59
-        - REDIS_PORT_59:6359
+        - REDIS_IP_60=redis60
+        - REDIS_PORT_60=6360
       
-        - REDIS_IP_60:redis60
-        - REDIS_PORT_60:6360
+        - REDIS_IP_61=redis61
+        - REDIS_PORT_61=6361
       
-        - REDIS_IP_61:redis61
-        - REDIS_PORT_61:6361
+        - REDIS_IP_62=redis62
+        - REDIS_PORT_62=6362
       
-        - REDIS_IP_62:redis62
-        - REDIS_PORT_62:6362
+        - REDIS_IP_63=redis63
+        - REDIS_PORT_63=6363
       
-        - REDIS_IP_63:redis63
-        - REDIS_PORT_63:6363
+        - REDIS_IP_64=redis64
+        - REDIS_PORT_64=6364
                 
     volumes:
         - "$DATA_DIR:/data"                   
     command: bash -c "cat /etc/hosts && env && tail -F -n0 /etc/hosts"
-  
-  redis0:
-    image: phelimb/redis-mcdbg
-    environment:
-        - PORT=6300    
-    volumes:
-      - "$DATA_DIR:/data"
-    ports:
-      - 6300  
   
   redis1:
     image: phelimb/redis-mcdbg
@@ -908,6 +899,15 @@ services:
       - "$DATA_DIR:/data"
     ports:
       - 6363  
+  
+  redis64:
+    image: phelimb/redis-mcdbg
+    environment:
+        - PORT=6364    
+    volumes:
+      - "$DATA_DIR:/data"
+    ports:
+      - 6364  
     
 
   
