@@ -115,14 +115,14 @@ class McDBG(object):
         if not min_lexo:
             kmers = self._convert_query_kmers(kmers)
         presence = self.query_kmers(kmers, min_lexo=True)
-        set_pipeline = self._get_set_connection(colour).pipeline()
+        kpresence = []
         for kmer, presence in zip(kmers, presence):
             if presence:
-                self.set_kmer(kmer, colour, min_lexo=True)
+                kpresence.append(kmer)
             else:
                 self.add_kmer_without_bitarray(
-                    kmer, colour, connection=set_pipeline)
-        set_pipeline.execute()
+                    kmer, colour)
+        self.set_kmers(kpresence, colour, min_lexo=True)
 
     def add_kmer(self, kmer, colour, min_lexo=False):
         if not min_lexo:
@@ -143,7 +143,7 @@ class McDBG(object):
             # setbits
 
     def search_sets(self, kmer, ignore_colour=-1):
-        for i in range(self.num_colours):
+        for i in range(self.get_num_colours()):
             if not i == ignore_colour:
                 res = self._get_set_connection(i).sismember(i, kmer)
                 if res == 1:
@@ -349,6 +349,12 @@ class McDBG(object):
 
     def count_kmers(self):
         return sum([r.dbsize() for r in self.connections['kmers'].values()])
+
+    def count_kmers_in_sets(self):
+        _sum = 0
+        for i in range(self.num_colours):
+            _sum += self._get_set_connection(i).scard(i)
+        return _sum
 
     def calculate_memory(self):
         memory = sum([r.info().get('used_memory')
