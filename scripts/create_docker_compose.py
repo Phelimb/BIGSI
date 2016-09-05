@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader('.'))
 redis_conf = []

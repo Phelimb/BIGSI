@@ -1,12 +1,13 @@
 from remcdbg.mcdbg import McDBG
 from remcdbg.utils import kmer_to_bits
 import random
-ports = [6200, 6201, 6202, 6203]
+conn_config = [('localhost', 6200), ('localhost', 6201),
+               ('localhost', 6202), ('localhost', 6203)]
 KMERS = ['A', 'T', 'C', 'G']
 
 
 def test_add_kmer():
-    mc = McDBG(ports=ports, compress_kmers=True)
+    mc = McDBG(conn_config=conn_config, compress_kmers=True)
     kmer = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
     bitstring = kmer_to_bits(kmer)
     mc.set_kmer(kmer, 1)
@@ -23,7 +24,7 @@ def test_add_kmer():
 
 
 def test_add_kmers():
-    mc = McDBG(ports=ports, compress_kmers=True)
+    mc = McDBG(conn_config=conn_config, compress_kmers=True)
     mc.set_kmers(
         ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'AGATATTGTAGATATTGTAGATATTGTAGAT'], 1)
     _bytes = b'#>\xc8\xcf\xb23\xec\x8c'
@@ -40,7 +41,7 @@ def test_add_kmers():
 
 
 def test_query_kmers():
-    mc = McDBG(ports=ports, compress_kmers=True)
+    mc = McDBG(conn_config=conn_config, compress_kmers=True)
     mc.delete()
 
     mc.add_sample('1234')

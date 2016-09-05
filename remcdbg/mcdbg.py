@@ -71,7 +71,10 @@ class McDBG(object):
                 connection.shutdown()
 
     def _kmer_to_bytes(self, kmer):
-        return kmer_to_bytes(kmer, self.bitpadding)
+        if isinstance(kmer, str):
+            return kmer_to_bytes(kmer, self.bitpadding)
+        else:
+            return kmer
 
     def _bytes_to_kmer(self, _bytes):
         a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
@@ -253,8 +256,24 @@ class McDBG(object):
             else:
                 c.get(kmer)
         result = self._execute_pipeline(pipelines)
-        out = [self._byte_arrays_to_bits(
-            result[self._shard_key(kmer)].pop(0)) for kmer in kmers]
+        out = []
+        for kmer in kmers:
+            res = result[self._shard_key(kmer)].pop(0)
+            if res is None:
+                if self.compress_kmers:
+                    i = self.search_sets(self._kmer_to_bytes(kmer))
+                else:
+                    i = self.search_sets(kmer)
+                if i is not None:
+                    res = [0]*self.num_colours
+                    res[i] = 1
+                    res = tuple(res)
+            else:
+                res = self._byte_arrays_to_bits(res)
+            out.append(res)
+
+        # out = [self._byte_arrays_to_bits(
+        #     result[self._shard_key(kmer)].pop(0)) for kmer in kmers]
         return out
 
     def query_kmers_100_per(self, kmers, min_lexo=False):
@@ -380,6 +399,55 @@ class McDBG(object):
                 pass
 
         return dict(count)
+
+    def compress(self):
+
+        for conn in self.connections['kmers'].values():
+            kmers = []
+            for i, kmer in enumerate(conn.scan_iter('*')):
+                kmers.append(kmer)
+                if i % 100000*len(self.ports) == 0:
+                    self._batch_compress(kmers, conn)
+                    kmers = []
+            self._batch_compress(kmers, conn)
+
+    def _batch_compress(self, kmers, kmer_conn=None):
+        if kmers:
+            bitcounts = self._bitcounts(kmers, kmer_conn)
+            compress_kmers = [
+                k for i, k in enumerate(kmers) if bitcounts[i] == 1]
+            sorted_by_colour = self._sort_kmers_by_colour(
+                compress_kmers, kmer_conn)
+            [kmer_conn.delete(k) for k in compress_kmers]
+            self._sadd_kmers_bulk(sorted_by_colour)
+
+    def _bitcounts(self, kmers, conn=None):
+        if conn:
+            pipeline = conn.pipeline()
+            [pipeline.bitcount(kmer) for kmer in kmers]
+            return pipeline.execute()
+        else:
+            raise NotImplementedError("Please pass connection to _bitcounts")
+
+    def _sort_kmers_by_colour(self, kmers, conn):
+        if not conn:
+            raise NotImplementedError("Please pass connection to _bitcounts")
+        pipeline = conn.pipeline()
+        [pipeline.bitpos(kmer, 1) for kmer in kmers]
+        colours = pipeline.execute()
+        out = {}
+        for kmer, colour in zip(kmers, colours):
+            try:
+                out[colour].append(kmer)
+            except KeyError:
+                out[colour] = [kmer]
+        return out
+
+    def _sadd_kmers_bulk(self, colour_kmer_dict):
+        for c, kmers in colour_kmer_dict.items():
+            pipe = self._get_set_connection(c).pipeline()
+            [pipe.sadd(c, kmer) for kmer in kmers]
+            pipe.execute()
 
 
 # >>> with r.pipeline() as pipe:

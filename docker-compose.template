@@ -4,7 +4,7 @@ services:
   main:
     image: phelimb/remcdbg
     ports:
-      - "8001"      
+      - "5000:5000"      
     links:
       {% for redis in redis_conf %}
         - {{redis['host']}}:{{redis['host']}}
@@ -16,7 +16,24 @@ services:
       {% endfor %}          
     volumes:
         - "$DATA_DIR:/data"                   
-    command: bash -c "cat /etc/hosts && env && tail -F -n0 /etc/hosts"
+    command: bash -c "cd remcdbg-server && python app.py"
+  worker:  
+    image: phelimb/remcdbg
+    command: sh run_celery.sh   
+    depends_on:
+        - redisbroker            
+    links:
+      {% for redis in redis_conf %}
+        - {{redis['host']}}:{{redis['host']}}
+      {% endfor %}
+    environment:
+        - C_FORCE_ROOT="yes" 
+      {% for redis in redis_conf %}
+        - REDIS_IP_{{redis['i']}}={{redis['host']}}
+        - REDIS_PORT_{{redis['i']}}={{redis['port']}}
+      {% endfor %}
+    volumes:
+        - "$DATA_DIR:/data"      
   {% for redis in redis_conf %}
   {{redis['host']}}:
     image: phelimb/redis-mcdbg
@@ -26,7 +43,17 @@ services:
       - "$DATA_DIR:/data"
     ports:
       - {{redis['port']}}  
-  {% endfor %}  
+  {% endfor %}
+
+  redisbroker:  
+    image: redis
+    command: redis-server --appendonly yes    
+    volumes:
+      - redis-data:/data       
+
+volumes:
+  redis-data:
+    driver: local
 
   
 

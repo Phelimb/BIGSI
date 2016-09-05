@@ -1,17 +1,19 @@
 from remcdbg.mcdbg import McDBG
 import random
-ports = [6200, 6201, 6202, 6203]
+conn_config = [('localhost', 6200), ('localhost', 6201),
+               ('localhost', 6202), ('localhost', 6203)]
+#ports = [6200, 6201, 6202, 6203]
 KMERS = ['A', 'T', 'C', 'G']
 
 
 def test_init():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     assert len(mc.connections) == 3
     assert len(mc.connections['kmers']) == 4
 
 
 def test_set_kmer():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.set_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG', 1)
     print(mc.connections['kmers']['A'].getbit(
         'ATCGTAGATATCGTAGATATCGTAGATATCG', 1))
@@ -27,7 +29,7 @@ def test_set_kmer():
 
 
 def test_set_kmers():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.set_kmers(
         ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT'], 1)
     assert mc.connections['kmers']['A'].getbit(
@@ -42,7 +44,7 @@ def test_set_kmers():
 
 
 def test_add_kmer():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.add_sample('s0')
     mc.num_colours = mc.get_num_colours()
     mc.add_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG', colour=0)
@@ -68,7 +70,7 @@ def test_add_kmer():
 
 
 def test_query_kmers():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.delete()
 
     mc.add_sample('1234')
@@ -100,7 +102,7 @@ def test_query_kmers():
 
 
 def test_stats():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.set_kmers(
         ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT'], 1)
     mc.count_kmers() == 1
@@ -109,7 +111,7 @@ def test_stats():
 
 
 def test_kmers_to_bytes():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     for i in range(100):
         kmer = "".join([random.choice(KMERS) for _ in range(31)])
         # print(kmer, mc._kmer_to_bytes(kmer),
@@ -118,7 +120,7 @@ def test_kmers_to_bytes():
 
 
 def test_samples():
-    mc = McDBG(ports=ports, compress_kmers=False)
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.delete()
     assert mc.get_num_colours() == 0
 

@@ -3,9 +3,12 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import abort
+from celery import Celery
+
 import sys
 import os
 import time
+import redis
 sys.path.append(
     os.path.realpath(
         os.path.join(
@@ -14,11 +17,51 @@ sys.path.append(
 
 from remcdbg.utils import seq_to_kmers
 from remcdbg.mcdbg import McDBG
-app = Flask(__name__)
+app = Flask('app')
 
+CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
-ports = sorted([int(os.environ.get(r)) for r in redis_envs])
-mc = McDBG(ports=ports)
+if len(redis_envs) == 0:
+    CONN_CONFIG = [('localhost', 6379)]
+else:
+    for i in range(int(len(redis_envs)/2)):
+        hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
+        port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
+        CONN_CONFIG.append((hostname, port))
+
+
+def load_mc(conn_config):
+    try:
+        return McDBG(conn_config=conn_config)
+    except redis.exceptions.BusyLoadingError as e:
+        time.sleep(10)
+        print("%s" % str(e))
+        return load_mc(conn_config)
+
+mc = load_mc(CONN_CONFIG)
+
+
+def make_celery(app):
+    celery = Celery(app.import_name, backend=app.config['CELERY_RESULT_BACKEND'],
+                    broker=app.config['CELERY_BROKER_URL'],
+                    CELERY_ACCEPT_CONTENT=['json', 'msgpack', 'yaml'])
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+
+    class ContextTask(TaskBase):
+        abstract = True
+
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+    celery.Task = ContextTask
+    return celery
+
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379',
+    CELERY_RESULT_BACKEND='redis://localhost:6379'
+)
+celery = make_celery(app)
 
 
 @app.route('/api/v1.0/search', methods=['POST'])
@@ -26,17 +69,25 @@ def search():
     if not request.json or not 'seq' in request.json:
         abort(400)
     colours_to_samples = mc.colours_to_sample_dict()
-    found = {}
+    tasks = {}
+    # http://stackoverflow.com/questions/26686850/add-n-tasks-to-celery-queue-and-wait-for-the-results
     for gene, seq in request.json['seq'].items():
-        found[gene] = {}
-        start = time.time()
-        kmers = [k for k in seq_to_kmers(str(seq))]
-        _found = mc.query_kmers_100_per(kmers)
-        found[gene]['samples'] = [
-            colours_to_samples.get(i, 'missing') for i, p in enumerate(_found) if p == 1]
-        diff = time.time() - start
-        found[gene]['time'] = "%ims" % int(1000*diff)
+        tasks[gene] = search_async.delay(str(seq))
+    found = {}
+    for gene, task in tasks.items():
+        found[gene] = task.get()
     return jsonify(found)
+
+
+@celery.task
+def search_async(seq):
+    start = time.time()
+    kmers = [k for k in seq_to_kmers(seq)]
+    _found = mc.query_kmers_100_per(kmers)
+    samples = [
+        colours_to_samples.get(i, 'missing') for i, p in enumerate(_found) if p == 1]
+    diff = time.time() - start
+    return {'time': "%ims" % int(1000*diff), 'samples': samples}
 
 
 @app.route('/api/v1.0/stats', methods=['get'])
