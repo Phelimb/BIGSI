@@ -41,7 +41,7 @@ def run(parser, args, conn_config):
                     colours_to_samples.get(i, 'missing'))
         diff = time.time() - start
         found[gene]['time'] = diff
-        print(json.dumps(found, indent=4))
+    print(json.dumps(found, indent=4))
 
     # ## Perf tests ###
     # found = {}

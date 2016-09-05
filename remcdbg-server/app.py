@@ -58,7 +58,7 @@ def make_celery(app):
     celery.Task = ContextTask
     return celery
 
-if os.uname()[1] == "Phelims-MacBook-Air.local":
+if os.uname()[0] == "Darwin":
     _broker = 'localhost'  # debug
 else:
     _broker = 'redisbroker'

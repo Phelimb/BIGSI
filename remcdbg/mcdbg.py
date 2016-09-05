@@ -232,7 +232,7 @@ class McDBG(object):
                 # print(temporary_bitarrays)
                 logger.info("Running bit op %s" % op)
                 res = self.single_bit_op(shard_key, op, search_kmers)
-                logger.info("Result %s" % res)
+                # logger.info("Result %s" % res)
 
                 temporary_bitarrays.append(res)
         return temporary_bitarrays
