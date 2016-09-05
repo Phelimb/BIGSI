@@ -1,2 +1,2 @@
 cd remcdbg-server
-celery -A app.celery worker
+celery -A app.celery worker -l info
