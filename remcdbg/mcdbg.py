@@ -13,7 +13,7 @@ import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 
 KMER_SHARDING = {}
 
@@ -219,6 +219,8 @@ class McDBG(object):
 
     def bitops(self, kmers, op):
         bit_op_lists = self._create_bitop_lists(kmers)
+        logger.info("Bitop %s vals" %
+                    ",".join([str(i) for i in bit_op_lists.values()]))
         temporary_bitarrays = []
         # print(bit_op_lists)
         for shard_key, search_kmers in bit_op_lists.items():
@@ -228,15 +230,21 @@ class McDBG(object):
                 # print("get", kmers[0], self._get_kmer_connection(
                 #     kmers[0]).get(search_kmers[0]))
                 # print(temporary_bitarrays)
-                temporary_bitarrays.append(
-                    self.single_bit_op(shard_key, op, search_kmers))
+                logger.info("Running bit op %s" % op)
+                res = self.single_bit_op(shard_key, op, search_kmers)
+                logger.info("Result %s" % res)
+
+                temporary_bitarrays.append(res)
         return temporary_bitarrays
 
     def single_bit_op(self, shard_key, op, kmers):
+        logger.info("bitop on %s" % "".join(
+            [str(self.connections['kmers'][shard_key].get(kmer)) for kmer in kmers]))
         self.connections['kmers'][
             shard_key].bitop(op, 'tmp%s' % op, *kmers)
         byte_array = self.connections['kmers'][
             shard_key].get('tmp%s' % op)
+        logger.info("result %s " % str(byte_array))
         return self._byte_arrays_to_bits(byte_array)
 
     def _shard_key(self, kmer):
@@ -291,6 +299,7 @@ class McDBG(object):
     def query_kmers_100_per(self, kmers, min_lexo=False):
         if not min_lexo:
             kmers = self._convert_query_kmers(kmers)
+        logger.info("Querying kmers %s " % ",".join(kmers))
         temporary_bitarrays = self.bitops(kmers, "AND")
         return logical_AND_reduce(temporary_bitarrays)
 
@@ -309,7 +318,11 @@ class McDBG(object):
         if colours:
             for kmer in kmers:
                 for colour in colours:
-                    pipelines[self._shard_key(kmer)].getbit(kmer, colour)
+                    if self.compress_kmers:
+                        pipelines[self._shard_key(kmer)].getbit(
+                            self._kmer_to_bytes(kmer), colour)
+                    else:
+                        pipelines[self._shard_key(kmer)].getbit(kmer, colour)
         result = self._execute_pipeline(pipelines)
         outs = [colours]
         if colours:
@@ -321,11 +334,12 @@ class McDBG(object):
         return outs
 
     def _byte_arrays_to_bits(self, _bytes):
-        # print(_bytes)
+        logger.debug("Converting byte array to bits")
         num_colours = self.num_colours
         tmp_v = [0]*(num_colours)
         if _bytes is not None:
             tmp_v = bits(_bytes)
+            logger.debug("tmp vect %s" % tmp_v)
         if len(tmp_v) < num_colours:
             tmp_v.extend([0]*(num_colours-len(tmp_v)))
         elif len(tmp_v) > num_colours:

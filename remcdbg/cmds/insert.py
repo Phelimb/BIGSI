@@ -21,7 +21,7 @@ def run(parser, args, conn_config):
                 if i % 100000 == 0:
                     mc.set_kmers(kmers, colour)
                     kmers = []
-        mc.set_kmers(kmers, i)
+        mc.set_kmers(kmers, colour)
 
         # kmers = inf.read().splitlines()
 
