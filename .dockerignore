@@ -1,4 +1,5 @@
 scripts
 venv*
 ./venv2
+remcdbg/utils.so
 ./venv

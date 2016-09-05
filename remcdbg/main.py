@@ -29,6 +29,8 @@ def run_subtool(parser, args):
         from remcdbg.cmds.query import run
     elif args.command == "stats":
         from remcdbg.cmds.stats import run
+    elif args.command == "kmers":
+        from remcdbg.cmds.kmers import run
     elif args.command == "compress":
         from remcdbg.cmds.compress import run
     elif args.command == "shutdown":
@@ -95,6 +97,12 @@ def main():
         help='Compresses the database',
         parents=[db_parser_mixin])
     parser_stats.set_defaults(func=run_subtool)
+
+    parser_kmers = subparsers.add_parser(
+        'kmers',
+        help='Print kmer colour matrix',
+        parents=[db_parser_mixin])
+    parser_kmers.set_defaults(func=run_subtool)
 
     parser_bitcount = subparsers.add_parser(
         'bitcount',

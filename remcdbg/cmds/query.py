@@ -34,7 +34,7 @@ def run(parser, args, conn_config):
         found[gene]['samples'] = []
         results[gene] = []
         start = time.time()
-        _found = mc.query_kmers_100_per(kmers, min_lexo=True)
+        _found = mc.query_kmers_100_per(kmers)
         for i, p in enumerate(_found):
             if p == 1:
                 found[gene]['samples'].append(
