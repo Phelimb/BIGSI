@@ -1,4 +1,4 @@
-from remcdbg.mcdbg import McDBG
+from remcdbg import McDBG
 import random
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]

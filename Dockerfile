@@ -1,3 +1,3 @@
-FROM python:3.6.0a4-onbuild
+FROM python:3.4.3-onbuild
 RUN python setup.py install
 CMD remcdbg --help

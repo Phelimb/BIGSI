@@ -4,6 +4,7 @@ from flask import jsonify
 from flask import request
 from flask import abort
 from celery import Celery
+import os
 
 import sys
 import os
@@ -38,7 +39,7 @@ def load_mc(conn_config):
         print("%s" % str(e))
         return load_mc(conn_config)
 
-mc = load_mc(CONN_CONFIG)
+mc = load_mc(conn_config=CONN_CONFIG)
 
 
 def make_celery(app):
@@ -57,9 +58,13 @@ def make_celery(app):
     celery.Task = ContextTask
     return celery
 
+if os.uname()[1] == "Phelims-MacBook-Air.local":
+    _broker = 'localhost'  # debug
+else:
+    _broker = 'redisbroker'
 app.config.update(
-    CELERY_BROKER_URL='redis://redisbroker:6379',
-    CELERY_RESULT_BACKEND='redis://redisbroker:6379'  # ,
+    CELERY_BROKER_URL='redis://%s:6379' % _broker,
+    CELERY_RESULT_BACKEND='redis://%s:6379' % _broker  # ,
     # CELERY_ACCEPT_CONTENT=['json', 'msgpack', 'yaml']
 )
 celery = make_celery(app)
@@ -69,9 +74,9 @@ celery = make_celery(app)
 def search():
     if not request.json or not 'seq' in request.json:
         abort(400)
-    colours_to_samples = mc.colours_to_sample_dict()
-    tasks = {}
+    print("search")
     # http://stackoverflow.com/questions/26686850/add-n-tasks-to-celery-queue-and-wait-for-the-results
+    tasks = {}
     for gene, seq in request.json['seq'].items():
         tasks[gene] = search_async.delay(str(seq))
     found = {}
@@ -83,11 +88,13 @@ def search():
 
 @celery.task
 def search_async(seq):
+
     start = time.time()
     kmers = [k for k in seq_to_kmers(seq)]
     _found = mc.query_kmers_100_per(kmers)
+    colours_to_samples = mc.colours_to_sample_dict()
     samples = [
-        colours_to_samples.get(i, 'missing') for i, p in enumerate(_found) if p == 1]
+        str(colours_to_samples.get(i, 'missing')) for i, p in enumerate(_found) if p == 1]
     diff = time.time() - start
     return {'time': "%ims" % int(1000*diff), 'samples': samples}
 

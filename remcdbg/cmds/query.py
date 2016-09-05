@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from utils import min_lexo
-from utils import seq_to_kmers
+from remcdbg.utils import min_lexo
+from remcdbg.utils import seq_to_kmers
 from remcdbg.mcdbg import McDBG
 import argparse
 import os.path

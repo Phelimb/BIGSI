@@ -1,6 +1,6 @@
-from remcdbg.utils import kmer_to_bits
-from remcdbg.utils import bits_to_kmer
-from remcdbg.utils import bits
+from remcdbg import kmer_to_bits
+from remcdbg import bits_to_kmer
+from remcdbg import bits
 
 
 def test_kmer_to_bits():

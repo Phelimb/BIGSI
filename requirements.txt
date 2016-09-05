@@ -4,3 +4,4 @@ hiredis
 cython
 flask
 celery
+biopython

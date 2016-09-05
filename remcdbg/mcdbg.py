@@ -207,7 +207,12 @@ class McDBG(object):
                             for el in self.connections['kmers'].keys())
         for kmer in kmers:
             try:
-                bit_op_lists[self._shard_key(kmer)].append(kmer)
+                if self.compress_kmers:
+                    bit_op_lists[self._shard_key(kmer)].append(
+                        self._kmer_to_bytes(kmer))
+                    # print(self._kmer_to_bytes(kmer))
+                else:
+                    bit_op_lists[self._shard_key(kmer)].append(kmer)
             except KeyError:
                 pass
         return bit_op_lists
@@ -215,17 +220,24 @@ class McDBG(object):
     def bitops(self, kmers, op):
         bit_op_lists = self._create_bitop_lists(kmers)
         temporary_bitarrays = []
-        for shard_key, kmers in bit_op_lists.items():
-            if kmers:
+        # print(bit_op_lists)
+        for shard_key, search_kmers in bit_op_lists.items():
+            # print(shard_key, kmers)
+
+            if search_kmers:
+                # print("get", kmers[0], self._get_kmer_connection(
+                #     kmers[0]).get(search_kmers[0]))
+                # print(temporary_bitarrays)
                 temporary_bitarrays.append(
-                    self.single_bit_op(shard_key, op, kmers))
+                    self.single_bit_op(shard_key, op, search_kmers))
         return temporary_bitarrays
 
     def single_bit_op(self, shard_key, op, kmers):
         self.connections['kmers'][
             shard_key].bitop(op, 'tmp%s' % op, *kmers)
-        return self._byte_arrays_to_bits(self.connections['kmers'][
-            shard_key].get('tmp%s' % op))
+        byte_array = self.connections['kmers'][
+            shard_key].get('tmp%s' % op)
+        return self._byte_arrays_to_bits(byte_array)
 
     def _shard_key(self, kmer):
         return kmer[:self.sharding_level]
@@ -293,7 +305,7 @@ class McDBG(object):
         if colours is None:
             colours = self.get_non_0_kmer_colours(kmers)
         pipelines = self._create_kmer_pipeline()
-        num_colours = self.num_colours
+        num_colours = self.get_num_colours()
         if colours:
             for kmer in kmers:
                 for colour in colours:
@@ -309,6 +321,7 @@ class McDBG(object):
         return outs
 
     def _byte_arrays_to_bits(self, _bytes):
+        # print(_bytes)
         num_colours = self.num_colours
         tmp_v = [0]*(num_colours)
         if _bytes is not None:
@@ -333,7 +346,7 @@ class McDBG(object):
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
         else:
-            num_colours = self.sample_redis.get('num_colours')
+            num_colours = self.get_num_colours()
             if num_colours is None:
                 num_colours = 0
             else:
@@ -341,6 +354,7 @@ class McDBG(object):
             pipe = self.sample_redis.pipeline()
             pipe.set('s%s' % sample_name, num_colours).incr('num_colours')
             pipe.execute()
+            self.num_colours = self.get_num_colours()
             return num_colours
 
     def get_sample_colour(self, sample_name):
@@ -353,7 +367,7 @@ class McDBG(object):
     def colours_to_sample_dict(self):
         o = {}
         for s in self.sample_redis.keys('s*'):
-            o[int(self.sample_redis.get(s))] = s[1:]
+            o[int(self.sample_redis.get(s))] = s[1:].decode("utf-8")
         return o
 
     @property

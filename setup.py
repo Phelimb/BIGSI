@@ -8,7 +8,8 @@ setup(
     version='0.1',
     packages=[
         'remcdbg',
-        'remcdbg.cmds'],
+        'remcdbg.cmds'
+    ],
     license='MIT',
     url='http://github.com/phelimb/remcdbg',
     description='.',

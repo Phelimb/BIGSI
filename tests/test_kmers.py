@@ -1,4 +1,4 @@
-from remcdbg.mcdbg import McDBG
+from remcdbg import McDBG
 import random
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
@@ -51,7 +51,7 @@ def test_add_kmer():
     assert mc.get_kmer('ATCGTAGATATCGTAGATATCGTAGATATCG') == None
     assert mc._get_set_connection(0).sismember(
         '0', 'ATCGTAGATATCGTAGATATCGTAGATATCG') == 1
-    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG']) == [(0,)]
+    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG']) == [(1,)]
     assert mc.search_sets('ATCGTAGATATCGTAGATATCGTAGATATCG', -1) == 0
     # Add the same kmer in another colour
     mc.add_sample('s1')
@@ -66,7 +66,7 @@ def test_add_kmer():
     assert mc.get_kmer('ATCGTAGATATCGTAGGGATCGTAGATATCG') == None
     assert mc._get_set_connection(1).sismember(
         '1', 'ATCGTAGATATCGTAGGGATCGTAGATATCG') == 1
-    assert mc.query_kmers(['ATCGTAGATATCGTAGGGATCGTAGATATCG']) == [(0, 0)]
+    assert mc.query_kmers(['ATCGTAGATATCGTAGGGATCGTAGATATCG']) == [(0, 1)]
 
 
 def test_query_kmers():
