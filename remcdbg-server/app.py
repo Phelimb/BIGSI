@@ -39,8 +39,6 @@ def load_mc(conn_config):
         print("%s" % str(e))
         return load_mc(conn_config)
 
-mc = load_mc(conn_config=CONN_CONFIG)
-
 
 def make_celery(app):
     celery = Celery(app.import_name, backend=app.config['CELERY_RESULT_BACKEND'],
@@ -72,9 +70,9 @@ celery = make_celery(app)
 
 @app.route('/api/v1.0/search', methods=['POST'])
 def search():
+    mc = load_mc(conn_config=CONN_CONFIG)
     if not request.json or not 'seq' in request.json:
         abort(400)
-    print("search")
     # http://stackoverflow.com/questions/26686850/add-n-tasks-to-celery-queue-and-wait-for-the-results
     tasks = {}
     for gene, seq in request.json['seq'].items():
@@ -88,6 +86,7 @@ def search():
 
 @celery.task
 def search_async(seq):
+    mc = load_mc(conn_config=CONN_CONFIG)
 
     start = time.time()
     kmers = [k for k in seq_to_kmers(seq)]
@@ -101,6 +100,7 @@ def search_async(seq):
 
 @app.route('/api/v1.0/stats', methods=['get'])
 def stats():
+    mc = load_mc(conn_config=CONN_CONFIG)
     stats = {}
     stats["memory (bytes)"] = mc.calculate_memory()
     stats["count_kmers"] = mc.count_kmers()
