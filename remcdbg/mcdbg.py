@@ -277,7 +277,6 @@ class McDBG(object):
                 c.get(kmer)
         result = self._execute_pipeline(pipelines)
         out = []
-        print(result)
         for kmer in kmers:
             res = result[self._shard_key(kmer)].pop(0)
             if res is None:

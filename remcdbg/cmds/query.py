@@ -46,7 +46,6 @@ def run(parser, args, conn_config):
             colours = mc.get_non_0_kmer_colours(kmers)
             for i, res in enumerate(mc.query_kmers(kmers)):
                 results[gene].append(res)
-            print(results)
             columns = [
                 j for i, j in enumerate(zip(*results[gene])) if i in colours]
             percent_kmers = list(map(per, columns))
