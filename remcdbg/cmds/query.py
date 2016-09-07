@@ -53,7 +53,7 @@ def run(parser, args, conn_config):
             for i, p in enumerate(percent_kmers):
                 if p*100 >= args.threshold:
                     found[gene]['samples'].append(
-                        colours_to_samples.get(i, 'missing'))
+                        colours_to_samples.get(colours[i], 'missing'))
                     found[gene]['percent_found'].append(p*100)
         diff = time.time() - start
         found[gene]['time'] = diff
