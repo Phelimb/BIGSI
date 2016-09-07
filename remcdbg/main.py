@@ -93,7 +93,7 @@ def main():
         help='querys a fasta against the DB',
         parents=[db_parser_mixin])
     parser_query.add_argument("fasta", type=str, help='fastafile')
-    parser_query.add_argument("threshold", type=int,
+    parser_query.add_argument("--threshold", type=int,
                               help='One show results that have this %% identity. Default:100%', default=100)
     parser_query.set_defaults(func=run_subtool)
 
