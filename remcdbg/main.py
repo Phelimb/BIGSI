@@ -4,7 +4,7 @@ import sys
 import os
 import argparse
 import redis
-# from remcdbg.version import __version__
+from version import __version__
 sys.path.append(
     os.path.realpath(
         os.path.join(
@@ -45,6 +45,18 @@ def run_subtool(parser, args):
             "Redis is loading the dataset in memory. Please try again when finished. ")
 
 
+class ArgumentParserWithDefaults(argparse.ArgumentParser):
+
+    def __init__(self, *args, **kwargs):
+        super(ArgumentParserWithDefaults, self).__init__(*args, **kwargs)
+        self.add_argument(
+            "-q",
+            "--quiet",
+            help="do not output warnings to stderr",
+            action="store_true",
+            dest="quiet")
+
+
 def main():
     #########################################
     # create the top-level parser
@@ -52,13 +64,13 @@ def main():
     parser = argparse.ArgumentParser(
         prog='remcdbg',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # parser.add_argument("--version", help="atlas version",
-    #                     action="version",
-    #                     version="%(prog)s " + str(__version__))
+    parser.add_argument("--version", help="atlas version",
+                        action="version",
+                        version="%(prog)s " + str(__version__))
     subparsers = parser.add_subparsers(
         title='[sub-commands]',
         dest='command',
-        parser_class=argparse.ArgumentParser)
+        parser_class=ArgumentParserWithDefaults)
 
     db_parser_mixin = argparse.ArgumentParser(add_help=False)
 
@@ -81,6 +93,8 @@ def main():
         help='querys a fasta against the DB',
         parents=[db_parser_mixin])
     parser_query.add_argument("fasta", type=str, help='fastafile')
+    parser_query.add_argument("threshold", type=int,
+                              help='One show results that have this %% identity. Default:100%', default=100)
     parser_query.set_defaults(func=run_subtool)
 
     ##########
@@ -117,7 +131,10 @@ def main():
     parser_shutdown.set_defaults(func=run_subtool)
 
     args = parser.parse_args()
-    args.func(parser, args)
+    try:
+        args.func(parser, args)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

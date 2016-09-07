@@ -34,11 +34,18 @@ def run(parser, args, conn_config):
         found[gene]['samples'] = []
         results[gene] = []
         start = time.time()
-        _found = mc.query_kmers_100_per(kmers)
-        for i, p in enumerate(_found):
-            if p == 1:
-                found[gene]['samples'].append(
-                    colours_to_samples.get(i, 'missing'))
+        if args.threshold == 100:
+            _found = mc.query_kmers_100_per(kmers)
+            for i, p in enumerate(_found):
+                if p == 1:
+                    found[gene]['samples'].append(
+                        colours_to_samples.get(i, 'missing'))
+        else:
+            _found = mc.query_kmers(kmers)
+            for i, p in enumerate(_found):
+                if p*100 >= args.threshold:
+                    found[gene]['samples'].append(
+                        colours_to_samples.get(i, 'missing'))
         diff = time.time() - start
         found[gene]['time'] = diff
     print(json.dumps(found, indent=4))
