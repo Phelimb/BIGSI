@@ -277,6 +277,7 @@ class McDBG(object):
                 c.get(kmer)
         result = self._execute_pipeline(pipelines)
         out = []
+        print(result)
         for kmer in kmers:
             res = result[self._shard_key(kmer)].pop(0)
             if res is None:
@@ -284,16 +285,13 @@ class McDBG(object):
                     i = self.search_sets(self._kmer_to_bytes(kmer))
                 else:
                     i = self.search_sets(kmer)
+                res = [0]*self.num_colours
                 if i is not None:
-                    res = [0]*self.num_colours
                     res[i] = 1
                     res = tuple(res)
             else:
                 res = self._byte_arrays_to_bits(res)
             out.append(res)
-
-        # out = [self._byte_arrays_to_bits(
-        #     result[self._shard_key(kmer)].pop(0)) for kmer in kmers]
         return out
 
     def query_kmers_100_per(self, kmers, min_lexo=False):

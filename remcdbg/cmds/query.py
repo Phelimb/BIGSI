@@ -46,6 +46,7 @@ def run(parser, args, conn_config):
             colours = mc.get_non_0_kmer_colours(kmers)
             for i, res in enumerate(mc.query_kmers(kmers)):
                 results[gene].append(res)
+            print(results)
             columns = [
                 j for i, j in enumerate(zip(*results[gene])) if i in colours]
             percent_kmers = list(map(per, columns))
@@ -54,7 +55,7 @@ def run(parser, args, conn_config):
                 if p*100 >= args.threshold:
                     found[gene]['samples'].append(
                         colours_to_samples.get(i, 'missing'))
-                    found[gene]['percent_found'].append(int(p*100))
+                    found[gene]['percent_found'].append(p*100)
         diff = time.time() - start
         found[gene]['time'] = diff
     print(json.dumps(found, indent=4))
