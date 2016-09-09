@@ -135,6 +135,31 @@ class McDBG(object):
             self.sadd_kmer(kmer, colour, pipeline)
         pipeline.execute()
 
+    @convert_kmers
+    def add_kmers_to_list(self, kmers, colour, min_lexo=False):
+        pipelines = self._create_list_pipeline(transaction=False)
+        for kmer in kmers:
+            self.rpush_kmer(kmer, colour,  pipelines[self._shard_key(kmer)])
+        self._execute_pipeline(pipelines)
+
+    def rpush_kmer(self, kmer, colour, c=None):
+        if c is None:
+            c = self._get_list_connection(kmer)
+        c.rpush(kmer, colour)
+
+    def list_get_kmer(self, kmer):
+        c = self._get_list_connection(kmer)
+        return [int(i) for i in c.lrange(kmer, -1, self.num_colours)]
+
+    @convert_kmers
+    def get_kmer_list_bitarray(self, kmer, min_lexo=False):
+        l = self.list_get_kmer(kmer)
+        if l:
+            lb = [0]*self.num_colours
+            for i in l:
+                lb[i] = 1
+            return tuple(lb)
+
     def _create_bitop_lists(self, kmers):
         bit_op_lists = dict((el, [])
                             for el in self.connections['kmers'].keys())
@@ -171,6 +196,10 @@ class McDBG(object):
         shard_key = self._shard_key(kmer)
         return self.connections['kmers'][shard_key]
 
+    def _get_list_connection(self, kmer):
+        shard_key = self._shard_key(kmer)
+        return self.connections['lists'][shard_key]
+
     def _get_set_connection(self, colour):
         return self.connections['colours'][colour % len(self.ports)]
 
@@ -179,7 +208,7 @@ class McDBG(object):
         return [self.get_kmer(k) for k in kmers]
 
     @convert_kmers
-    def get_kmer(self, kmer, connection=None):
+    def get_kmer(self, kmer, connection=None, min_lexo=False):
         if not connection:
             c = self._get_kmer_connection(kmer)
         return c.get(kmer)
@@ -195,15 +224,22 @@ class McDBG(object):
         for kmer in kmers:
             res = result[self._shard_key(kmer)].pop(0)
             if res is None:
-                i = self.search_sets(kmer, min_lexo=True)
-                res = [0]*self.num_colours
-                if i is not None:
-                    res[i] = 1
-                    res = tuple(res)
+                res = self.get_kmer_list_bitarray(kmer, min_lexo=True)
+                if res is None:
+                    res = [0]*self.num_colours
+                    i = self.search_sets(kmer, min_lexo=True)
+                    if i is not None:
+                        res[i] = 1
+                res = tuple(res)
             else:
                 res = self._byte_arrays_to_bits(res)
             out.append(res)
         return out
+
+    @convert_kmers
+    def query_kmer(self, kmer, min_lexo=False):
+        byte_array = self.get_kmer(kmer, min_lexo=True)
+        return self._byte_arrays_to_bits(byte_array)
 
     @convert_kmers
     def query_kmers_100_per(self, kmers, min_lexo=False):
@@ -300,6 +336,9 @@ class McDBG(object):
     def count_kmers(self):
         return sum([r.dbsize() for r in self.connections['kmers'].values()])
 
+    def count_kmers_in_lists(self):
+        return sum([r.dbsize() for r in self.connections['lists'].values()])
+
     def count_kmers_in_sets(self):
         _sum = 0
         for i in range(self.num_colours):
@@ -330,6 +369,33 @@ class McDBG(object):
                 pass
 
         return dict(count)
+
+    def compress_list(self, sparsity_threshold=0.05):
+
+        for conn in self.connections['kmers'].values():
+            kmers = []
+            for i, kmer in enumerate(conn.scan_iter('*')):
+                kmers.append(kmer)
+                if i % 100000*len(self.ports) == 0:
+                    self._batch_compress_list(
+                        kmers, conn, sparsity_threshold=sparsity_threshold)
+                    kmers = []
+            self._batch_compress_list(
+                kmers, conn, sparsity_threshold=sparsity_threshold)
+
+    def _batch_compress_list(self, kmers, kmer_conn=None, sparsity_threshold=0.05):
+        if kmers:
+            sparsity = [
+                float(i)/self.num_colours for i in self._bitcounts(kmers, kmer_conn)]
+            compress_kmers = [
+                k for i, k in enumerate(kmers) if sparsity[i] <= sparsity_threshold]
+            for k in compress_kmers:
+                bitarray = self.query_kmer(k, min_lexo=True)
+                for i, j in enumerate(bitarray):
+                    if j == 1:
+                        self.rpush_kmer(k, i)
+
+            [kmer_conn.delete(k) for k in compress_kmers]
 
     def compress(self):
 
@@ -407,6 +473,7 @@ class McDBG(object):
         self.connections['stats'] = {}
         self.connections['colours'] = {}
         self.connections['kmers'] = {}
+        self.connections['lists'] = {}
         for i, c in enumerate(self.conn_config):
             host, port = c
             self.connections['stats'][i] = redis.StrictRedis(
@@ -416,6 +483,8 @@ class McDBG(object):
             kmer_key = KMER_SHARDING[self.sharding_level][i]
             self.connections['kmers'][kmer_key] = redis.StrictRedis(
                 host=host, port=port, db=2)
+            self.connections['lists'][kmer_key] = redis.StrictRedis(
+                host=host, port=port, db=3)
 
     def _create_kmer_pipeline(self, transaction=True):
         # kmers stored in DB 2

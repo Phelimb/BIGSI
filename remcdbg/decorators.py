@@ -27,7 +27,6 @@ def convert_kmers(func):
     # and it's reverse complement
     @wraps(func)
     def inner(self, kmers, *args, **kwargs):
-
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
         if not kwargs.get('min_lexo'):

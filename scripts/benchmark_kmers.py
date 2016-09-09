@@ -18,7 +18,7 @@ keys = []
 # with open('/data4/projects/atlas/ecol/data/kmers/k31/ERR1095101.txt',
 # 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines())
+    keys.extend(infile.read().splitlines()[:10000])
 
 print(" FLUSHALL")
 mc = McDBG(ports=['6379'], compress_kmers=False)

@@ -12,7 +12,7 @@ stats = {}
 def run(parser, args, conn_config):
     mc = McDBG(conn_config=conn_config)
     stats["memory before compression (bytes)"] = mc.calculate_memory()
-    mc.compress()
+    mc.compress_list()
     stats["memory after compression (bytes)"] = mc.calculate_memory()
     print(json.dumps(stats))
 # a = mc.unique_colour_arrays()
