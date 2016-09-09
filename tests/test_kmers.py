@@ -1,5 +1,7 @@
 from remcdbg import McDBG
 import random
+from remcdbg.utils import make_hash
+from remcdbg.utils import reverse_comp
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
 #ports = [6200, 6201, 6202, 6203]
@@ -30,16 +32,16 @@ def test_set_kmer():
 
 def test_set_kmers():
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
+    k1 = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
+    k2 = 'ATCTACAATATCTACAATATCTACAATATCT'
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT'], 1)
-    assert mc.connections['kmers']['A'].getbit(
-        'ATCGTAGATATCGTAGATATCGTAGATATCG', 1) == 1
-    assert mc.connections['kmers']['A'].getbit(
-        'AGATATTGTAGATATTGTAGATATTGTAGAT', 1) == 1
-    assert mc.connections['kmers']['T'].getbit(
-        'ATCGTAGATATCGTAGATATCGTAGATATCG', 1) == 0
-    assert mc.connections['kmers']['T'].getbit(
-        'AGATATTGTAGATATTGTAGATATTGTAGAT', 1) == 0
+        [k1, k2], 1)
+    _retrieve_kmers = mc.get_kmers(
+        [k1, k2, reverse_comp(k1), reverse_comp(k2)])
+    assert _retrieve_kmers[0] != None
+    assert _retrieve_kmers[1] != None
+    assert _retrieve_kmers[2] != None
+    assert _retrieve_kmers[3] != None
     mc.delete()
 
 
@@ -130,6 +132,6 @@ def test_samples():
     assert mc.get_sample_colour('1234') == 0
     assert mc.get_num_colours() == 2
 
-    # mc.add_sample('1235')
-    # assert mc.get_sample_colour('1235') == '1'
-    # assert mc.get_num_colours() == 2
+    mc.add_sample('1235')
+    assert mc.get_sample_colour('1235') == '1'
+    assert mc.get_num_colours() == 2

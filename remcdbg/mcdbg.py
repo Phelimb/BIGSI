@@ -4,6 +4,8 @@ from remcdbg.utils import bits
 from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
+from remcdbg.decorators import convert_kmers
+
 import redis
 import math
 import sys
@@ -60,63 +62,10 @@ class McDBG(object):
         self.bitpadding = 2
         self.compress_kmers = compress_kmers
 
-    def delete(self):
-        for k, v in self.connections.items():
-            for i, connection in v.items():
-                connection.flushall()
-
-    def shutdown(self):
-        for v in self.connections.values():
-            for connection in v.values():
-                connection.shutdown()
-
-    def _kmer_to_bytes(self, kmer):
-        if isinstance(kmer, str):
-            return kmer_to_bytes(kmer, self.bitpadding)
-        else:
-            return kmer
-
-    def _bytes_to_kmer(self, _bytes):
-        a = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
-        return bits_to_kmer(a, self.kmer_size)
-
-    def _create_connections(self):
-        # kmers stored in DB 2
-        # colour arrays in DB 1
-        # stats in DB 0
-        self.connections['stats'] = {}
-        self.connections['colours'] = {}
-        self.connections['kmers'] = {}
-        for i, c in enumerate(self.conn_config):
-            host, port = c
-            self.connections['stats'][i] = redis.StrictRedis(
-                host=host, port=port, db=0)
-            self.connections['colours'][i] = redis.StrictRedis(
-                host=host, port=port, db=1)
-            kmer_key = KMER_SHARDING[self.sharding_level][i]
-            self.connections['kmers'][kmer_key] = redis.StrictRedis(
-                host=host, port=port, db=2)
-
-    def _create_kmer_pipeline(self, transaction=True):
-        # kmers stored in DB 2
-        # colour arrays in DB 1
-        # stats in DB 0
-        pipelines = {}
-        for i, port in enumerate(self.ports):
-            kmer_key = KMER_SHARDING[self.sharding_level][i]
-            pipelines[kmer_key] = self.connections[
-                'kmers'][kmer_key].pipeline(transaction=transaction)
-        return pipelines
-
-    def _execute_pipeline(self, pipelines):
-        out = {}
-        for kmer_key, p in pipelines.items():
-            out[kmer_key] = p.execute()
-        return out
-
+    # Methods for inserting kmers
+    @convert_kmers
     def add_kmers(self, kmers, colour, min_lexo=False):
-        if not min_lexo:
-            kmers = self._convert_query_kmers(kmers)
+        # Not thread safe
         presence = self.query_kmers(kmers, min_lexo=True)
         kpresence = []
         for kmer, presence in zip(kmers, presence):
@@ -127,9 +76,8 @@ class McDBG(object):
                     kmer, colour)
         self.set_kmers(kpresence, colour, min_lexo=True)
 
+    @convert_kmers
     def add_kmer(self, kmer, colour, min_lexo=False):
-        if not min_lexo:
-            kmer = self._convert_query_kmer(kmer)
         if self.get_kmer(kmer) is not None:
             self.set_kmer(kmer, colour)
         else:
@@ -162,10 +110,8 @@ class McDBG(object):
         else:
             connection.setbit(kmer, colour, 1)
 
+    @convert_kmers
     def set_kmers(self, kmers, colour, min_lexo=False):
-        if not min_lexo:
-            kmers = self._convert_query_kmers(kmers)
-        # logger.debug('setting %s' % kmers)
         pipelines = self._create_kmer_pipeline(transaction=False)
         for kmer in kmers:
             self.set_kmer(kmer, colour, pipelines[self._shard_key(kmer)])
@@ -187,20 +133,13 @@ class McDBG(object):
         else:
             c.srem(colour, kmer)
 
+    @convert_kmers
     def add_kmers_to_set(self, kmers, colour, min_lexo=False):
-        if not min_lexo:
-            kmers = self._convert_query_kmers(kmers)
         pipeline = self.connections['colours'][
             colour % len(self.ports)].pipeline()
         for kmer in kmers:
             self.sadd_kmer(kmer, colour, pipeline)
         pipeline.execute()
-
-    def _convert_query_kmers(self, kmers):
-        return [self._convert_query_kmer(k) for k in kmers]
-
-    def _convert_query_kmer(self, kmer):
-        return min_lexo(kmer)
 
     def _create_bitop_lists(self, kmers):
         bit_op_lists = dict((el, [])
@@ -219,32 +158,18 @@ class McDBG(object):
 
     def bitops(self, kmers, op):
         bit_op_lists = self._create_bitop_lists(kmers)
-        logger.info("Bitop %s vals" %
-                    ",".join([str(i) for i in bit_op_lists.values()]))
         temporary_bitarrays = []
-        # print(bit_op_lists)
         for shard_key, search_kmers in bit_op_lists.items():
-            # print(shard_key, kmers)
-
             if search_kmers:
-                # print("get", kmers[0], self._get_kmer_connection(
-                #     kmers[0]).get(search_kmers[0]))
-                # print(temporary_bitarrays)
-                logger.info("Running bit op %s" % op)
                 res = self.single_bit_op(shard_key, op, search_kmers)
-                # logger.info("Result %s" % res)
-
                 temporary_bitarrays.append(res)
         return temporary_bitarrays
 
     def single_bit_op(self, shard_key, op, kmers):
-        logger.info("bitop on %s" % "".join(
-            [str(self.connections['kmers'][shard_key].get(kmer)) for kmer in kmers]))
         self.connections['kmers'][
             shard_key].bitop(op, 'tmp%s' % op, *kmers)
         byte_array = self.connections['kmers'][
             shard_key].get('tmp%s' % op)
-        logger.info("result %s " % str(byte_array))
         return self._byte_arrays_to_bits(byte_array)
 
     def _shard_key(self, kmer):
@@ -257,6 +182,10 @@ class McDBG(object):
     def _get_set_connection(self, colour):
         return self.connections['colours'][colour % len(self.ports)]
 
+    @convert_kmers
+    def get_kmers(self, kmers, min_lexo=False):
+        return [self.get_kmer(k) for k in kmers]
+
     def get_kmer(self, kmer, connection=None):
         if not connection:
             c = self._get_kmer_connection(kmer)
@@ -265,9 +194,8 @@ class McDBG(object):
         else:
             return c.get(kmer)
 
+    @convert_kmers
     def query_kmers(self, kmers, min_lexo=False):
-        if not min_lexo:
-            kmers = self._convert_query_kmers(kmers)
         pipelines = self._create_kmer_pipeline()
         for kmer in kmers:
             c = pipelines[self._shard_key(kmer)]
@@ -293,21 +221,19 @@ class McDBG(object):
             out.append(res)
         return out
 
+    @convert_kmers
     def query_kmers_100_per(self, kmers, min_lexo=False):
-        if not min_lexo:
-            kmers = self._convert_query_kmers(kmers)
         logger.info("Querying kmers %s " % ",".join(kmers))
         temporary_bitarrays = self.bitops(kmers, "AND")
         return logical_AND_reduce(temporary_bitarrays)
 
-    def get_non_0_kmer_colours(self, kmers):
-        kmers = self._convert_query_kmers(kmers)
+    @convert_kmers
+    def get_non_0_kmer_colours(self, kmers, min_lexo=False):
         return [i for i, j in enumerate(
                 logical_OR_reduce(self.bitops(kmers, 'OR'))) if j == 1]
 
-    def query_kmers_colours(self, kmers, colours=None):
-        kmers = self._convert_query_kmers(kmers)
-
+    @convert_kmers
+    def query_kmers_colours(self, kmers, colours=None, min_lexo=False):
         if colours is None:
             colours = self.get_non_0_kmer_colours(kmers)
         pipelines = self._create_kmer_pipeline()
@@ -474,6 +400,59 @@ class McDBG(object):
             [pipe.sadd(c, kmer) for kmer in kmers]
             pipe.execute()
 
+    def delete(self):
+        for k, v in self.connections.items():
+            for i, connection in v.items():
+                connection.flushall()
+
+    def shutdown(self):
+        for v in self.connections.values():
+            for connection in v.values():
+                connection.shutdown()
+
+    def _kmer_to_bytes(self, kmer):
+        if isinstance(kmer, str):
+            return kmer_to_bytes(kmer, self.bitpadding)
+        else:
+            return kmer
+
+    def _bytes_to_kmer(self, _bytes):
+        bitstring = "".join([byte_to_bitstring(byte) for byte in list(_bytes)])
+        return bits_to_kmer(bitstring, self.kmer_size)
+
+    def _create_connections(self):
+        # kmers stored in DB 2
+        # colour arrays in DB 1
+        # stats in DB 0
+        self.connections['stats'] = {}
+        self.connections['colours'] = {}
+        self.connections['kmers'] = {}
+        for i, c in enumerate(self.conn_config):
+            host, port = c
+            self.connections['stats'][i] = redis.StrictRedis(
+                host=host, port=port, db=0)
+            self.connections['colours'][i] = redis.StrictRedis(
+                host=host, port=port, db=1)
+            kmer_key = KMER_SHARDING[self.sharding_level][i]
+            self.connections['kmers'][kmer_key] = redis.StrictRedis(
+                host=host, port=port, db=2)
+
+    def _create_kmer_pipeline(self, transaction=True):
+        # kmers stored in DB 2
+        # colour arrays in DB 1
+        # stats in DB 0
+        pipelines = {}
+        for i, port in enumerate(self.ports):
+            kmer_key = KMER_SHARDING[self.sharding_level][i]
+            pipelines[kmer_key] = self.connections[
+                'kmers'][kmer_key].pipeline(transaction=transaction)
+        return pipelines
+
+    def _execute_pipeline(self, pipelines):
+        out = {}
+        for kmer_key, p in pipelines.items():
+            out[kmer_key] = p.execute()
+        return out
 
 # >>> with r.pipeline() as pipe:
 # ...     while 1:

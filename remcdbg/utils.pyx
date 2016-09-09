@@ -1,15 +1,29 @@
+import hashlib
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS={'A':'00','C':'01','G':'10','T':'11'}
 BASES={'00':'A','01':'C','10':'G','11':'T'}
 
+def make_hash(str s):
+    return hashlib.sha256(s.encode("ascii", errors="ignore")).hexdigest()
+
+
 def reverse_comp(str s):
     return "".join([COMPLEMENT.get(base, base) for base in reversed(s)])
 
+def convert_query_kmers(kmers):
+    return [convert_query_kmer(k) for k in kmers]
+
+def convert_query_kmer(str kmer):
+    return min_lexo(kmer)
 
 def min_lexo(str k):
-    l = [k, reverse_comp(k)]
+    k_hash=make_hash(k)
+    _rev_comp = reverse_comp(k)
+    _rev_comp_hash= make_hash(reverse_comp(k))
+    d={k_hash:k,_rev_comp_hash:_rev_comp}
+    l = [k_hash,_rev_comp_hash]
     l.sort()
-    return l[0]
+    return d[l[0]]
 
 def seq_to_kmers(str seq):
     for i in range(len(seq)-31+1):
