@@ -12,11 +12,13 @@ def choose_convert_func(kmers):
     return convert_func
 
 
-def choose_return_func(self, func, kmers, colour, min_lexo):
-    if colour is not None:
-        return func(self, kmers, colour, min_lexo)
+def kmers_or_bytes(self, kmers):
+    if self.compress_kmers and isinstance(kmers, list):
+        return [self._kmer_to_bytes(k) for k in kmers]
+    elif self.compress_kmers:
+        return self._kmer_to_bytes(kmers)
     else:
-        return func(self, kmers, min_lexo)
+        return kmers
 
 
 def convert_kmers(func):
@@ -24,11 +26,13 @@ def convert_kmers(func):
     # or (self, kmers, min_lexo=False) and returns only the min of the kmer
     # and it's reverse complement
     @wraps(func)
-    def inner(self, kmers, colour=None, min_lexo=False):
+    def inner(self, kmers, *args, **kwargs):
+
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
-        if not min_lexo:
+        if not kwargs.get('min_lexo'):
             # It is a list of kmers or a single kmer?
             kmers = convert_func(kmers)
-        return choose_return_func(self, func, kmers, colour, min_lexo)
+        kmers = kmers_or_bytes(self, kmers)
+        return func(self, kmers, *args, **kwargs)
     return inner

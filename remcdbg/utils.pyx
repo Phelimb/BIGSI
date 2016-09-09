@@ -6,7 +6,6 @@ BASES={'00':'A','01':'C','10':'G','11':'T'}
 def make_hash(str s):
     return hashlib.sha256(s.encode("ascii", errors="ignore")).hexdigest()
 
-
 def reverse_comp(str s):
     return "".join([COMPLEMENT.get(base, base) for base in reversed(s)])
 

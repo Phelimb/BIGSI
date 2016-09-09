@@ -93,7 +93,8 @@ class McDBG(object):
             self.sadd_kmer(kmer, colour, connection)
             # setbits
 
-    def search_sets(self, kmer, ignore_colour=-1):
+    @convert_kmers
+    def search_sets(self, kmer, ignore_colour=-1, min_lexo=True):
         for i in range(self.get_num_colours()):
             if not i == ignore_colour:
                 res = self._get_set_connection(i).sismember(i, kmer)
@@ -101,37 +102,30 @@ class McDBG(object):
                     return i
         return None
 
-    def set_kmer(self, kmer, colour, connection=None):
+    @convert_kmers
+    def set_kmer(self, kmer, colour, connection=None, min_lexo=False):
         if connection is None:
             connection = self.connections['kmers'][
                 self._shard_key(kmer)]
-        if self.compress_kmers:
-            connection.setbit(self._kmer_to_bytes(kmer), colour, 1)
-        else:
-            connection.setbit(kmer, colour, 1)
+        connection.setbit(kmer, colour, 1)
 
     @convert_kmers
     def set_kmers(self, kmers, colour, min_lexo=False):
         pipelines = self._create_kmer_pipeline(transaction=False)
         for kmer in kmers:
-            self.set_kmer(kmer, colour, pipelines[self._shard_key(kmer)])
+            self.set_kmer(
+                kmer, colour, pipelines[self._shard_key(kmer)], min_lexo=True)
         self._execute_pipeline(pipelines)
 
     def sadd_kmer(self, kmer, colour, c=None):
         if c is None:
             c = self.connections['colours'][colour % len(self.ports)]
-        if self.compress_kmers:
-            c.sadd(colour, self._kmer_to_bytes(kmer))
-        else:
-            c.sadd(colour, kmer)
+        c.sadd(colour, kmer)
 
     def srem_kmer(self, kmer, colour, c=None):
         if c is None:
             c = self.connections['colours'][colour % len(self.ports)]
-        if self.compress_kmers:
-            c.srem(colour, self._kmer_to_bytes(kmer))
-        else:
-            c.srem(colour, kmer)
+        c.srem(colour, kmer)
 
     @convert_kmers
     def add_kmers_to_set(self, kmers, colour, min_lexo=False):
@@ -146,12 +140,7 @@ class McDBG(object):
                             for el in self.connections['kmers'].keys())
         for kmer in kmers:
             try:
-                if self.compress_kmers:
-                    bit_op_lists[self._shard_key(kmer)].append(
-                        self._kmer_to_bytes(kmer))
-                    # print(self._kmer_to_bytes(kmer))
-                else:
-                    bit_op_lists[self._shard_key(kmer)].append(kmer)
+                bit_op_lists[self._shard_key(kmer)].append(kmer)
             except KeyError:
                 pass
         return bit_op_lists
@@ -173,7 +162,10 @@ class McDBG(object):
         return self._byte_arrays_to_bits(byte_array)
 
     def _shard_key(self, kmer):
-        return kmer[:self.sharding_level]
+        if isinstance(kmer, str):
+            return kmer[:self.sharding_level]
+        else:
+            return self._bytes_to_kmer(kmer)[:self.sharding_level]
 
     def _get_kmer_connection(self, kmer):
         shard_key = self._shard_key(kmer)
@@ -186,32 +178,24 @@ class McDBG(object):
     def get_kmers(self, kmers, min_lexo=False):
         return [self.get_kmer(k) for k in kmers]
 
+    @convert_kmers
     def get_kmer(self, kmer, connection=None):
         if not connection:
             c = self._get_kmer_connection(kmer)
-        if self.compress_kmers:
-            return c.get(self._kmer_to_bytes(kmer))
-        else:
-            return c.get(kmer)
+        return c.get(kmer)
 
     @convert_kmers
     def query_kmers(self, kmers, min_lexo=False):
         pipelines = self._create_kmer_pipeline()
         for kmer in kmers:
             c = pipelines[self._shard_key(kmer)]
-            if self.compress_kmers:
-                c.get(self._kmer_to_bytes(kmer))
-            else:
-                c.get(kmer)
+            c.get(kmer)
         result = self._execute_pipeline(pipelines)
         out = []
         for kmer in kmers:
             res = result[self._shard_key(kmer)].pop(0)
             if res is None:
-                if self.compress_kmers:
-                    i = self.search_sets(self._kmer_to_bytes(kmer))
-                else:
-                    i = self.search_sets(kmer)
+                i = self.search_sets(kmer, min_lexo=True)
                 res = [0]*self.num_colours
                 if i is not None:
                     res[i] = 1
@@ -223,7 +207,7 @@ class McDBG(object):
 
     @convert_kmers
     def query_kmers_100_per(self, kmers, min_lexo=False):
-        logger.info("Querying kmers %s " % ",".join(kmers))
+        # logger.info("Querying kmers %s " % ",".join(kmers))
         temporary_bitarrays = self.bitops(kmers, "AND")
         return logical_AND_reduce(temporary_bitarrays)
 
@@ -241,11 +225,7 @@ class McDBG(object):
         if colours:
             for kmer in kmers:
                 for colour in colours:
-                    if self.compress_kmers:
-                        pipelines[self._shard_key(kmer)].getbit(
-                            self._kmer_to_bytes(kmer), colour)
-                    else:
-                        pipelines[self._shard_key(kmer)].getbit(kmer, colour)
+                    pipelines[self._shard_key(kmer)].getbit(kmer, colour)
         result = self._execute_pipeline(pipelines)
         outs = [colours]
         if colours:
