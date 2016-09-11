@@ -5,6 +5,8 @@ from remcdbg.utils import seq_to_kmers
 
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
+conn_config = [('localhost', 6379)]
+
 KMERS = ['A', 'T', 'C', 'G']
 
 

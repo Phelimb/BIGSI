@@ -7,10 +7,7 @@ python:
   - "3.5"
   - "3.4"
 services:
-  - redis-server --port 6200
-  - redis-server --port 6201
-  - redis-server --port 6202
-  - redis-server --port 6203
+  - redis-server 
 # Install any dependencies for running the tests:
 install: pip install -r requirements.txt && python setup.py build_ext  --inplace
 # command to run tests

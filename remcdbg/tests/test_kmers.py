@@ -6,13 +6,14 @@ from hypothesis import given
 import hypothesis.strategies as st
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
+conn_config = [('localhost', 6379)]
 #ports = [6200, 6201, 6202, 6203]
 KMERS = ['A', 'T', 'C', 'G']
 
 
 def test_init():
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
-    assert len(mc.ports) == 4
+    assert len(mc.ports) == len(conn_config)
 
 KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 

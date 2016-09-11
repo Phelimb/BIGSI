@@ -2,6 +2,7 @@ from remcdbg import McDBG
 import random
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
+conn_config = [('localhost', 6379)]
 
 
 def test_set_compress():
