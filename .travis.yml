@@ -9,7 +9,7 @@ python:
 services:
   - redis-server
 # Install any dependencies for running the tests:
-install: pip install -r requirements.txt
+install: pip install -r requirements.txt && python setup.py build_ext  --inplace
 # command to run tests
 script: py.test --cov=remcdbg --cov-config .coveragerc remcdbg/tests/*.py 
 after_success:
