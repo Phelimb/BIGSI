@@ -1,3 +1,7 @@
+remcdbg.egg-info/
+.coverage
+.hypothesis/
+dist/
 *.rdb
 venv2/
 build/
