@@ -23,19 +23,18 @@ with open('scripts/ERR1095101_100.txt', 'r') as infile:
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.set_kmers(keys, 5000)
 # # print(" INFO memory")
 # # print(" DBSIZE")
 # end = time.time()
-# print("bitarray N=5000", mc.sample_redis.info(
-#     'memory').get('used_memory_human'))
+# print("bitarray N=5000", mc.calculate_memory())
 
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.add_kmers_to_list(keys, 5000)
 # # print(" INFO memory")
@@ -46,48 +45,45 @@ with open('scripts/ERR1095101_100.txt', 'r') as infile:
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.set_kmers(keys, 10000)
 # mc.set_kmers(keys, 5000)
 # # print(" INFO memory")
 # # print(" DBSIZE")
 # end = time.time()
-# print("bitarray N=10000 X=2", mc.sample_redis.info(
-#     'memory').get('used_memory_human'))
+# print("bitarray N=10000 X=2", mc.calculate_memory())
 
 # # print(mc.sample_redis.info('memory').get('used_memory_human'))
 
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.add_kmers_to_list(keys, 5000)
 # mc.add_kmers_to_list(keys, 10000)
 # # print(" INFO memory")
 # # print(" DBSIZE")
 # end = time.time()
-# print("list N=10000 X=2", mc.sample_redis.info(
-#     'memory').get('used_memory_human'))
+# print("list N=10000 X=2", mc.calculate_memory())
 
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.set_kmers(keys, 2000)
 # mc.set_kmers(keys, 4000)
 # mc.set_kmers(keys, 5000)
 # mc.set_kmers(keys, 10000)
 # end = time.time()
-# print("bitarray N=10000 X=4", mc.sample_redis.info(
-#     'memory').get('used_memory_human'))
+# print("bitarray N=10000 X=4", mc.calculate_memory())
 
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-# mc.delete()
+# mc.flushall()
 # start = time.time()
 # mc.add_kmers_to_list(keys, 2000)
 # mc.add_kmers_to_list(keys, 4000)
@@ -96,32 +92,31 @@ with open('scripts/ERR1095101_100.txt', 'r') as infile:
 # # print(" INFO memory")
 # # print(" DBSIZE")
 # end = time.time()
-# print("list N=10000 X=4", mc.sample_redis.info(
-#     'memory').get('used_memory_human'))
+# print("list N=10000 X=4", mc.calculate_memory())
 
 
 def run_set(x):
     start = time.time()
     mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-    mc.delete()
+    mc.flushall()
     start = time.time()
     for _ in range(x):
         mc.set_kmers(keys, random.randint(0, 10000))
     end = time.time()
-    print("bitarray N=10000 sparsity=%i%%" % int(100*float(x)/10000), mc.sample_redis.info(
-        'memory').get('used_memory_human'))
+    print("bitarray N=10000 sparsity=%i%%" %
+          int(100*float(x)/10000), mc.calculate_memory())
 
 
 def run_list(x):
     start = time.time()
     mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-    mc.delete()
+    mc.flushall()
     start = time.time()
     for _ in range(x):
         mc.add_kmers_to_list(keys, random.randint(0, 10000))
     end = time.time()
-    print("list N=10000 sparsity=%i%%" % int(100*float(x)/10000), mc.sample_redis.info(
-        'memory').get('used_memory_human'))
+    print("list N=10000 sparsity=%i%%" %
+          int(100*float(x)/10000), mc.calculate_memory())
 
 for x in [100, 250, 500, 1000, 5000]:
     run_set(x)

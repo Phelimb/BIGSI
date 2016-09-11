@@ -1,8 +1,12 @@
 redispartition
-pytest
 redis
 hiredis
 cython
 flask
 celery
 biopython
+## testing
+hypothesis
+pytest
+codecov
+pytest-cov

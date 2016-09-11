@@ -1,0 +1,17 @@
+# This is a simple Travis config for a project that only needs to install pure
+# Python dependencies. For more complex setups, you can use conda on Travis:
+# http://conda.pydata.org/docs/travis.html 
+
+language: python
+python:
+  - "3.5"
+  - "3.4"
+services:
+  - redis-server
+# Install any dependencies for running the tests:
+install: pip install -r requirements.txt
+# command to run tests
+script: py.test --cov=remcdbg --cov-config .coveragerc remcdbg/tests/*.py 
+after_success:
+  codecov
+

@@ -2,6 +2,8 @@ from remcdbg import McDBG
 import random
 from remcdbg.utils import make_hash
 from remcdbg.utils import reverse_comp
+from hypothesis import given
+import hypothesis.strategies as st
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
 #ports = [6200, 6201, 6202, 6203]
@@ -11,6 +13,14 @@ KMERS = ['A', 'T', 'C', 'G']
 def test_init():
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     assert len(mc.ports) == 4
+
+
+@given(kmer=st.text(min_size=1, alphabet=['A', 'T', 'C', 'G']))
+def test_set_get_kmer(kmer):
+    mc = McDBG(conn_config=conn_config, compress_kmers=False)
+    mc.set_kmer(kmer, 1)
+    assert mc.get_kmerbit(kmer, 1) == 1
+    assert mc.get_kmerbit(kmer, 2) == 0
 
 
 def test_set_kmer():

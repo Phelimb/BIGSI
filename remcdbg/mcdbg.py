@@ -73,6 +73,10 @@ class McDBG(object):
             kmers, [colour]*len(kmers), [1]*len(kmers))
 
     @convert_kmers
+    def get_kmerbit(self, kmer, colour, min_lexo=False):
+        return self.clusters['kmers'].getbit(kmer, colour)
+
+    @convert_kmers
     def sadd_kmer(self, kmer, colour, min_lexo=False):
         self.clusters['sets'].sadd(colour, kmer)
 
@@ -95,10 +99,7 @@ class McDBG(object):
 
     @convert_kmers
     def add_kmers_to_list(self, kmers, colour, min_lexo=False):
-        pipelines = self._create_list_pipeline(transaction=False)
-        for kmer in kmers:
-            self.rpush_kmer(kmer, colour,  pipelines[self._shard_key(kmer)])
-        self._execute_pipeline(pipelines)
+        self.clusters['lists'].rpush(kmers, [colour]*len(kmers))
 
     @convert_kmers
     def rpush_kmer(self, kmer, colour, min_lexo=False):
@@ -194,15 +195,6 @@ class McDBG(object):
         elif len(tmp_v) > num_colours:
             tmp_v = tmp_v[:num_colours]
         return tuple(tmp_v)
-
-    def kmers(self, N=-1, k='*'):
-        i = 0
-        for connections in self.connections['kmers'].values():
-            for kmer in connections.scan_iter(k):
-                i += 1
-                if (i > N and N > 0):
-                    break
-                yield kmer
 
     def add_sample(self, sample_name):
         existing_index = self.get_sample_colour(sample_name)
