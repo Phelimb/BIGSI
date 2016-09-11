@@ -6,7 +6,6 @@ from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
 from remcdbg.decorators import convert_kmers
-sys.path.append('/Users/phelimb/Documents/git/redis-py-partition')
 from redispartition import RedisCluster
 import redis
 import math
