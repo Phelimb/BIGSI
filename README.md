@@ -1,4 +1,7 @@
 # remcdbg
+[![Build Status](https://travis-ci.com/Phelimb/redis-mcdbg.svg?token=zS56Z2pmznVQKhUTxqcq&branch=master)](https://travis-ci.com/Phelimb/redis-mcdbg)
+
+
 
 A redis backed kmer -> sample lookup. 
 
