@@ -55,7 +55,6 @@ class McDBG(object):
         self.conn_config = conn_config
         self.hostnames = [c[0] for c in conn_config]
         self.ports = [c[1] for c in conn_config]
-        assert len(self.ports) in [1, 4, 64]
         self.clusters = {}
         self._create_connections()
         self.num_colours = self.get_num_colours()
