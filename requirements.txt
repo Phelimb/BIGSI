@@ -1,3 +1,4 @@
+redispartition
 pytest
 redis
 hiredis

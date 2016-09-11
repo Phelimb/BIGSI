@@ -17,15 +17,15 @@ def test_add_kmer():
     mc.set_kmer(kmer, 1)
     _bytes = b'6\xc8\xcd\xb23l\x8c\xd8'
     _bytes_rc = b'c7\x18\xcd\xc63q\x8c'
-    assert mc.connections['kmers'][kmer[:1]].getbit(
-        _bytes, 1) == 1 or mc.connections['kmers'][kmer_rc[:1]].getbit(
+    assert mc.clusters['kmers'].getbit(
+        _bytes, 1) == 1 or mc.clusters['kmers'].getbit(
         _bytes_rc, 1)
-    assert mc.connections['kmers']['T'].getbit(
+    assert mc.clusters['kmers'].getbit(
         _bytes, 1) == 0
-    mc.delete()
-    assert mc.connections['kmers']['A'].getbit(
+    mc.flushall()
+    assert mc.clusters['kmers'].getbit(
         _bytes, 1) == 0
-    assert mc.connections['kmers']['T'].getbit(
+    assert mc.clusters['kmers'].getbit(
         _bytes, 1) == 0
 
 
@@ -42,21 +42,21 @@ def test_add_kmers():
     _bytes2 = b'6\xc8\xcd\xb23l\x8c\xd8'
     _bytes1_rc = b'c7\x18\xcd\xc63q\x8c'
     _bytes2_rc = b'7\x10\xcd\xc43q\x0c\xdc'
-    assert mc.connections['kmers'][k1[:1]].getbit(
-        _bytes, 1) == 1 or mc.connections['kmers'][k1_rc[:1]].getbit(_bytes1_rc, 1) == 1
-    assert mc.connections['kmers'][k2[:1]].getbit(
-        _bytes2, 1) == 1 or mc.connections['kmers'][k2_rc[:1]].getbit(
+    assert mc.clusters['kmers'].getbit(
+        _bytes, 1) == 1 or mc.clusters['kmers'].getbit(_bytes1_rc, 1) == 1
+    assert mc.clusters['kmers'].getbit(
+        _bytes2, 1) == 1 or mc.clusters['kmers'].getbit(
         _bytes2_rc, 1)
-    assert mc.connections['kmers']['C'].getbit(
+    assert mc.clusters['kmers'].getbit(
         _bytes, 1) == 0
-    assert mc.connections['kmers']['C'].getbit(
+    assert mc.clusters['kmers'].getbit(
         _bytes2, 1) == 0
-    mc.delete()
+    mc.flushall()
 
 
 def test_query_kmers():
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
-    mc.delete()
+    mc.flushall()
 
     mc.add_sample('1234')
     mc.add_sample('1235')
@@ -72,7 +72,7 @@ def test_query_kmers():
     mc.num_colours = mc.get_num_colours()
     assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT']) == [
         (1, 1, 0), (1, 0, 0)]
-    mc.delete()
+    mc.flushall()
 
     mc.add_sample('1234')
     mc.add_sample('1235')
@@ -91,12 +91,12 @@ def test_query_kmers():
         True, True, False]
     assert mc.query_kmers_100_per(['ATCGTAGATATCGTAGATATCGTAGATATCG', 'CTTGTAGATCTTGTAGATCTTGTAGATCTTG']) == [
         True, False, False]
-    mc.delete()
+    mc.flushall()
 
 
 def test_query_kmers_2():
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
-    mc.delete()
+    mc.flushall()
     mc.add_sample('1234')
     kmer = "TAGATCAGAAAACCATATTCAAATGGGATAA"
     mc.set_kmers(
@@ -108,7 +108,7 @@ def test_query_kmers_2():
 def test_query_kmers_3():
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
     gene = "ATGAAAAACACAATACATATCAACTTCGCTATTTTTTTAATAATTGCAAATATTATCTACAGCAGCGCCAGTGCATCAACAGATATCTCTACTGTTGCATCTCCATTATTTGAAGGAACTGAAGGTTGTTTTTTACTTTACGATGCATCCACAAACGCTGAAATTGCTCAATTCAATAAAGCAAAGTGTGCAACGCAAATGGCACCAGATTCAACTTTCAAGATCGCATTATCACTTATGGCATTTGATGCGGAAATAATAGATCAGAAAACCATATTCAAATGGGATAAAACCCCCAAAGGAATGGAGATCTGGAACAGCAATCATACACCAAAGACGTGGATGCAATTTTCTGTTGTTTGGGTTTCGCAAGAAATAACCCAAAAAATTGGATTAAATAAAATCAAGAATTATCTCAAAGATTTTGATTATGGAAATCAAGACTTCTCTGGAGATAAAGAAAGAAACAACGGATTAACAGAAGCATGGCTCGAAAGTAGCTTAAAAATTTCACCAGAAGAACAAATTCAATTCCTGCGTAAAATTATTAATCACAATCTCCCAGTTAAAAACTCAGCCATAGAAAACACCATAGAGAACATGTATCTACAAGATCTGGATAATAGTACAAAACTGTATGGGAAAACTGGTGCAGGATTCACAGCAAATAGAACCTTACAAAACGGATGGTTTGAAGGGTTTATTATAAGCAAATCAGGACATAAATATGTTTTTGTGTCCGCACTTACAGGAAACTTGGGGTCGAATTTAACATCAAGCATAAAAGCCAAGAAAAATGCGATCACCATTCTAAACACACTAAATTTATAA"
-    mc.delete()
+    mc.flushall()
     kmers = [k for k in seq_to_kmers(gene)]
     mc.add_sample('1234')
     mc.set_kmers(

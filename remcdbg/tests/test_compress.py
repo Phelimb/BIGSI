@@ -6,7 +6,7 @@ conn_config = [('localhost', 6200), ('localhost', 6201),
 
 def test_set_compress():
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
-    mc.delete()
+    mc.flushall()
     kmer_shared = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
     kmer_unique1 = 'ATCGTAGATATCGTAGATATCGTAGATATCC'
     kmer_unique2 = 'ATCGTAGATATCGTAGATATCGTAGATATCT'
@@ -28,7 +28,7 @@ def test_set_compress():
 
 def test_list_compress():
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
-    mc.delete()
+    mc.flushall()
     kmer_shared = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
     kmer_unique1 = 'ATCGTAGATATCGTAGATATCGTAGATATCC'
     kmer_unique2 = 'ATCGTAGATATCGTAGATATCGTAGATATCT'

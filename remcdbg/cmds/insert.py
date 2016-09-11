@@ -25,8 +25,6 @@ def run(parser, args, conn_config):
 
         # kmers = inf.read().splitlines()
 
-        logger.info("%i\t%i\t%i" %
-                    (i, mc.count_kmers(), mc.calculate_memory()))
         print(json.dumps({"result": "success", "colour": colour, "kmers": mc.count_kmers(
         ), "memory": mc.calculate_memory()}))
     except ValueError as e:
