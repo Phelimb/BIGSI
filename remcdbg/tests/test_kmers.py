@@ -14,8 +14,10 @@ def test_init():
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     assert len(mc.ports) == 4
 
+KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 
-@given(kmer=st.text(min_size=1, alphabet=['A', 'T', 'C', 'G']))
+
+@given(kmer=st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G']))
 def test_set_get_kmer(kmer):
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.set_kmer(kmer, 1)
@@ -42,10 +44,9 @@ def test_set_kmer():
         k1, 1) == 0
 
 
-def test_set_kmers():
+@given(k1=KMER, k2=KMER)
+def test_set_kmers(k1, k2):
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
-    k1 = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
-    k2 = 'ATCTACAATATCTACAATATCTACAATATCT'
     mc.set_kmers(
         [k1, k2], 1)
     _retrieve_kmers = mc.get_kmers(
@@ -87,8 +88,9 @@ def test_set_kmers():
 #         '1', k2) == 1 or mc._get_set_connection(1).sismember('1', k2_rev_comp)
 #     assert mc.query_kmers([k2]) == [(0, 1)]
 
-
-def test_query_kmers():
+@given(x=st.lists(KMER, min_size=5, max_size=5, unique=True))
+def test_query_kmers(x):
+    k1, k2, k3, k4, k5 = x
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.flushall()
 
@@ -97,13 +99,13 @@ def test_query_kmers():
     mc.add_sample('1236')
 
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT'], 0)
+        [k1, k2], 0)
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATTGTAGAGATTGTAGAGATTGTAGAGATTA'], 1)
-    mc.set_kmers(['ATCGTAGAC', 'ATTGTAGAGATTGTAGAGATTGTAGAGATTA'], 2)
+        [k1, k3], 1)
+    mc.set_kmers([k4, k3], 2)
     assert mc.get_num_colours() == 3
     mc.num_colours = mc.get_num_colours()
-    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT']) == [
+    assert mc.query_kmers([k1, k2]) == [
         (1, 1, 0), (1, 0, 0)]
     mc.flushall()
 
@@ -112,19 +114,20 @@ def test_query_kmers():
     mc.add_sample('1236')
 
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'CTTGTAGATCTTGTAGATCTTGTAGATCTTG'], 0)
+        [k1, k5], 0)
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATTGTAGAGATTGTAGAGATTGTAGAGATTA'], 1)
-    mc.set_kmers(['ATCGTAGAC', 'ATTGTAGAGATTGTAGAGATTGTAGAGATTA'], 2)
-    assert mc.query_kmers(['ATCGTAGATATCGTAGATATCGTAGATATCG', 'CTTGTAGATCTTGTAGATCTTGTAGATCTTG']) == [
+        [k1, k3], 1)
+    mc.set_kmers([k4, k3], 2)
+    assert mc.query_kmers([k1, k5]) == [
         (1, 1, 0), (1, 0, 0)]
     mc.flushall()
 
 
-def test_stats():
+@given(k1=KMER, k2=KMER)
+def test_stats(k1, k2):
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     mc.set_kmers(
-        ['ATCGTAGATATCGTAGATATCGTAGATATCG', 'ATCTACAATATCTACAATATCTACAATATCT'], 1)
+        [k1, k2], 1)
     mc.count_kmers() == 1
     mc.calculate_memory() > 0
     mc.flushall()
