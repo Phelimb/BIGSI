@@ -4,6 +4,7 @@ from remcdbg.mcdbg import McDBG
 import argparse
 import json
 import pickle
+import collections
 
 
 stats = {}
@@ -16,4 +17,4 @@ def run(parser, args, conn_config):
     stats["accessory kmers (sparse)"] = mc.count_kmers_in_lists()
     stats["samples"] = mc.get_num_colours()
 
-    print(json.dumps(stats, indent=4))
+    print(json.dumps(collections.OrderedDict(sorted(stats.items())), indent=4))
