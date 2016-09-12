@@ -6,6 +6,7 @@ from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
 from remcdbg.decorators import convert_kmers
+sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
 import redis
 import math
@@ -278,21 +279,58 @@ class McDBG(object):
         self._batch_compress_list(
             kmers, sparsity_threshold=sparsity_threshold)
 
+    def uncompress_list(self, sparsity_threshold=0.05):
+        kmers = []
+        for i, kmer in enumerate(self.clusters['lists'].scan_iter('*')):
+            kmers.append(kmer)
+            if i % 100000*len(self.ports) == 0:
+                self._batch_uncompress_list(
+                    kmers,  sparsity_threshold=sparsity_threshold)
+                kmers = []
+        self._batch_uncompress_list(
+            kmers, sparsity_threshold=sparsity_threshold)
+
     def _batch_compress_list(self, kmers, sparsity_threshold=0.05):
         if kmers:
             sparsity = [
                 float(i)/self.num_colours for i in self.clusters['kmers'].bitcount(kmers)]
             compress_kmers = [
                 k for i, k in enumerate(kmers) if sparsity[i] <= sparsity_threshold]
+            _kmers = []
+            _index = []
             for k in compress_kmers:
                 bitarray = self.query_kmer(k, min_lexo=True)
                 for i, j in enumerate(bitarray):
                     if j == 1:
-                        self.rpush_kmer(k, i, min_lexo=True)
-
+                        _kmers.append(k)
+                        _index.append(i)
+            self.rpush_kmer(_kmers, _index, min_lexo=True)
             self.clusters['kmers'].delete(compress_kmers)
 
-    def compress(self):
+    def _batch_uncompress_list(self, kmers, sparsity_threshold=0.05):
+        if kmers:
+            sparsity = [
+                float(i)/self.num_colours for i in self.clusters['lists'].llen(kmers)]
+            uncompress_kmers = [
+                k for i, k in enumerate(kmers) if sparsity[i] >= sparsity_threshold]
+            _kmers = []
+            _index = []
+            for k in uncompress_kmers:
+                bitarray = self.get_kmer_list_bitarray(k, min_lexo=True)
+                for i, j in enumerate(bitarray):
+                    if j == 1:
+                        _kmers.append(k)
+                        _index.append(i)
+            self.clusters['kmers'].setbit(_kmers, _index, [1]*len(_kmers))
+            self.clusters['lists'].delete(uncompress_kmers)
+
+    def compress(self, **kwargs):
+        self.compress_list(**kwargs)
+
+    def uncompress(self, **kwargs):
+        self.uncompress_list(**kwargs)
+
+    def compress_set(self):
 
         kmers = []
         for i, kmer in enumerate(self.clusters['kmers'].scan_iter('*')):

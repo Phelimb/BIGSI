@@ -26,7 +26,7 @@ def convert_kmers(func):
     # or (self, kmers, min_lexo=False) and returns only the min of the kmer
     # and it's reverse complement
     @wraps(func)
-    def inner(self, kmers, *args, **kwargs):
+    def convert_kmers_inner(self, kmers, *args, **kwargs):
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
         if not kwargs.get('min_lexo'):
@@ -34,4 +34,4 @@ def convert_kmers(func):
             kmers = convert_func(kmers)
         kmers = kmers_or_bytes(self, kmers)
         return func(self, kmers, *args, **kwargs)
-    return inner
+    return convert_kmers_inner

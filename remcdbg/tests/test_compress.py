@@ -20,7 +20,7 @@ def test_set_compress():
     assert mc.count_kmers() == 3
     assert mc.count_kmers_in_sets() == 0
 
-    mc.compress()
+    mc.compress_set()
     assert mc.count_kmers() == 1
     assert mc.count_kmers_in_sets() == 2
     assert mc.query_kmers([kmer_shared, kmer_unique1, kmer_unique2]) == [
@@ -42,8 +42,14 @@ def test_list_compress():
     assert mc.count_kmers() == 3
     assert mc.count_kmers_in_lists() == 0
 
-    mc.compress_list(sparsity_threshold=0.5)
+    mc.compress(sparsity_threshold=0.5)
     assert mc.count_kmers() == 1
     assert mc.count_kmers_in_lists() == 2
     assert mc.query_kmers([kmer_shared, kmer_unique1, kmer_unique2]) == [
         (1, 1), (1, 0), (0, 1)]
+
+    mc.uncompress(sparsity_threshold=0)
+    assert mc.query_kmers([kmer_shared, kmer_unique1, kmer_unique2]) == [
+        (1, 1), (1, 0), (0, 1)]
+    assert mc.count_kmers() == 3
+    assert mc.count_kmers_in_lists() == 0

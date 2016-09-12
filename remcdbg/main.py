@@ -35,6 +35,8 @@ def run_subtool(parser, args):
         from remcdbg.cmds.kmers import run
     elif args.command == "compress":
         from remcdbg.cmds.compress import run
+    elif args.command == "uncompress":
+        from remcdbg.cmds.uncompress import run
     elif args.command == "shutdown":
         from remcdbg.cmds.shutdown import run
     elif args.command == "bitcount":
@@ -75,6 +77,9 @@ def main():
         parser_class=ArgumentParserWithDefaults)
 
     db_parser_mixin = argparse.ArgumentParser(add_help=False)
+    compress_mixin = argparse.ArgumentParser(add_help=False)
+    compress_mixin.add_argument(
+        '--sparsity_threshold', type=float, default=0.05, help="Default=0.05")
 
     ##########
     # Insert
@@ -117,7 +122,13 @@ def main():
     parser_stats = subparsers.add_parser(
         'compress',
         help='Compresses the database',
-        parents=[db_parser_mixin])
+        parents=[db_parser_mixin, compress_mixin])
+    parser_stats.set_defaults(func=run_subtool)
+
+    parser_stats = subparsers.add_parser(
+        'uncompress',
+        help='Uncompresses the database',
+        parents=[db_parser_mixin, compress_mixin])
     parser_stats.set_defaults(func=run_subtool)
 
     parser_kmers = subparsers.add_parser(
