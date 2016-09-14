@@ -1,0 +1,30 @@
+version: '2'
+
+services:
+  main:
+    image: phelimb/remcdbg
+    ports:
+      - "8001"      
+    depends_on:
+        - redis
+    networks:
+        - front-tier
+        - back-tier
+  redis:
+    image: redis:3.2.3-32bit
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - back-tier
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  front-tier:
+    driver: overlay
+  back-tier:
+    driver: overlay
