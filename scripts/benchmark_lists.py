@@ -20,7 +20,7 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:100000])
+    keys.extend(infile.read().splitlines()[:10000])
 
 # start = time.time()
 # mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
@@ -119,21 +119,21 @@ def run_list(x):
     print("list N=10000 sparsity=%i%%" %
           int(100*float(x)/10000), mc.calculate_memory())
 
-# for x in [100, 250, 500, 1000, 5000]:
-#     run_set(x)
-#     run_list(x)
-x = 2
-start = time.time()
-mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
-mc.flushall()
-mc.add_sample("123")
-start = time.time()
-for _ in range(x):
-    mc.set_kmers(keys, random.randint(0, 10000))
-end = time.time()
-print("built in ", end-start)
-print("list N=10000 sparsity=%i%%" %
-      int(100*float(x)/10000), mc.calculate_memory())
+for x in [100, 250, 500, 1000, 5000]:
+    run_set(x)
+    run_list(x)
+# x = 2
+# start = time.time()
+# mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
+# mc.flushall()
+# mc.add_sample("123")
+# start = time.time()
+# for _ in range(x):
+#     mc.set_kmers(keys, random.randint(0, 10000))
+# end = time.time()
+# print("built in ", end-start)
+# print("list N=10000 sparsity=%i%%" %
+#       int(100*float(x)/10000), mc.calculate_memory())
 # start = time.time()
 # mc.compress_list()
 # end = time.time()

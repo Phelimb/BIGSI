@@ -5,8 +5,9 @@ from remcdbg.utils import bits
 from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
+from remcdbg.utils import hash_key
 from remcdbg.decorators import convert_kmers
-# sys.path.append("../redis-py-partition")
+sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
 import redis
 import math
@@ -244,8 +245,9 @@ class McDBG(object):
         return sum(self.clusters['sets'].scard([i for i in range(self.num_colours)]))
 
     def calculate_memory(self):
-        memory = sum([r.calculate_memory()
-                      for r in self.clusters.values()])
+        # info memory returns total instance memory not memory of connectionn
+        # so only need to calculate it for one DB
+        memory = self.clusters['kmers'].calculate_memory()
         self.clusters['stats'].set(self.count_kmers(), memory)
         return memory
 
@@ -253,7 +255,7 @@ class McDBG(object):
         count = Counter()
         pipelines = None
         for i, kmer in enumerate(self.kmers()):
-            if i % 100000*len(self.ports) == 0:
+            if i % 100000 == 0:
                 if pipelines:
                     result = self._execute_pipeline(pipelines)
                     [count.update(l) for l in result.values()]
@@ -272,7 +274,7 @@ class McDBG(object):
         kmers = []
         for i, kmer in enumerate(self.clusters['kmers'].scan_iter('*')):
             kmers.append(kmer)
-            if i % 100000*len(self.ports) == 0:
+            if i % 100000 == 0 and i > 0:
                 self._batch_compress_list(
                     kmers,  sparsity_threshold=sparsity_threshold)
                 kmers = []
@@ -304,7 +306,7 @@ class McDBG(object):
                     if j == 1:
                         _kmers.append(k)
                         _index.append(i)
-            self.rpush_kmer(_kmers, _index, min_lexo=True)
+            self.clusters['lists'].rpush(_kmers, _index)
             self.clusters['kmers'].delete(compress_kmers)
 
     def _batch_uncompress_list(self, kmers, sparsity_threshold=0.05):
@@ -329,6 +331,26 @@ class McDBG(object):
 
     def uncompress(self, **kwargs):
         self.uncompress_list(**kwargs)
+
+    def compress_hash(self, **kwargs):
+        self.compress_hash(**kwargs)
+
+    def compress_hash(self):
+        # for cluster in ["kmers", "lists"]:
+        cluster = "kmers"
+        kmers = []
+        for i, kmer in enumerate(self.clusters[cluster].scan_iter('*')):
+            kmers.append(kmer)
+            if i % 100000*len(self.ports) == 0 and i > 0:
+                self._batch_compress_hash(kmers)
+                kmers = []
+        self._batch_compress_hash(kmers, cluster=cluster)
+
+    def _batch_compress_hash(self, kmers, cluster):
+        vals = self.clusters[cluster].get(kmers)
+        hash_keys = [hash_key(k) for k in kmers]
+        self.clusters[cluster].hset(hash_keys, kmers, vals)
+        self.clusters[cluster].delete(kmers)
 
     def compress_set(self):
 
