@@ -331,7 +331,9 @@ class McDBG(object):
 
     def count_kmers(self):
         return self.clusters['stats'].pfcount('kmer_count')
-        # return self.clusters['kmers'].dbsize()
+
+    def count_keys(self):
+        return self.clusters['kmers'].dbsize()
 
     def count_kmers_in_lists(self):
         return self.clusters['lists'].dbsize()
