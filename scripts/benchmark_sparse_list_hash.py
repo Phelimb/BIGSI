@@ -20,16 +20,17 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:10000])
+    keys.extend(infile.read().splitlines()[:1000000])
 
 start = time.time()
 
 mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
 mc.flushall()
-start = time.time()
 c = 1000  # random.randint(0, 10000)
 for i in range(c+1):
     mc.add_sample(i)
+start = time.time()
+
 mc.insert_kmers(keys, c)
 mc.num_colours = mc.get_num_colours()
 print(mc.count_kmers())

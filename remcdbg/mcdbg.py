@@ -113,24 +113,30 @@ class McDBG(object):
         self.clusters['stats'].pfadd('kmer_count', *kmers)
         d = self._group_kmers_by_hashkey_and_connection(kmers, min_lexo=True)
         for conn, hk in d.items():
-            for name, kmers in hk.items():
-                self._batch_insert(conn, name, kmers, colour)
+            # for name, kmers in hk.items():
+            self._batch_insert(conn, hk, colour)
 
-    def _batch_insert(self,  conn, name, kmers, colour, count=0):
+    def _batch_insert(self,  conn, hk, colour, count=0):
         r = conn
         with r.pipeline() as pipe:
             try:
-                pipe.watch(name)
-                current_vals = pipe.hmget(name, kmers)
-                new_vals = {}
-                for i, val in enumerate(current_vals):
-                    if val is None:
-                        new_vals[kmers[i]] = str(colour)
-                    else:
-                        v = val.decode("utf-8")
-                        v = ",".join([v, str(colour)])
-                        new_vals[kmers[i]] = v
-                pipe.hmset(name, new_vals)
+                names = hk.keys()
+                list_of_list_kmers = [v for v in hk.values()]
+                pipe.watch(names)
+                pipe2 = r.pipeline()
+                [pipe2.hmget(name, kmers)
+                 for name, kmers in zip(names, list_of_list_kmers)]
+                vals = pipe2.execute()
+                for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
+                    new_vals = {}
+                    for j, val in enumerate(current_vals):
+                        if val is None:
+                            new_vals[kmers[j]] = str(colour)
+                        else:
+                            v = val.decode("utf-8")
+                            v = ",".join([v, str(colour)])
+                            new_vals[kmers[j]] = v
+                    pipe.hmset(name, new_vals)
                 pipe.execute()
             except redis.WatchError:
                 logger.warning("Retrying %s %s " % (r, name))
