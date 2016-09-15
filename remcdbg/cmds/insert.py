@@ -18,7 +18,7 @@ def run(parser, args, conn_config):
             for i, line in enumerate(inf):
                 kmer = line.strip()
                 kmers.append(kmer)
-                if i % 100000 == 0:
+                if i % 1000000 == 0:
                     mc.insert_kmers(kmers, colour)
                     kmers = []
         mc.insert_kmers(kmers, colour)

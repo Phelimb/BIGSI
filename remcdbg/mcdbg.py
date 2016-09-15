@@ -89,11 +89,11 @@ class McDBG(object):
         name = hash_key(kmer)
         with r.pipeline() as pipe:
             try:
-                pipe.watch('name')
-                v = pipe.hget(name, kmer)
-                if v is None:
+                pipe.watch(name)
+                if not pipe.hexists(name, kmer):
                     v = str(colour)
                 else:
+                    v = pipe.hget(name, kmer)
                     v = v.decode("utf-8")
                     v = ",".join([v, str(colour)])
                 pipe.hset(name, kmer, v)
@@ -108,7 +108,41 @@ class McDBG(object):
 
     @convert_kmers
     def insert_kmers(self, kmers, colour, min_lexo=False):
-        [self.insert_kmer(kmer, colour, min_lexo=True) for kmer in kmers]
+        d = self._group_kmers_by_hashkey_and_connection(kmers, min_lexo=True)
+        for conn, hk in d.items():
+            for name, kmers in hk.items():
+                self._batch_insert(conn, name, kmers, colour)
+
+    def _batch_insert(self,  conn, name, kmers, colour):
+        r = conn
+        with r.pipeline() as pipe:
+            try:
+                pipe.watch(name)
+                current_vals = pipe.hmget(name, kmers)
+                new_vals = {}
+                for i, val in enumerate(current_vals):
+                    if val is None:
+                        new_vals[kmers[i]] = str(colour)
+                    else:
+                        v = val.decode("utf-8")
+                        v = ",".join([v, str(colour)])
+                        new_vals[kmers[i]] = v
+                pipe.hmset(name, new_vals)
+                pipe.execute()
+            except redis.WatchError:
+                self._batch_insert(name, kmers, colour)
+
+    @convert_kmers
+    def _group_kmers_by_hashkey_and_connection(self, kmers, min_lexo=False):
+        d = dict((el, {}) for el in self.clusters['kmers'].connections)
+        for k in kmers:
+            name = hash_key(k)
+            conn = self.clusters['kmers'].get_connection(k)
+            try:
+                d[conn][name].append(k)
+            except KeyError:
+                d[conn][name] = [k]
+        return d
 
     @convert_kmers
     def set_kmer(self, kmer, colour, min_lexo=False):

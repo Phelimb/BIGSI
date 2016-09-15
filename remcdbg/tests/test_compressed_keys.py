@@ -2,6 +2,7 @@ from remcdbg import McDBG
 from remcdbg import kmer_to_bits
 import random
 from remcdbg.utils import seq_to_kmers
+from remcdbg.utils import hash_key
 
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
@@ -117,3 +118,12 @@ def test_query_kmers_3():
         kmers, 0)
     assert mc.query_kmers_100_per(kmers) == [
         True]
+
+
+def test_group_kmers_by_hashkey_and_connection():
+    mc = McDBG(conn_config=conn_config, compress_kmers=True)
+    mc.flushall()
+    d = mc._group_kmers_by_hashkey_and_connection(["AT", "TG"])
+    # print(hash_key(mc._kmer_to_bytes("AT")), hash_key(mc._kmer_to_bytes("TG")))
+    assert d[mc.clusters['kmers'].connections[0]][
+        'ef6c'] == [mc._kmer_to_bytes("AT")]
