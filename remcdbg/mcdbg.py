@@ -19,7 +19,7 @@ import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 KMER_SHARDING = {}
 
@@ -85,6 +85,7 @@ class McDBG(object):
 
     @convert_kmers
     def insert_kmer(self, kmer, colour, min_lexo=False):
+
         r = self.clusters['kmers'].get_connection(kmer)
         name = hash_key(kmer)
         with r.pipeline() as pipe:
@@ -99,6 +100,7 @@ class McDBG(object):
                 pipe.hset(name, kmer, v)
                 pipe.execute()
             except redis.WatchError:
+
                 self.insert_kmer(kmer, colour, min_lexo=True)
 
     @convert_kmers
@@ -108,12 +110,13 @@ class McDBG(object):
 
     @convert_kmers
     def insert_kmers(self, kmers, colour, min_lexo=False):
+        self.clusters['stats'].pfadd('kmer_count', *kmers)
         d = self._group_kmers_by_hashkey_and_connection(kmers, min_lexo=True)
         for conn, hk in d.items():
             for name, kmers in hk.items():
                 self._batch_insert(conn, name, kmers, colour)
 
-    def _batch_insert(self,  conn, name, kmers, colour):
+    def _batch_insert(self,  conn, name, kmers, colour, count=0):
         r = conn
         with r.pipeline() as pipe:
             try:
@@ -130,7 +133,12 @@ class McDBG(object):
                 pipe.hmset(name, new_vals)
                 pipe.execute()
             except redis.WatchError:
-                self._batch_insert(name, kmers, colour)
+                logger.warning("Retrying %s %s " % (r, name))
+                if count < 5:
+                    self._batch_insert(name, kmers, colour, count=count+1)
+                else:
+                    logger.warning(
+                        "Failed %s %s. Too many retries. Contining regardless." % (r, name))
 
     @convert_kmers
     def _group_kmers_by_hashkey_and_connection(self, kmers, min_lexo=False):
@@ -316,7 +324,8 @@ class McDBG(object):
             return 0
 
     def count_kmers(self):
-        return self.clusters['kmers'].dbsize()
+        return self.clusters['stats'].pfcount('kmer_count')
+        # return self.clusters['kmers'].dbsize()
 
     def count_kmers_in_lists(self):
         return self.clusters['lists'].dbsize()

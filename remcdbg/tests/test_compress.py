@@ -3,7 +3,7 @@ import random
 from remcdbg.utils import hash_key
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
-conn_config = [('localhost', 6380)]
+conn_config = [('localhost', 6379)]
 
 
 def test_set_compress():

@@ -20,7 +20,7 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines())
+    keys.extend(infile.read().splitlines()[:10000])
 
 start = time.time()
 
@@ -32,7 +32,7 @@ for i in range(c+1):
     mc.add_sample(i)
 mc.insert_kmers(keys, c)
 mc.num_colours = mc.get_num_colours()
-
+print(mc.count_kmers())
 end = time.time()
 print("hashset N=50000", mc.calculate_memory(), end-start)
 
