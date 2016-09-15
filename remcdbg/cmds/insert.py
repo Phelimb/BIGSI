@@ -19,9 +19,9 @@ def run(parser, args, conn_config):
                 kmer = line.strip()
                 kmers.append(kmer)
                 if i % 100000 == 0:
-                    mc.set_kmers(kmers, colour)
+                    mc.insert_kmers(kmers, colour)
                     kmers = []
-        mc.set_kmers(kmers, colour)
+        mc.insert_kmers(kmers, colour)
 
         # kmers = inf.read().splitlines()
 

@@ -26,6 +26,16 @@ def test_set_get_kmer(kmer):
     assert mc.get_kmerbit(kmer, 2) == 0
 
 
+@given(kmer=st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G']))
+def test_set_get_kmer_sparse_list(kmer):
+    mc = McDBG(conn_config=conn_config, compress_kmers=True)
+    mc.flushall()
+    mc.insert_kmer(kmer, 1)
+    assert mc.get_kmer_sl(kmer).decode('utf-8') == "1"
+    mc.insert_kmer(kmer, 2)
+    assert mc.get_kmer_sl(kmer).decode('utf-8') == "1,2"
+
+
 def test_set_kmer():
     k1 = 'ATCGTAGATATCGTAGATATCGTAGATATCG'
     k1_rev_comp = 'CGATATCTACGATATCTACGATATCTACGAT'

@@ -20,14 +20,14 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:1000000])
+    keys.extend(infile.read().splitlines())
 
 start = time.time()
 
 mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
 mc.flushall()
 start = time.time()
-c = 100  # random.randint(0, 10000)
+c = 1000  # random.randint(0, 10000)
 for i in range(c+1):
     mc.add_sample(i)
 mc.set_kmers(keys, c)
@@ -40,7 +40,8 @@ print("bitarray N=50000", mc.calculate_memory())
 start = time.time()
 mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
 start = time.time()
-print(mc.count_kmers(), mc.count_kmers_in_lists())
+mc.compress_list()
+print("Compress list  N=50000", mc.calculate_memory())
 mc.compress_hash()
 print("Compress hash N=50000", mc.calculate_memory())
 

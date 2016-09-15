@@ -4,12 +4,12 @@ import sys
 import os
 import argparse
 import redis
-from version import __version__
 sys.path.append(
     os.path.realpath(
         os.path.join(
             os.path.dirname(__file__),
             "..")))
+from remcdbg.version import __version__
 
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
@@ -113,23 +113,23 @@ def main():
         parents=[db_parser_mixin])
     parser_stats.set_defaults(func=run_subtool)
 
-    parser_stats = subparsers.add_parser(
+    parser_samples = subparsers.add_parser(
         'samples',
         help='Colour to sample ID',
         parents=[db_parser_mixin])
-    parser_stats.set_defaults(func=run_subtool)
+    parser_samples.set_defaults(func=run_subtool)
 
-    parser_stats = subparsers.add_parser(
+    parser_compress = subparsers.add_parser(
         'compress',
         help='Compresses the database',
         parents=[db_parser_mixin, compress_mixin])
-    parser_stats.set_defaults(func=run_subtool)
+    parser_compress.set_defaults(func=run_subtool)
 
-    parser_stats = subparsers.add_parser(
+    parser_uncompress = subparsers.add_parser(
         'uncompress',
         help='Uncompresses the database',
         parents=[db_parser_mixin, compress_mixin])
-    parser_stats.set_defaults(func=run_subtool)
+    parser_uncompress.set_defaults(func=run_subtool)
 
     parser_kmers = subparsers.add_parser(
         'kmers',
@@ -150,10 +150,8 @@ def main():
     parser_shutdown.set_defaults(func=run_subtool)
 
     args = parser.parse_args()
-    try:
-        args.func(parser, args)
-    except AttributeError:
-        parser.print_help()
+
+    args.func(parser, args)
 
 if __name__ == "__main__":
     main()

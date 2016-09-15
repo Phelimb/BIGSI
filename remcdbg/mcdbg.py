@@ -7,7 +7,7 @@ from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
 from remcdbg.utils import hash_key
 from remcdbg.decorators import convert_kmers
-sys.path.append("../redis-py-partition")
+# sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
 import redis
 import math
@@ -50,6 +50,25 @@ def byte_to_bitstring(byte):
     return a
 
 
+# def insert_kmer(kmer, colour):
+#     r = self.clusters['kmers'].get_connection(kmer)
+#     hk = hash_key(kmer)
+#     tmp_key = uuid4()
+#     with r.pipeline() as pipe:
+#         try:
+#             pipe.watch(kmer)
+#             v = pipe.hget(hk, kmer)
+#             if v is not None:
+#                 pipe.set(tmp_key, v)
+#             pipe.setbit(tmp_key, colour, 1)
+#             v = pipe.get(tmp_key)
+#             hset(hk, kmer, v)
+#             del(tmp_key)
+    # pipe.execute()
+    #     except WatchError:
+    #         insert_kmer(kmer, colour)
+
+
 class McDBG(object):
 
     def __init__(self, conn_config, kmer_size=31, compress_kmers=True):
@@ -63,6 +82,33 @@ class McDBG(object):
         self.kmer_size = kmer_size
         self.bitpadding = 2
         self.compress_kmers = compress_kmers
+
+    @convert_kmers
+    def insert_kmer(self, kmer, colour, min_lexo=False):
+        r = self.clusters['kmers'].get_connection(kmer)
+        name = hash_key(kmer)
+        with r.pipeline() as pipe:
+            try:
+                pipe.watch('name')
+                v = pipe.hget(name, kmer)
+                if v is None:
+                    v = str(colour)
+                else:
+                    v = v.decode("utf-8")
+                    v = ",".join([v, str(colour)])
+                pipe.hset(name, kmer, v)
+                pipe.execute()
+            except redis.WatchError:
+                self.insert_kmer(kmer, colour, min_lexo=True)
+
+    @convert_kmers
+    def get_kmer_sl(self, kmer, min_lexo=False):
+        name = hash_key(kmer)
+        return self.clusters['kmers'].hget(name, kmer, partition_arg=1)
+
+    @convert_kmers
+    def insert_kmers(self, kmers, colour, min_lexo=False):
+        [self.insert_kmer(kmer, colour, min_lexo=True) for kmer in kmers]
 
     @convert_kmers
     def set_kmer(self, kmer, colour, min_lexo=False):
@@ -332,24 +378,28 @@ class McDBG(object):
     def uncompress(self, **kwargs):
         self.uncompress_list(**kwargs)
 
-    def compress_hash(self, **kwargs):
-        self.compress_hash(**kwargs)
-
     def compress_hash(self):
-        # for cluster in ["kmers", "lists"]:
-        cluster = "kmers"
-        kmers = []
-        for i, kmer in enumerate(self.clusters[cluster].scan_iter('*')):
-            kmers.append(kmer)
-            if i % 100000*len(self.ports) == 0 and i > 0:
-                self._batch_compress_hash(kmers)
-                kmers = []
-        self._batch_compress_hash(kmers, cluster=cluster)
+        for cluster in ["kmers", "lists"]:
+            # cluster = "kmers"
+            kmers = []
+            for i, kmer in enumerate(self.clusters[cluster].scan_iter('*')):
+                if len(kmer) > 4:
+                    kmers.append(kmer)
+                    if i % 100000*len(self.ports) == 0 and i > 0:
+                        self._batch_compress_hash(kmers, cluster=cluster)
+                        kmers = []
+            self._batch_compress_hash(kmers, cluster=cluster)
 
     def _batch_compress_hash(self, kmers, cluster):
-        vals = self.clusters[cluster].get(kmers)
-        hash_keys = [hash_key(k) for k in kmers]
-        self.clusters[cluster].hset(hash_keys, kmers, vals)
+        if cluster == "lists":
+            vals = [",".join([str(i) for i in l]) for l in self.clusters['lists'].lrange(
+                kmers, [-1]*len(kmers), [self.num_colours]*len(kmers))]
+            # vals = [",".join([str(i) for i in self.list_get_kmer(k)])
+            #         for k in kmers]
+        else:
+            vals = self.clusters[cluster].get(kmers)
+        hash_keys = [hash_key(k, 3) for k in kmers]
+        self.clusters[cluster].hset(hash_keys, kmers, vals, partition_arg=1)
         self.clusters[cluster].delete(kmers)
 
     def compress_set(self):
