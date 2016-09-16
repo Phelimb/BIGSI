@@ -13,15 +13,25 @@ def run(parser, args, conn_config):
     mc = McDBG(conn_config=conn_config)
     try:
         colour = mc.add_sample(args.sample_name)
+        kmers = []
         with open(args.kmer_file, 'r') as inf:
-            kmers = []
-            for i, line in enumerate(inf):
-                kmer = line.strip()
-                kmers.append(kmer)
-                if i % 1000000 == 0:
-                    mc.insert_kmers(kmers, colour)
-                    kmers = []
-        mc.insert_kmers(kmers, colour)
+            kmers.extend(inf.read().splitlines())
+            mc.insert_kmers(kmers, colour)
+
+        #     kmers = []
+        #     for i, line in enumerate(inf):
+        #         kmer = line.strip()
+        #         kmers.append(kmer)
+        #         if i % 1000000 == 0 and i > 1:
+        #             mc.insert_kmers(kmers, colour)
+        #             kmers = []
+        # mc.insert_kmers(kmers, colour)
+        ckmers = []
+        for i, kmer in enumerate(kmers):
+            ckmers.append(kmer)
+            if i % 100000 == 0 and i > 1:
+                mc.clusters['stats'].pfadd('kmer_count', *ckmers)
+                ckmers = []
 
         # kmers = inf.read().splitlines()
 

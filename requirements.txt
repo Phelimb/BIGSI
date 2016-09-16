@@ -1,3 +1,4 @@
+bitstring
 redispartition
 redis
 hiredis
@@ -5,6 +6,8 @@ cython
 flask
 celery
 biopython
+pathos
+
 ## testing
 hypothesis
 pytest

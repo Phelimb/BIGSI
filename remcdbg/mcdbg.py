@@ -12,7 +12,7 @@ from redispartition import RedisCluster
 import redis
 import math
 import uuid
-
+import time
 from collections import Counter
 import json
 import logging
@@ -50,23 +50,44 @@ def byte_to_bitstring(byte):
     return a
 
 
-# def insert_kmer(kmer, colour):
-#     r = self.clusters['kmers'].get_connection(kmer)
-#     hk = hash_key(kmer)
-#     tmp_key = uuid4()
-#     with r.pipeline() as pipe:
-#         try:
-#             pipe.watch(kmer)
-#             v = pipe.hget(hk, kmer)
-#             if v is not None:
-#                 pipe.set(tmp_key, v)
-#             pipe.setbit(tmp_key, colour, 1)
-#             v = pipe.get(tmp_key)
-#             hset(hk, kmer, v)
-#             del(tmp_key)
-    # pipe.execute()
-    #     except WatchError:
-    #         insert_kmer(kmer, colour)
+from pathos.threading import ThreadPool
+
+
+def _batch_insert(conn, hk, colour, count=0):
+    start = time.time()
+    r = conn
+    colour_bytes = (colour).to_bytes(3, byteorder='big')
+    with r.pipeline() as pipe:
+        try:
+            names = hk.keys()
+            list_of_list_kmers = [v for v in hk.values()]
+            pipe.watch(names)
+            pipe2 = r.pipeline()
+            [pipe2.hmget(name, kmers)
+             for name, kmers in zip(names, list_of_list_kmers)]
+            vals = pipe2.execute()
+            pipe.multi()
+            for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
+                new_vals = {}
+                for j, val in enumerate(current_vals):
+                    if val is None:
+                        base_bytes = b'\x00'
+                        new_vals[kmers[j]] = b''.join(
+                            [base_bytes, colour_bytes])
+                    else:
+                        new_vals[kmers[j]] = b"".join([val, colour_bytes])
+                pipe.hmset(name, new_vals)
+            pipe.execute()
+        except redis.WatchError:
+            logger.warning("Retrying %s %s " % (r, name))
+            if count < 5:
+                self._batch_insert(conn, hk, colour, count=count+1)
+            else:
+                logger.warning(
+                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
+    end = time.time()
+    logger.info("%s seconds to process %s, %i keys" %
+                (str(end-start), str(conn), len(hk)))
 
 
 class McDBG(object):
@@ -110,41 +131,13 @@ class McDBG(object):
 
     @convert_kmers
     def insert_kmers(self, kmers, colour, min_lexo=False):
-        self.clusters['stats'].pfadd('kmer_count', *kmers)
+        pool = ThreadPool(nodes=len(self.ports))
         d = self._group_kmers_by_hashkey_and_connection(kmers, min_lexo=True)
-        for conn, hk in d.items():
-            # for name, kmers in hk.items():
-            self._batch_insert(conn, hk, colour)
-
-    def _batch_insert(self,  conn, hk, colour, count=0):
-        r = conn
-        with r.pipeline() as pipe:
-            try:
-                names = hk.keys()
-                list_of_list_kmers = [v for v in hk.values()]
-                pipe.watch(names)
-                pipe2 = r.pipeline()
-                [pipe2.hmget(name, kmers)
-                 for name, kmers in zip(names, list_of_list_kmers)]
-                vals = pipe2.execute()
-                for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
-                    new_vals = {}
-                    for j, val in enumerate(current_vals):
-                        if val is None:
-                            new_vals[kmers[j]] = str(colour)
-                        else:
-                            v = val.decode("utf-8")
-                            v = ",".join([v, str(colour)])
-                            new_vals[kmers[j]] = v
-                    pipe.hmset(name, new_vals)
-                pipe.execute()
-            except redis.WatchError:
-                logger.warning("Retrying %s %s " % (r, name))
-                if count < 5:
-                    self._batch_insert(name, kmers, colour, count=count+1)
-                else:
-                    logger.warning(
-                        "Failed %s %s. Too many retries. Contining regardless." % (r, name))
+        # for conn, hk in d.items():
+        # for name, kmers in hk.items():
+        results = pool.imap(
+            _batch_insert, d.keys(), [v for v in d.values()], [colour]*len(d))
+        # _batch_insert(conn, hk, colour)
 
     @convert_kmers
     def _group_kmers_by_hashkey_and_connection(self, kmers, min_lexo=False):
@@ -532,27 +525,3 @@ class McDBG(object):
         for kmer_key, p in pipelines.items():
             out[kmer_key] = p.execute()
         return out
-
-# >>> with r.pipeline() as pipe:
-# ...     while 1:
-# ...         try:
-# ...             # put a WATCH on the key that holds our sequence value
-# ...             pipe.watch('OUR-SEQUENCE-KEY')
-# ...             # after WATCHing, the pipeline is put into immediate execution
-# ...             # mode until we tell it to start buffering commands again.
-# ...             # this allows us to get the current value of our sequence
-# ...             current_value = pipe.get('OUR-SEQUENCE-KEY')
-# ...             next_value = int(current_value) + 1
-# ...             # now we can put the pipeline back into buffered mode with MULTI
-# ...             pipe.multi()
-# ...             pipe.set('OUR-SEQUENCE-KEY', next_value)
-# ...             # and finally, execute the pipeline (the set command)
-# ...             pipe.execute()
-# ...             # if a WatchError wasn't raised during execution, everything
-# ...             # we just did happened atomically.
-# ...             break
-# ...        except WatchError:
-# ...             # another client must have changed 'OUR-SEQUENCE-KEY' between
-# ...             # the time we started WATCHing it and the pipeline's execution.
-# ...             # our best bet is to just retry.
-# ...             continue
