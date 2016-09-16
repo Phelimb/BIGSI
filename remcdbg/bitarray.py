@@ -25,9 +25,6 @@ class ByteArray(object):
     def to_sparse(self):
         if not self.is_sparse():
             self.meta[0] = 1
-            print('bin', self.bitstring.bin)
-            for i in self.bitstring.findall('0b1'):
-                print(i)
             _bytes = b''.join([int(i).to_bytes(self.sparse_byte_length, byteorder='big')
                                for i in self.bitstring.findall('0b1')])
             self.bitstring = BitArray(bytes=_bytes)
@@ -63,7 +60,10 @@ class ByteArray(object):
         if self.is_sparse():
             raise NotImplementedError()
         else:
-            return int(self.bitstring[pos])
+            try:
+                return int(self.bitstring[pos])
+            except IndexError:
+                return 0
 
     @property
     def bytes(self):

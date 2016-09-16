@@ -25,7 +25,7 @@ def test_setbit_dense(pos, bit):
     a = ByteArray()
     a.setbit(pos, bit)
     assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp') == a.bytes
+    assert r.get('tmp')[:len(a.bytes)] == a.bytes
 
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
@@ -37,7 +37,7 @@ def test_setbit_dense_lists(poss, bits):
         r.setbit('tmp', pos, bit)
         a.setbit(pos, bit)
         assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp') == a.bytes
+    assert r.get('tmp')[:len(a.bytes)] == a.bytes
 
 
 @given(pos=POSSIBLE_COLOUR, bit=ST_BIT)
