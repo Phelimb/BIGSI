@@ -20,7 +20,7 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:100000])
+    keys.extend(infile.read().splitlines()[:10000])
 
 start = time.time()
 

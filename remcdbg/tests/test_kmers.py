@@ -4,6 +4,7 @@ from remcdbg.utils import make_hash
 from remcdbg.utils import reverse_comp
 from hypothesis import given
 import hypothesis.strategies as st
+from remcdbg.bitarray import ByteArray
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
 conn_config = [('localhost', 6379)]
@@ -41,9 +42,14 @@ def test_set_get_kmers_sparse_list(kmers):
     mc = McDBG(conn_config=conn_config, compress_kmers=True)
     mc.flushall()
     mc.insert_kmers(kmers, 1)
-    assert mc.get_kmer_sl(kmers[0]).decode('utf-8') == "1"
+    for kmer in kmers:
+        assert ByteArray(byte_array=mc.get_kmer_sl(kmer)).colours() == [1]
+    mc.insert_kmers(kmers, 1)
+    for kmer in kmers:
+        assert ByteArray(byte_array=mc.get_kmer_sl(kmer)).colours() == [1]
     mc.insert_kmers(kmers, 2)
-    assert mc.get_kmer_sl(kmers[0]).decode('utf-8') == "1,2"
+    for kmer in kmers:
+        assert ByteArray(byte_array=mc.get_kmer_sl(kmer)).colours() == [1, 2]
 
 
 def test_set_kmer():

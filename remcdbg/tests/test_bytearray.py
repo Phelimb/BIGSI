@@ -25,7 +25,7 @@ def test_setbit_dense(pos, bit):
     a = ByteArray()
     a.setbit(pos, bit)
     assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp')[:len(a.bytes)] == a.bytes
+    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
 
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
@@ -37,7 +37,7 @@ def test_setbit_dense_lists(poss, bits):
         r.setbit('tmp', pos, bit)
         a.setbit(pos, bit)
         assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp')[:len(a.bytes)] == a.bytes
+    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
 
 
 @given(pos=POSSIBLE_COLOUR, bit=ST_BIT)
@@ -50,14 +50,15 @@ def test_convert_to_dense(pos, bit):
         byte_order = 3
     a = ByteArray()
     a.setbit(pos, bit)
-    dense_bytes = a.bytes
+    dense_bytes = a.bitstring.bytes
     a.to_sparse()
     if bit:
-        assert a.bytes == int(pos).to_bytes(byte_order, byteorder='big')
+        assert a.bitstring.bytes == int(
+            pos).to_bytes(byte_order, byteorder='big')
     else:
-        assert a.bytes == b''
+        assert a.bitstring.bytes == b''
     a.to_dense()
-    assert a.bytes == dense_bytes
+    assert a.bitstring.bytes == dense_bytes
 
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
@@ -79,16 +80,16 @@ def test_convert_to_dense_list(poss, bits):
 
     for pos, bit in zip(poss, bits):
         a.setbit(pos, bit)
-    dense_bytes = a.bytes
+    dense_bytes = a.bitstring.bytes
     dense_bitstring = a.bitstring.bin
     a.to_sparse()
     if any(bits):
-        assert a.bytes == b''.join(
+        assert a.bitstring.bytes == b''.join(
             [int(pos).to_bytes(byte_order, byteorder='big') for pos in positive_is])
     else:
-        assert a.bytes == b''
+        assert a.bitstring.bytes == b''
     a.to_dense()
-    assert sum(a.bytes) == sum(dense_bytes)
+    assert sum(a.bitstring.bytes) == sum(dense_bytes)
 
 
 def test_sparse_byte_bit_encoding():
@@ -98,3 +99,34 @@ def test_sparse_byte_bit_encoding():
     a._set_sparse_byte_length(3)
     assert a.sparse_byte_bit_encoding == '10'
     assert a.sparse_byte_length == 3
+
+
+@given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
+def test_choose_optimal_encoding(poss, bits):
+    a = ByteArray()
+    for pos, bit in zip(poss, bits):
+        a.setbit(pos, bit)
+    dense_bytes = a.bitstring.bytes
+    a.to_sparse()
+    sparse_bytes = a.bitstring.bytes
+    a.choose_optimal_encoding()
+    if a.is_sparse():
+        assert len(a.bitstring.bytes) <= len(dense_bytes)
+    elif a.is_dense():
+        assert len(a.bitstring.bytes) <= len(sparse_bytes)
+
+# Test adding to sparse array
+
+
+@given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
+def test_setbit_sparse_lists(poss, bits):
+    r = redis.StrictRedis()
+    r.flushall()
+    a = ByteArray()
+    a.to_sparse()
+    for pos, bit in zip(poss, bits):
+        r.setbit('tmp', pos, bit)
+        a.setbit(pos, bit)
+        assert r.getbit('tmp', pos) == a.getbit(pos)
+    a.to_dense()
+    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes

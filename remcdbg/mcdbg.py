@@ -6,8 +6,8 @@ from remcdbg.utils import kmer_to_bits
 from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
 from remcdbg.utils import hash_key
+from remcdbg.bitarray import ByteArray
 from remcdbg.decorators import convert_kmers
-from pathos.threading import ThreadPool
 
 # sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
@@ -55,26 +55,23 @@ def byte_to_bitstring(byte):
 def _batch_insert(conn, hk, colour, count=0):
     start = time.time()
     r = conn
-    colour_bytes = (colour).to_bytes(3, byteorder='big')
     with r.pipeline() as pipe:
         try:
-            names = hk.keys()
+            names = [k for k in hk.keys()]
             list_of_list_kmers = [v for v in hk.values()]
             pipe.watch(names)
-            pipe2 = r.pipeline()
-            [pipe2.hmget(name, kmers)
-             for name, kmers in zip(names, list_of_list_kmers)]
-            vals = pipe2.execute()
-            pipe.multi()
+            vals = [r.hmget(name, kmers)
+                    for name, kmers in zip(names, list_of_list_kmers)]
             for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
                 new_vals = {}
                 for j, val in enumerate(current_vals):
                     if val is None:
-                        base_bytes = b'\x00'
-                        new_vals[kmers[j]] = b''.join(
-                            [base_bytes, colour_bytes])
+                        ba = ByteArray()
                     else:
-                        new_vals[kmers[j]] = b"".join([val, colour_bytes])
+                        ba = ByteArray(byte_array=val)
+                    ba.setbit(colour, 1)
+                    ba.choose_optimal_encoding()
+                    new_vals[kmers[j]] = ba.bytes
                 pipe.hmset(name, new_vals)
             pipe.execute()
         except redis.WatchError:
@@ -85,8 +82,8 @@ def _batch_insert(conn, hk, colour, count=0):
                 logger.warning(
                     "Failed %s %s. Too many retries. Contining regardless." % (r, name))
     end = time.time()
-    logger.info("%s seconds to process %s, %i keys" %
-                (str(end-start), str(conn), len(hk)))
+    # logger.info("%s seconds to process %s, %i keys" %
+    #             (str(end-start), str(conn), len(hk)))
 
 
 class McDBG(object):
@@ -130,13 +127,9 @@ class McDBG(object):
 
     @convert_kmers
     def insert_kmers(self, kmers, colour, min_lexo=False):
-        pool = ThreadPool(nodes=len(self.ports))
         d = self._group_kmers_by_hashkey_and_connection(kmers, min_lexo=True)
-        # for conn, hk in d.items():
-        # for name, kmers in hk.items():
-        results = pool.imap(
-            _batch_insert, d.keys(), [v for v in d.values()], [colour]*len(d))
-        # _batch_insert(conn, hk, colour)
+        for conn, hk in d.items():
+            _batch_insert(conn, hk, colour)
 
     @convert_kmers
     def _group_kmers_by_hashkey_and_connection(self, kmers, min_lexo=False):
