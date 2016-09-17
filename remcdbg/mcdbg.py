@@ -52,6 +52,14 @@ def byte_to_bitstring(byte):
     return a
 
 
+def get_vals(r, names, list_of_list_kmers):
+    pipe2 = r.pipeline()
+    [pipe2.hmget(name, kmers)
+     for name, kmers in zip(names, list_of_list_kmers)]
+    vals = pipe2.execute()
+    return vals
+
+
 def _batch_insert(conn, hk, colour, count=0):
     start = time.time()
     r = conn
@@ -60,8 +68,8 @@ def _batch_insert(conn, hk, colour, count=0):
             names = [k for k in hk.keys()]
             list_of_list_kmers = [v for v in hk.values()]
             pipe.watch(names)
-            vals = [r.hmget(name, kmers)
-                    for name, kmers in zip(names, list_of_list_kmers)]
+            vals = get_vals(r, names, list_of_list_kmers)
+            pipe.multi()
             for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
                 new_vals = {}
                 for j, val in enumerate(current_vals):
@@ -70,7 +78,8 @@ def _batch_insert(conn, hk, colour, count=0):
                     else:
                         ba = ByteArray(byte_array=val)
                     ba.setbit(colour, 1)
-                    ba.choose_optimal_encoding()
+                    if colour % 8 == 0:
+                        ba.choose_optimal_encoding()
                     new_vals[kmers[j]] = ba.bytes
                 pipe.hmset(name, new_vals)
             pipe.execute()

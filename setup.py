@@ -15,7 +15,7 @@ setup(
     description='.',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-        ext_modules=cythonize("remcdbg/utils.pyx"),
+    ext_modules=cythonize("remcdbg/utils.pyx"),
     install_requires=[
             'redis',
             'hiredis'],

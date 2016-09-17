@@ -98,9 +98,21 @@ class ByteArray(object):
         self.bitstring = setbit(self.bitstring, pos, i)
 
     def _setbit_sparse(self, pos, i):
-        self.to_dense()
-        self._setbit_dense(pos, i)
-        self.to_sparse()
+        if i == 0:
+            self.to_dense()
+            self._setbit_dense(pos, i)
+            self.to_sparse()
+        else:
+            if not pos in self.colours():
+                if choose_int_encoding([pos]) > self.sparse_byte_length:
+                    # lazy option
+                    self.to_dense()
+                    self._setbit_dense(pos, i)
+                    self.to_sparse()
+                else:
+                    _append_bytes = int(pos).to_bytes(
+                        self.sparse_byte_length, byteorder='big')
+                    self.bitstring.append(_append_bytes)
 
     def getbit(self, pos):
         if self.is_sparse():
@@ -123,15 +135,14 @@ class ByteArray(object):
         return ''.join([self.meta.bin, self.bitstring.bin])
 
     def choose_optimal_encoding(self):
-        if self.is_sparse():
-            sparse_byte_length = len(self.bitstring)
-            self.to_dense()
-            dense_byte_length = len(self.bitstring)
-            if dense_byte_length > sparse_byte_length:
+        colours = self.colours()
+        if colours:
+            byte_order = choose_int_encoding(colours)
+            sparse_byte_length = byte_order*len(colours)
+            dense_byte_length = math.ceil(max(colours)/8)
+            if dense_byte_length < sparse_byte_length:
+                self.to_dense()
+            else:
                 self.to_sparse()
         else:
-            dense_byte_length = len(self.bitstring)
             self.to_sparse()
-            sparse_byte_length = len(self.bitstring)
-            if sparse_byte_length > dense_byte_length:
-                self.to_dense()
