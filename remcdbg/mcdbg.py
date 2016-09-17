@@ -7,6 +7,8 @@ from remcdbg.utils import bits_to_kmer
 from remcdbg.utils import kmer_to_bytes
 from remcdbg.utils import hash_key
 from remcdbg.decorators import convert_kmers
+from pathos.threading import ThreadPool
+
 # sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
 import redis
@@ -48,9 +50,6 @@ def byte_to_bitstring(byte):
     if len(a) < 8:
         a = "".join(['0'*(8-len(a)), a])
     return a
-
-
-from pathos.threading import ThreadPool
 
 
 def _batch_insert(conn, hk, colour, count=0):
