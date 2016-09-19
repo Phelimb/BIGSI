@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 def run(parser, args, conn_config):
     if args.sample_name is None:
         args.sample_name = os.path.basename(args.kmer_file).split('.')[0]
-    mc = McDBG(conn_config=conn_config)
+    mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
     try:
         colour = mc.add_sample(args.sample_name)
         kmers = []
         with open(args.kmer_file, 'r') as inf:
             kmers.extend(inf.read().splitlines())
-            mc.insert_kmers(kmers, colour)
+        mc.insert_kmers(kmers, colour)
 
         #     kmers = []
         #     for i, line in enumerate(inf):

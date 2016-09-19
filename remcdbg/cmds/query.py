@@ -25,36 +25,15 @@ def parse_input(infile):
 
 def run(parser, args, conn_config):
     gene_to_kmers = parse_input(args.fasta)
-    mc = McDBG(conn_config=conn_config)
+    mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
     colours_to_samples = mc.colours_to_sample_dict()
     results = {}
     found = {}
     for gene, kmers in gene_to_kmers.items():
         found[gene] = {}
-        found[gene]['samples'] = []
-        found[gene]['percent_found'] = []
-        results[gene] = []
         start = time.time()
-        if args.threshold == 100:
-            _found = mc.query_kmers_100_per(kmers)
-            for i, p in enumerate(_found):
-                if p == 1:
-                    found[gene]['samples'].append(
-                        colours_to_samples.get(i, 'missing'))
-                    found[gene]['percent_found'].append(100)
-        else:
-            colours = mc.get_non_0_kmer_colours(kmers)
-            for i, res in enumerate(mc.query_kmers(kmers)):
-                results[gene].append(res)
-            columns = [
-                j for i, j in enumerate(zip(*results[gene])) if i in colours]
-            percent_kmers = list(map(per, columns))
-            colours_indexes = results[gene][0]
-            for i, p in enumerate(percent_kmers):
-                if p*100 >= args.threshold:
-                    found[gene]['samples'].append(
-                        colours_to_samples.get(colours[i], 'missing'))
-                    found[gene]['percent_found'].append(p*100)
+        found[gene]['results'] = mc.query_kmers(kmers, args.threshold)
+
         diff = time.time() - start
         found[gene]['time'] = diff
     print(json.dumps(found, indent=4))

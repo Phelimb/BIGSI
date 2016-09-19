@@ -97,6 +97,9 @@ class BaseStorage(object):
     def get_kmers(self, kmers):
         return [self.get_kmer(k) for k in kmers]
 
+    def count_keys(self):
+        raise NotImplementedError
+
 
 class InMemoryStorage(BaseStorage):
 
@@ -107,6 +110,9 @@ class InMemoryStorage(BaseStorage):
     def keys(self):
         """ Returns a list of binary hashes that are used as dict keys. """
         return self.storage.keys()
+
+    def count_keys(self):
+        return len(self.storage)
 
     def values(self):
         return self.storage.values()
@@ -133,47 +139,47 @@ class InMemoryStorage(BaseStorage):
         return size
 
 
-class RocksDBStorage(BaseStorage):
+# class RocksDBStorage(BaseStorage):
 
-    def __init__(self, config):
-        if 'filename' not in config:
-            raise ValueError(
-                "You must supply a 'filename' in your config%s" % config)
-        self.db_file = config['filename']
-        try:
-            self.storage = rocksdb.DB(
-                "test.db", rocksdb.Options(create_if_missing=True))
-        except AttributeError:
-            raise ValueError(
-                "Please install rocksdb to use rocks DB storage")
+#     def __init__(self, config):
+#         if 'filename' not in config:
+#             raise ValueError(
+#                 "You must supply a 'filename' in your config%s" % config)
+#         self.db_file = config['filename']
+#         try:
+#             self.storage = rocksdb.DB(
+#                 "test.db", rocksdb.Options(create_if_missing=True))
+#         except AttributeError:
+#             raise ValueError(
+#                 "Please install rocksdb to use rocks DB storage")
 
-    def keys(self):
-        return self.storage.keys()
+#     def keys(self):
+#         return self.storage.keys()
 
-    def __setitem__(self, key, val):
-        if isinstance(key, str):
-            key = str.encode(key)
-        self.storage.put(key, val)
+#     def __setitem__(self, key, val):
+#         if isinstance(key, str):
+#             key = str.encode(key)
+#         self.storage.put(key, val)
 
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            key = str.encode(key)
-        self.storage.get(key)
+#     def __getitem__(self, key):
+#         if isinstance(key, str):
+#             key = str.encode(key)
+#         self.storage.get(key)
 
-    def get(self, key, default=None):
-        if isinstance(key, str):
-            key = str.encode(key)
-        try:
-            return self[key]
-        except KeyError:
-            return default
+#     def get(self, key, default=None):
+#         if isinstance(key, str):
+#             key = str.encode(key)
+#         try:
+#             return self[key]
+#         except KeyError:
+#             return default
 
-    def delete_all(self):
-        for k in self.storage.iterkeys():
-            db.delete(k)
+#     def delete_all(self):
+#         for k in self.storage.iterkeys():
+#             db.delete(k)
 
-    def getmemoryusage(self):
-        return 0
+#     def getmemoryusage(self):
+#         return 0
 
 
 class BerkeleyDBStorage(BaseStorage):
@@ -194,6 +200,9 @@ class BerkeleyDBStorage(BaseStorage):
 
     def keys(self):
         return self.storage.keys()
+
+    def count_keys(self):
+        return len(self.keys())
 
     def __setitem__(self, key, val):
         if isinstance(key, str):
@@ -268,6 +277,9 @@ class RedisStorage(BaseStorage):
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
+
+    def count_keys(self):
+        return self.storage.dbsize()
 
     def __setitem__(self, key, val):
         if isinstance(key, str):

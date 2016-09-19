@@ -77,7 +77,7 @@ class McDBG(object):
         self._create_connections()
         self.num_colours = self.get_num_colours()
         self.kmer_size = kmer_size
-        self.bitpadding = 2
+        self.bitpadding = 2  # TODO. This should be dependant on kmer size
         self.compress_kmers = compress_kmers
         self.storage = choose_storage(storage)
 
@@ -184,15 +184,10 @@ class McDBG(object):
         return self.clusters['stats'].pfcount('kmer_count')
 
     def count_keys(self):
-        return self.clusters['kmers'].dbsize()
+        return self.storage.count_keys()
 
     def calculate_memory(self):
         return self.storage.getmemoryusage()
-        # info memory returns total instance memory not memory of connectionn
-        # so only need to calculate it for one DB
-        # memory = self.clusters['kmers'].calculate_memory()
-        # self.clusters['stats'].set(self.count_kmers(), memory)
-        # return memory
 
     def delete_all(self):
         self.storage.delete_all()
@@ -213,13 +208,6 @@ class McDBG(object):
 
     def _create_connections(self):
         # kmers stored in DB 2
-        # colour arrays in DB 1
         # stats in DB 0
         self.clusters['stats'] = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=0) for host, port in self.conn_config])
-        self.clusters['sets'] = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=1) for host, port in self.conn_config])
-        self.clusters['kmers'] = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=2) for host, port in self.conn_config])
-        self.clusters['lists'] = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=3) for host, port in self.conn_config])

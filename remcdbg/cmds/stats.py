@@ -11,11 +11,10 @@ stats = {}
 
 
 def run(parser, args, conn_config):
-    mc = McDBG(conn_config=conn_config)
+    mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
     stats["memory (bytes)"] = mc.calculate_memory()
     stats["keys"] = mc.count_keys()
-    stats["core kmers (dense)"] = mc.count_kmers()
-    stats["accessory kmers (sparse)"] = mc.count_kmers_in_lists()
+    stats["kmers"] = mc.count_kmers()
     stats["samples"] = mc.get_num_colours()
 
     print(json.dumps(collections.OrderedDict(sorted(stats.items())), indent=4))

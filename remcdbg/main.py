@@ -41,12 +41,15 @@ def run_subtool(parser, args):
         from remcdbg.cmds.shutdown import run
     elif args.command == "bitcount":
         from remcdbg.cmds.bitcount import run
+    else:
+        parser.print_help()
     # run the chosen submodule.
     try:
         run(parser, args, CONN_CONFIG)
-    except redis.exceptions.BusyLoadingError:
-        print(
-            "Redis is loading the dataset in memory. Please try again when finished. ")
+    except (UnboundLocalError, redis.exceptions.BusyLoadingError) as e:
+        if e is isinstance(e, redis.exceptions.BusyLoadingError):
+            print(
+                "Redis is loading the dataset in memory. Please try again when finished. ")
 
 
 class ArgumentParserWithDefaults(argparse.ArgumentParser):
@@ -71,6 +74,8 @@ def main():
     parser.add_argument("--version", help="atlas version",
                         action="version",
                         version="%(prog)s " + str(__version__))
+    parser.set_defaults(func=run_subtool)
+
     subparsers = parser.add_subparsers(
         title='[sub-commands]',
         dest='command',
