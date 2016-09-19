@@ -33,7 +33,7 @@ else:
 
 def load_mc(conn_config):
     try:
-        return McDBG(conn_config=conn_config)
+        return McDBG(conn_config=conn_config, storage={'redis': conn_config})
     except redis.exceptions.BusyLoadingError as e:
         time.sleep(10)
         print("%s" % str(e))
@@ -76,12 +76,12 @@ def search():
     # http://stackoverflow.com/questions/26686850/add-n-tasks-to-celery-queue-and-wait-for-the-results
     tasks = {}
     for gene, seq in request.json['seq'].items():
-        tasks[gene] = search_async.delay(str(seq))
-    found = {}
+        tasks[gene] = search_async(str(seq))
+    # found = {}
 
-    for gene, task in tasks.items():
-        found[gene] = task.get()
-    return jsonify(found)
+    # for gene, task in tasks.items():
+    #     found[gene] = task.get()
+    return jsonify(tasks)
 
 
 @celery.task
@@ -90,12 +90,9 @@ def search_async(seq):
 
     start = time.time()
     kmers = [k for k in seq_to_kmers(seq)]
-    _found = mc.query_kmers_100_per(kmers)
-    colours_to_samples = mc.colours_to_sample_dict()
-    samples = [
-        str(colours_to_samples.get(i, 'missing')) for i, p in enumerate(_found) if p == 1]
+    results = mc.query_kmers(kmers, threshold=1)
     diff = time.time() - start
-    return {'time': "%ims" % int(1000*diff), 'samples': samples}
+    return {'time': "%ims" % int(1000*diff), 'results': results}
 
 
 @app.route('/api/v1.0/stats', methods=['get'])
