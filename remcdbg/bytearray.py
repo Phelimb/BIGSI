@@ -28,6 +28,16 @@ def choose_int_encoding(ints):
     return byteorder
 
 
+def find_all(a_str, sub):
+    start = 0
+    while True:
+        start = a_str.find(sub, start)
+        if start == -1:
+            return
+        yield start
+        start += len(sub)  # use start += 1 to find overlapping matches
+
+
 class ByteArray(object):
 
     def __init__(self, byte_array=None, meta=b'\x00', bitstring=b'\x00'):
@@ -49,7 +59,10 @@ class ByteArray(object):
         if self.is_sparse():
             return self._bit_1_indexes()
         else:
-            return [i for i in self.bitstring.findall('0b1')]
+            # assert [i for i in self.bitstring.findall(
+            #     '0b1')] == [i for i in find_all(self.bitstring.bin, '1')]
+            # return [i for i in self.bitstring.findall('0b1')]
+            return [i for i in find_all(self.bitstring.bin, '1')]
 
     @property
     def sparse_byte_bit_encoding(self):
@@ -134,12 +147,15 @@ class ByteArray(object):
     def bin(self):
         return ''.join([self.meta.bin, self.bitstring.bin])
 
-    def choose_optimal_encoding(self):
+    def choose_optimal_encoding(self, colour=None):
         colours = self.colours()
         if colours:
-            byte_order = choose_int_encoding(colours)
+            if colour:
+                byte_order = choose_int_encoding([colour])
+            else:
+                byte_order = choose_int_encoding(colours)
             sparse_byte_length = byte_order*len(colours)
-            dense_byte_length = math.ceil(max(colours)/8)
+            dense_byte_length = max(colours)/8
             if dense_byte_length < sparse_byte_length:
                 self.to_dense()
             else:

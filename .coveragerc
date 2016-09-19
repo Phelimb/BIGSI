@@ -1,2 +1,2 @@
 [run]
-omit = remcdbg/tests/*
+omit = remcdbg/tests/*,remcdbg/cmds/*,remcdbg/version.py,remcdbg/main.py

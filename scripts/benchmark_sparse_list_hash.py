@@ -20,15 +20,15 @@ keys = []
 # 'r') as infile:
 # with open('scripts/ERR1095101_100.txt', 'r') as infile:
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:1000])
+    keys.extend(infile.read().splitlines()[:100000])
 
 start = time.time()
 
 mc = McDBG(conn_config=[('localhost', 6379)], compress_kmers=True)
 mc.flushall()
-c = 1  # random.randint(0, 10000)
+c = 2  # random.randint(0, 10000)
 start = time.time()
-for i in range(9):
+for i in range(c):
     mc.add_sample(i)
     mc.insert_kmers(keys, c)
     mc.insert_kmers(keys, c+1)
@@ -44,8 +44,7 @@ end = time.time()
 
 mc.flushall()
 start = time.time()
-c = 1  # random.randint(0, 10000)
-for i in range(9):
+for i in range(c):
     mc.add_sample(i)
     mc.set_kmers(keys, c)
     mc.set_kmers(keys, c+1)
