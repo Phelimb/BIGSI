@@ -23,15 +23,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-KMER_SHARDING = {}
-
-KMER_SHARDING[0] = {0: ''}
-KMER_SHARDING[1] = {0: 'A', 1: 'T', 2: 'C', 3: 'G'}
-KMER_SHARDING[2] = {0: 'AA', 1: 'AT', 2: 'AC', 3: 'AG', 4: 'TA', 5: 'TT', 6: 'TC',
-                    7: 'TG', 8: 'CA', 9: 'CT', 10: 'CC', 11: 'CG', 12: 'GA', 13: 'GT', 14: 'GC', 15: 'GG'}
-KMER_SHARDING[3] = {0: 'AAA', 1: 'AAT', 2: 'AAC', 3: 'AAG', 4: 'ATA', 5: 'ATT', 6: 'ATC', 7: 'ATG', 8: 'ACA', 9: 'ACT', 10: 'ACC', 11: 'ACG', 12: 'AGA', 13: 'AGT', 14: 'AGC', 15: 'AGG', 16: 'TAA', 17: 'TAT', 18: 'TAC', 19: 'TAG', 20: 'TTA', 21: 'TTT', 22: 'TTC', 23: 'TTG', 24: 'TCA', 25: 'TCT', 26: 'TCC', 27: 'TCG', 28: 'TGA', 29: 'TGT', 30: 'TGC', 31:
-                    'TGG', 32: 'CAA', 33: 'CAT', 34: 'CAC', 35: 'CAG', 36: 'CTA', 37: 'CTT', 38: 'CTC', 39: 'CTG', 40: 'CCA', 41: 'CCT', 42: 'CCC', 43: 'CCG', 44: 'CGA', 45: 'CGT', 46: 'CGC', 47: 'CGG', 48: 'GAA', 49: 'GAT', 50: 'GAC', 51: 'GAG', 52: 'GTA', 53: 'GTT', 54: 'GTC', 55: 'GTG', 56: 'GCA', 57: 'GCT', 58: 'GCC', 59: 'GCG', 60: 'GGA', 61: 'GGT', 62: 'GGC', 63: 'GGG'}
-
 
 # def byte_to_bitstring(byte):
 #     a = str("{0:b}".format(byte))
@@ -110,7 +101,7 @@ class McDBG(object):
     @convert_kmers
     def get_kmer_colours(self, kmer, min_lexo=False):
         ba = self.get_kmer(kmer, min_lexo=True)
-        return ba.colours()
+        return {kmer: ba.colours()}
 
     @convert_kmers
     def get_kmers_colours(self, kmers, min_lexo=False):
@@ -203,7 +194,7 @@ class McDBG(object):
             return kmer
 
     def _bytes_to_kmer(self, _bytes):
-        bitstring = ByteArray(byte_array=_bytes).bin
+        bitstring = ByteArray(byte_array=_bytes).bin[::-1]
         return bits_to_kmer(bitstring, self.kmer_size)
 
     def _create_connections(self):

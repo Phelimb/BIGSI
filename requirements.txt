@@ -1,5 +1,4 @@
-pyrocksdb
-bsddb
+
 bitstring
 redispartition
 redis
@@ -8,10 +7,15 @@ cython
 flask
 celery
 biopython
-pathos
 
 ## testing
 hypothesis
 pytest
 codecov
 pytest-cov
+
+## Optional
+#pyrocksdb
+#bsddb3
+#pathos
+

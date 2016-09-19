@@ -1,7 +1,7 @@
 import hashlib
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-BITS={'A':'00','C':'01','G':'10','T':'11'}
-BASES={'00':'A','01':'C','10':'G','11':'T'}
+BITS={'A':'00','G':'01','C':'10','T':'11'}
+BASES={'00':'A','01':'G','10':'C','11':'T'}
 
 def make_hash(str s):
     return hashlib.sha256(s.encode("ascii", errors="ignore")).hexdigest()
@@ -49,7 +49,7 @@ def bits_to_kmer(str bitstring, int l):
 def kmer_to_bytes(str kmer,int bitpadding=0):
     bitstring = kmer_to_bits(kmer)
     if not bitpadding == 0:
-        bitstring = "".join([bitstring, '0'*bitpadding])
+        bitstring = "".join([bitstring, '0'*bitpadding])[::-1]
     list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
     _bytes = [int(byte, 2) for byte in list_of_bytes]
     return bytes(_bytes)

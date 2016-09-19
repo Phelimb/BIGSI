@@ -92,6 +92,7 @@ def test_kmers_to_bytes(kmers):
     mc = McDBG(conn_config=conn_config, compress_kmers=False)
     for kmer in kmers:
         assert mc._bytes_to_kmer(mc._kmer_to_bytes(kmer)) == kmer
+    # print(mc._bytes_to_kmer(b'\x1bI\xe94\x82\xb2ph'))
 
 
 # def test_samples():
