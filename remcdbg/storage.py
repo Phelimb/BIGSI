@@ -366,6 +366,19 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         assert self.num_hashes == 2
         return [self.get_kmer(k) for k in kmers]
 
+    def get_kmers(self, kmers):
+        kmers = [str.encode(kmer) if isinstance(
+            kmer, str) else kmer for kmer in kmers]
+        all_hashes = [
+            int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size for kmer in kmers]
+        all_hashes.extend(
+            [int(hashlib.sha256(kmer).hexdigest(), 16) % self.array_size for kmer in kmers])
+        all_hashes.extend(
+            [int(hashlib.sha384(kmer).hexdigest(), 16) % self.array_size for kmer in kmers])
+        names = [hash_key((key).to_bytes(3, byteorder='big'))
+                 for key in all_hashes]
+        return hget_vals(self.storage, names, all_hashes)
+
 
 def get_vals(r, names, list_of_list_kmers):
     pipe2 = r.pipeline()
