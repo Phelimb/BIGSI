@@ -58,6 +58,9 @@ class ByteArray(object):
             new.setbit(c, 1)
         return new
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return "".join(str(self.meta)+str(self.bitstring))
 

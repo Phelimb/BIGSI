@@ -326,8 +326,8 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         self.name = 'probabibistic-redis'
         self.array_size = config['array_size']
         self.num_hashes = config['num_hashes']
-        self.storage = redis.StrictRedis(
-            host=config['conn'][0], port=config['conn'][1], db=2)
+        self.storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=2) for host, port in config['conn']])
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
@@ -339,34 +339,54 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         if isinstance(key, str):
             hkey = str.encode(key)
         elif isinstance(key, int):
-            hkey = (key).to_bytes(3, byteorder='big')
+            hkey = (key).to_bytes(4, byteorder='big')
         name = hash_key(hkey)
         return name
 
     def __setitem__(self, key, val):
         name = self.get_name(key)
-        self.storage.hset(name, key, val)
+        self.storage.hset(name, key, val, partition_arg=1)
 
     def __getitem__(self, key):
         name = self.get_name(key)
-        return self.storage.hget(name, key)
+        return self.storage.hget(name, key, partition_arg=1)
 
     def delete_all(self):
         self.storage.flushall()
 
     def getmemoryusage(self):
-        return self.storage.info('memory').get('used_memory')
+        return self.storage.calculate_memory()
 
     def insert_kmers(self, kmers, colour):
         assert self.num_hashes == 2
-        _batch_insert_prob_redis(self.storage, kmers, colour, self.array_size)
+        all_hashes = self._kmers_to_hash_indexes(kmers)
+        names = self._key_names_from_hashes(all_hashes)
+        hk = self._group_kmers_by_hashkey_and_connection(all_hashes)
+        # print(hk)
+        for conn, names_hashes in hk.items():
+            names = [k for k in names_hashes.keys()]
+            hashes = [hs for hs in names_hashes.values()]
+            _batch_insert_prob_redis(
+                conn, names, hashes, colour, self.array_size)
         # [self.insert_kmer(kmer, colour) for kmer in kmers]
+        # print(names, all_hashes)
 
-    def get_kmers(self, kmers):
-        assert self.num_hashes == 2
-        return [self.get_kmer(k) for k in kmers]
+    def _group_kmers_by_hashkey_and_connection(self, all_hashes):
+        d = dict((el, {}) for el in self.storage.connections)
+        for k in all_hashes:
+            name = self.get_name(k)
+            conn = self.storage.get_connection(k)
+            try:
+                d[conn][name].append(k)
+            except KeyError:
+                d[conn][name] = [k]
+        return d
 
-    def get_kmers(self, kmers):
+    # def get_kmers(self, kmers):
+    #     assert self.num_hashes == 2
+    #     return [self.get_kmer(k) for k in kmers]
+
+    def _kmers_to_hash_indexes(self, kmers):
         kmers = [str.encode(kmer) if isinstance(
             kmer, str) else kmer for kmer in kmers]
         all_hashes = [
@@ -375,9 +395,15 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
             [int(hashlib.sha256(kmer).hexdigest(), 16) % self.array_size for kmer in kmers])
         all_hashes.extend(
             [int(hashlib.sha384(kmer).hexdigest(), 16) % self.array_size for kmer in kmers])
-        names = [hash_key((key).to_bytes(3, byteorder='big'))
-                 for key in all_hashes]
-        return hget_vals(self.storage, names, all_hashes)
+        return all_hashes
+
+    def _key_names_from_hashes(self, hash_indexes):
+        return [self.get_name(key) for key in hash_indexes]
+
+    def get_kmers(self, kmers):
+        all_hashes = self._kmers_to_hash_indexes(kmers)
+        names = self._key_names_from_hashes(all_hashes)
+        return self.storage.hget(names, all_hashes, partition_arg=1)
 
 
 def get_vals(r, names, list_of_list_kmers):
@@ -396,28 +422,19 @@ def hget_vals(r, names, list_of_list_kmers):
     return vals
 
 
-def _batch_insert_prob_redis(conn, kmers, colour, array_size, count=0):
+def _batch_insert_prob_redis(conn, names, all_hashes, colour, array_size, count=0):
     r = conn
     with r.pipeline() as pipe:
         try:
-            kmers = [str.encode(kmer) if isinstance(
-                kmer, str) else kmer for kmer in kmers]
-            all_hashes = [
-                int(hashlib.sha1(kmer).hexdigest(), 16) % array_size for kmer in kmers]
-            all_hashes.extend(
-                [int(hashlib.sha256(kmer).hexdigest(), 16) % array_size for kmer in kmers])
-            all_hashes.extend(
-                [int(hashlib.sha384(kmer).hexdigest(), 16) % array_size for kmer in kmers])
-            names = [hash_key((key).to_bytes(3, byteorder='big'))
-                     for key in all_hashes]
             pipe.watch(names)
-            vals = hget_vals(r, names, all_hashes)
+            vals = get_vals(r, names, all_hashes)
             pipe.multi()
-            for name, val, h in zip(names, vals, all_hashes):
-                ba = ByteArray(byte_array=val)
-                ba.setbit(colour, 1)
-                ba.choose_optimal_encoding(colour)
-                pipe.hset(name, h, ba.bytes)
+            for name, values, hs in zip(names, vals, all_hashes):
+                for val, h in zip(values, hs):
+                    ba = ByteArray(byte_array=val)
+                    ba.setbit(colour, 1)
+                    ba.choose_optimal_encoding(colour)
+                    pipe.hset(name, h, ba.bytes)
             pipe.execute()
         except redis.WatchError:
             logger.warning("Retrying %s %s " % (r, name))

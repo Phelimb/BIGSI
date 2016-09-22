@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 def run(parser, args, conn_config):
     if args.sample_name is None:
         args.sample_name = os.path.basename(args.kmer_file).split('.')[0]
-    mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
+    mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
+                                                                         "array_size": 25000000, "num_hashes": 2}})
     try:
         colour = mc.add_sample(args.sample_name)
         kmers = []

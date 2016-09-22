@@ -15,7 +15,7 @@ POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
                      {"redis": [('localhost', 6379)]},
                      {"probabilistic-inmemory":
                          {"array_size": 5000000, "num_hashes": 2}},
-                     {"probabilistic-redis": {"conn": ('localhost', 6379), "array_size": 100000, "num_hashes": 2}}]
+                     {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)
@@ -83,6 +83,7 @@ def test_query_kmers(x, store, compress_kmers):
     mc.insert_kmers([k4, k3], 2)
     assert mc.get_num_colours() == 3
     mc.num_colours = mc.get_num_colours()
+    # print(mc.get_kmers_colours([k1, k2]))
     assert mc.query_kmers([k1, k2], threshold=0.5) == {
         '1234': 1, '1235': 0.5}
     assert mc.query_kmers([k1, k2]) == {
