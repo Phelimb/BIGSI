@@ -16,7 +16,7 @@ sys.path.append(
 from remcdbg.mcdbg import McDBG
 
 keys = []
-N = 1000
+N = 100000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 

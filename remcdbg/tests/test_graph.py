@@ -68,6 +68,7 @@ def test_query_kmer(kmer, store, compress_kmers):
 
 @given(x=st.lists(KMER, min_size=5, max_size=5, unique=True), store=st_storage, compress_kmers=st_compress_kmers)
 def test_query_kmers(x, store, compress_kmers):
+    # print("new test ====== ")
     k1, k2, k3, k4, k5 = x
     mc = McDBG(
         conn_config=conn_config, compress_kmers=compress_kmers, storage=store)
