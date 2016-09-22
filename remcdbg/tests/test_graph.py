@@ -15,7 +15,7 @@ POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
                      {"redis": [('localhost', 6379)]},
                      {"probabilistic-inmemory":
                          {"array_size": 5000000, "num_hashes": 2}},
-                     {"probabilistic-redis": {"conn": ('localhost', 6379), "array_size": 1000, "num_hashes": 2}}]
+                     {"probabilistic-redis": {"conn": ('localhost', 6379), "array_size": 100000, "num_hashes": 2}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)

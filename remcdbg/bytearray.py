@@ -1,5 +1,5 @@
 from __future__ import print_function
-from bitstring import BitArray
+# from bitstring import BitArray
 import sys
 import math
 

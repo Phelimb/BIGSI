@@ -9,7 +9,7 @@ from remcdbg.utils import hash_key
 from remcdbg.storage import choose_storage
 from remcdbg.bytearray import ByteArray
 from remcdbg.decorators import convert_kmers
-sys.path.append("../cortex-py")
+sys.path.append("cortex-py")
 from mccortex.cortex import encode_kmer
 from mccortex.cortex import decode_kmer
 # sys.path.append("../redis-py-partition")

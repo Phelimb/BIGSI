@@ -171,34 +171,44 @@ class ProbabilisticStorage(BaseStorage):
             kmer = str.encode(kmer)
 
         hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
-            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size,
+            int(hashlib.sha384(kmer).hexdigest(), 16) % self.array_size
+        ]
         for h in hashes:
-            current_val = self.get(h, None)
-            if current_val is None:
-                current_val = b'\x00'
-            ba = setbit(current_val, colour)
-            self[h] = ba
+            val = self.get(h, None)
+            ba = ByteArray(byte_array=val)
+            ba.setbit(colour, 1)
+            ba.choose_optimal_encoding(colour)
+            self[h] = ba.bytes
 
     def get_kmer(self, kmer):
         assert self.num_hashes == 2
         if isinstance(kmer, str):
             kmer = str.encode(kmer)
         hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
-            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size,
+            int(hashlib.sha384(kmer).hexdigest(), 16) % self.array_size
+        ]
         b1 = self[hashes[0]]
         b2 = self[hashes[1]]
+        b3 = self[hashes[2]]
 
         if b1 is None:
             b1 = b'\x00'
         if b2 is None:
             b2 = b'\x00'
-        v1 = bitarray()
-        v1.frombytes(b1)
-        v2 = bitarray()
-        v2.frombytes(b2)
+        if b3 is None:
+            b3 = b'\x00'
+        ba1 = ByteArray(byte_array=b1)
+        ba2 = ByteArray(byte_array=b1)
+        ba3 = ByteArray(byte_array=b1)
+        ba1.to_dense()
+        ba2.to_dense()
+        ba3.to_dense()
+
         # print('get', kmer, hashes, v1, v2, (v1 & v2).tobytes())
 
-        return b"".join([b'\x00', (v1 & v2).tobytes()])
+        return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).bytes])
 
 
 class ProbabilisticInMemoryStorage(ProbabilisticStorage):
@@ -383,17 +393,18 @@ def _batch_insert_prob_redis(conn, kmers, colour, array_size, count=0):
                 int(hashlib.sha1(kmer).hexdigest(), 16) % array_size for kmer in kmers]
             all_hashes.extend(
                 [int(hashlib.sha256(kmer).hexdigest(), 16) % array_size for kmer in kmers])
+            all_hashes.extend(
+                [int(hashlib.sha384(kmer).hexdigest(), 16) % array_size for kmer in kmers])
             names = [hash_key((key).to_bytes(3, byteorder='big'))
                      for key in all_hashes]
             pipe.watch(names)
             vals = hget_vals(r, names, all_hashes)
             pipe.multi()
             for name, val, h in zip(names, vals, all_hashes):
-                ba = val
-                if val is None:
-                    val = b'\x00'
-                ba = setbit(val, colour)
-                pipe.hset(name, h, ba)
+                ba = ByteArray(byte_array=val)
+                ba.setbit(colour, 1)
+                ba.choose_optimal_encoding(colour)
+                pipe.hset(name, h, ba.bytes)
             pipe.execute()
         except redis.WatchError:
             logger.warning("Retrying %s %s " % (r, name))
