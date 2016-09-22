@@ -208,7 +208,7 @@ class ProbabilisticStorage(BaseStorage):
 
         # print('get', kmer, hashes, v1, v2, (v1 & v2).tobytes())
 
-        return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).bytes])
+        return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).tobytes()])
 
 
 class ProbabilisticInMemoryStorage(ProbabilisticStorage):

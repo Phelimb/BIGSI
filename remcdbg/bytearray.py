@@ -1,16 +1,17 @@
 from __future__ import print_function
-from bitstring import BitArray
+# from bitstring import BitArray
+from bitarray import bitarray
 import sys
 import math
 
 
 def setbit(bitstring, pos, i):
     try:
-        bitstring.set(value=i, pos=pos)
+        bitstring[pos] = bool(i)  # .set(value=i, pos=pos)
     except IndexError:
         if i:
-            bitstring.append(b"".join([
-                b'\x00']*math.ceil(float(1+pos-len(bitstring))/8)))
+            for _ in range(1+pos-len(bitstring)):
+                bitstring.append(False)
             setbit(bitstring, pos, i)
     return bitstring
 
@@ -41,12 +42,14 @@ def find_all(a_str, sub):
 class ByteArray(object):
 
     def __init__(self, byte_array=None, meta=b'\x00', bitstring=b'\x00'):
+        self.meta = bitarray()
+        self.bitstring = bitarray()
         if byte_array is None:
-            self.meta = BitArray(bytes=meta)
-            self.bitstring = BitArray(bytes=bitstring)
+            self.meta.frombytes(meta)
+            self.bitstring.frombytes(bitstring)
         else:
-            self.meta = BitArray(bytes=byte_array[0:1])
-            self.bitstring = BitArray(bytes=byte_array[1:])
+            self.meta.frombytes(byte_array[0:1])
+            self.bitstring.frombytes(byte_array[1:])
 
     def intersect(self, ba):
         colours = set(self.colours()) & set(ba.colours())
@@ -54,6 +57,9 @@ class ByteArray(object):
         for c in colours:
             new.setbit(c, 1)
         return new
+
+    def __str__(self):
+        return "".join(str(self.meta)+str(self.bitstring))
 
     def is_sparse(self):
         # dense or sparse?
@@ -66,45 +72,58 @@ class ByteArray(object):
         if self.is_sparse():
             return self._bit_1_indexes()
         else:
-            # assert [i for i in self.bitstring.findall(
-            #     '0b1')] == [i for i in find_all(self.bitstring.bin, '1')]
-            # return [i for i in self.bitstring.findall('0b1')]
-            return [i for i in find_all(self.bitstring.bin, '1')]
+            return self.indexes()
 
     @property
     def sparse_byte_bit_encoding(self):
-        return self.meta.bin[1:3]
+        return "".join([str(int(i)) for i in self.meta[1:3]])
 
     @property
     def sparse_byte_length(self):
         return BITS_TO_BYTE_LENGTH[self.sparse_byte_bit_encoding]
 
     def _set_sparse_byte_length(self, l):
-        tmp = list(self.meta.bin)
-        tmp[1:3] = list(BYTE_LENGTH_TO_BITS[l])
-        self.meta = BitArray(bin="".join(tmp))
+        self.meta[1] = bool(int(BYTE_LENGTH_TO_BITS[l][0]))
+        self.meta[2] = bool(int(BYTE_LENGTH_TO_BITS[l][1]))
 
     def to_sparse(self):
         if self.is_dense():
-            self.meta[0] = 1
-            indexes = [i for i in self.bitstring.findall('0b1')]
+            indexes = self.indexes()
+            self.meta[0] = True
+
             bo = choose_int_encoding(indexes)
             self._set_sparse_byte_length(bo)
             _bytes = b''.join([int(i).to_bytes(self.sparse_byte_length, byteorder='big')
                                for i in indexes])
-            self.bitstring = BitArray(bytes=_bytes)
+            self.bitstring = bitarray()
+            self.bitstring.frombytes(_bytes)
+
+    def indexes(self):
+        indexes = []
+        i = 0
+        if self.is_dense():
+            while True:
+                try:
+                    i = self.bitstring.index(True, i)
+                    indexes.append(i)
+                    i += 1
+                except ValueError:
+                    break
+
+        return indexes
 
     def to_dense(self):
         if self.is_sparse():
-            new_bitstring = BitArray(b'\x00')
+            new_bitstring = bitarray()
+            new_bitstring.frombytes(b'\x00')
             for i in self._bit_1_indexes():
                 setbit(new_bitstring, i, 1)
             self.bitstring = new_bitstring
-            self.meta[0] = 0
+            self.meta[0] = False
 
     def _bit_1_indexes(self):
         s = self.sparse_byte_length
-        _bytes = self.bitstring.bytes
+        _bytes = self.bitstring.tobytes()
         assert self.is_sparse()
         return [int.from_bytes(_bytes[i*s:(i+1)*s], byteorder='big') for i in range(0, int(len(_bytes)/s))]
 
@@ -118,21 +137,26 @@ class ByteArray(object):
         self.bitstring = setbit(self.bitstring, pos, i)
 
     def _setbit_sparse(self, pos, i):
+
         if i == 0:
             self.to_dense()
             self._setbit_dense(pos, i)
             self.to_sparse()
         else:
             if not pos in self.colours():
+
                 if choose_int_encoding([pos]) > self.sparse_byte_length:
                     # lazy option
                     self.to_dense()
                     self._setbit_dense(pos, i)
                     self.to_sparse()
+
                 else:
                     _append_bytes = int(pos).to_bytes(
                         self.sparse_byte_length, byteorder='big')
-                    self.bitstring.append(_append_bytes)
+                    b = b''.join([self.bitstring.tobytes(), _append_bytes])
+                    self.bitstring = bitarray()
+                    self.bitstring.frombytes(b)
 
     def getbit(self, pos):
         if self.is_sparse():
@@ -148,7 +172,7 @@ class ByteArray(object):
 
     @property
     def bytes(self):
-        return b''.join([self.meta.bytes, self.bitstring.bytes])
+        return b''.join([self.meta.tobytes(), self.bitstring.tobytes()])
 
     @property
     def bin(self):

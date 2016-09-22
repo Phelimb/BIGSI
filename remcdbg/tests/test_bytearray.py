@@ -24,8 +24,10 @@ def test_setbit_dense(pos, bit):
     r.setbit('tmp', pos, bit)
     a = ByteArray()
     a.setbit(pos, bit)
+    if bit:
+        assert a.indexes() == [pos]
     assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
+    assert r.get('tmp')[:len(a.bitstring.tobytes())] == a.bitstring.tobytes()
 
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
@@ -37,7 +39,10 @@ def test_setbit_dense_lists(poss, bits):
         r.setbit('tmp', pos, bit)
         a.setbit(pos, bit)
         assert r.getbit('tmp', pos) == a.getbit(pos)
-    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
+#    assert sorted(a.indexes()) == sorted(list(
+#        set([pos for pos, bit in zip(poss, bits) if bit])))
+
+    assert r.get('tmp')[:len(a.bitstring.tobytes())] == a.bitstring.tobytes()
 
 
 @given(pos=POSSIBLE_COLOUR, bit=ST_BIT)
@@ -50,15 +55,17 @@ def test_convert_to_dense(pos, bit):
         byte_order = 3
     a = ByteArray()
     a.setbit(pos, bit)
-    dense_bytes = a.bitstring.bytes
+    dense_bytes = a.bitstring.tobytes()
+
     a.to_sparse()
+
     if bit:
-        assert a.bitstring.bytes == int(
+        assert a.bitstring.tobytes() == int(
             pos).to_bytes(byte_order, byteorder='big')
     else:
-        assert a.bitstring.bytes == b''
+        assert a.bitstring.tobytes() == b''
     a.to_dense()
-    assert a.bitstring.bytes == dense_bytes
+    assert a.bitstring.tobytes() == dense_bytes
 
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
@@ -80,16 +87,15 @@ def test_convert_to_dense_list(poss, bits):
 
     for pos, bit in zip(poss, bits):
         a.setbit(pos, bit)
-    dense_bytes = a.bitstring.bytes
-    dense_bitstring = a.bitstring.bin
+    dense_bytes = a.bitstring.tobytes()
     a.to_sparse()
     if any(bits):
-        assert a.bitstring.bytes == b''.join(
+        assert a.bitstring.tobytes() == b''.join(
             [int(pos).to_bytes(byte_order, byteorder='big') for pos in positive_is])
     else:
-        assert a.bitstring.bytes == b''
+        assert a.bitstring.tobytes() == b''
     a.to_dense()
-    assert sum(a.bitstring.bytes) == sum(dense_bytes)
+    assert sum(a.bitstring.tobytes()) == sum(dense_bytes)
 
 
 def test_sparse_byte_bit_encoding():
@@ -106,14 +112,14 @@ def test_choose_optimal_encoding(poss, bits):
     a = ByteArray()
     for pos, bit in zip(poss, bits):
         a.setbit(pos, bit)
-    dense_bytes = a.bitstring.bytes
+    dense_bytes = a.bitstring.tobytes()
     a.to_sparse()
-    sparse_bytes = a.bitstring.bytes
+    sparse_bytes = a.bitstring.tobytes()
     a.choose_optimal_encoding()
     if a.is_sparse():
-        assert len(a.bitstring.bytes) <= len(dense_bytes)
+        assert len(a.bitstring.tobytes()) <= len(dense_bytes)
     elif a.is_dense():
-        assert len(a.bitstring.bytes) <= len(sparse_bytes)
+        assert len(a.bitstring.tobytes()) <= len(sparse_bytes)
 
 
 def test_choose_optimal_encoding2():
@@ -121,7 +127,7 @@ def test_choose_optimal_encoding2():
         byte_array=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10')
     a.choose_optimal_encoding()
     assert a.is_sparse()
-    print(a.bytes)
+    # print(a.bytes)
 
 # Test adding to sparse array
 
@@ -137,7 +143,7 @@ def test_setbit_sparse_lists(poss, bits):
         a.setbit(pos, bit)
         assert r.getbit('tmp', pos) == a.getbit(pos)
     a.to_dense()
-    assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
+    assert r.get('tmp')[:len(a.bitstring.tobytes())] == a.bitstring.tobytes()
 
 
 @given(colours1=st.lists(POSSIBLE_COLOUR, min_size=1), colours2=st.lists(POSSIBLE_COLOUR, min_size=1))
