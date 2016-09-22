@@ -129,6 +129,7 @@ class McDBG(object):
         tmp = Counter()
         for kmer, colours in self.get_kmers_colours(kmers, min_lexo=True).items():
             tmp.update(colours)
+
         out = {}
         for k, f in tmp.items():
             res = f/len(kmers)

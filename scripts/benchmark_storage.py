@@ -16,12 +16,16 @@ sys.path.append(
 from remcdbg.mcdbg import McDBG
 
 keys = []
-N = 10000
+N = 1000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 
 for storage in [{'dict': None}, {'berkeleydb': {'filename': './db'}},
-                {"redis": [('localhost', 6379)]},  {"probabilistic-inmemory": {"array_size": int(N/10), "num_hashes": 2}}]:
+                {"redis": [('localhost', 6379)]},
+                {"probabilistic-inmemory":
+                    {"array_size": int(N/10), "num_hashes": 2}},
+                {"probabilistic-redis": {"conn": ('localhost', 6379),
+                                         "array_size": int(N/10), "num_hashes": 2}}]:
     sname = [k for k in storage.keys()][0]
     mc = McDBG(conn_config=[('localhost', 6379)],
                compress_kmers=True, storage=storage)

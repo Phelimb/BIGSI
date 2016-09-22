@@ -2,8 +2,10 @@ from __future__ import print_function
 from remcdbg import hash_key
 from remcdbg.bytearray import ByteArray
 import hashlib
+from bitstring import BitArray
 from redispartition import RedisCluster
-
+from bitarray import bitarray
+import math
 import os
 import json
 from sys import getsizeof
@@ -37,6 +39,8 @@ def choose_storage(storage_config):
         return RocksDBStorage(storage_config['rocksdb'])
     elif 'probabilistic-inmemory' in storage_config:
         return ProbabilisticInMemoryStorage(storage_config['probabilistic-inmemory'])
+    elif 'probabilistic-redis' in storage_config:
+        return ProbabilisticRedisStorage(storage_config['probabilistic-redis'])
     else:
         raise ValueError(
             "Only in-memory dictionary, berkeleydb, rocksdb, and redis are supported.")
@@ -139,7 +143,64 @@ class InMemoryStorage(BaseStorage):
         return size
 
 
-class ProbabilisticInMemoryStorage(BaseStorage):
+def byte_to_bitstring(byte):
+    a = str("{0:b}".format(byte))
+    if len(a) < 8:
+        a = "".join(['0'*(8-len(a)), a])
+    return a
+
+
+def setbit(bytes, i):
+    a = bitarray()
+    a.frombytes(bytes)
+    try:
+        a[i] = 1
+        return a.tobytes()
+    except IndexError:
+        a = bitarray()
+        _bytes = b"".join(
+            [bytes, b'\x00']*math.ceil(float(1+i-len(bytes)*8)/8))
+        return setbit(_bytes, i)
+
+
+class ProbabilisticStorage(BaseStorage):
+
+    def insert_kmer(self, kmer, colour):
+        assert self.num_hashes == 2
+        if isinstance(kmer, str):
+            kmer = str.encode(kmer)
+
+        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+        for h in hashes:
+            current_val = self.get(h, None)
+            if current_val is None:
+                current_val = b'\x00'
+            ba = setbit(current_val, colour)
+            self[h] = ba
+
+    def get_kmer(self, kmer):
+        assert self.num_hashes == 2
+        if isinstance(kmer, str):
+            kmer = str.encode(kmer)
+        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+        b1 = self[hashes[0]]
+        b2 = self[hashes[1]]
+
+        if b1 is None:
+            b1 = b'\x00'
+        if b2 is None:
+            b2 = b'\x00'
+        v1 = bitarray()
+        v1.frombytes(b1)
+        v2 = bitarray()
+        v2.frombytes(b2)
+
+        return b"".join([b'\x00', (v1 & v2).tobytes()])
+
+
+class ProbabilisticInMemoryStorage(ProbabilisticStorage):
 
     def __init__(self, config):
         self.name = 'probabilistic-inmemory'
@@ -160,41 +221,16 @@ class ProbabilisticInMemoryStorage(BaseStorage):
     def items(self):
         return NotImplementedError("Probabilistic storage doesn't store keys (only the hash of them)")
 
-    def insert_kmer(self, kmer, colour):
-        assert self.num_hashes == 2
-        if isinstance(kmer, str):
-            kmer = str.encode(kmer)
-
-        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
-            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
-        for h in hashes:
-            current_val = self.get(h, None)
-            ba = ByteArray(byte_array=current_val)
-            ba.setbit(colour, 1)
-            ba.choose_optimal_encoding(colour)
-            self[h] = ba.bytes
-
     def insert_kmers(self, kmers, colour):
         assert self.num_hashes == 2
         [self.insert_kmer(kmer, colour) for kmer in kmers]
 
-    def get_kmer(self, kmer):
-        assert self.num_hashes == 2
-        if isinstance(kmer, str):
-            kmer = str.encode(kmer)
-        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
-            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
-        vals = [ByteArray(self[h]) for h in hashes]
-        return vals[0].intersect(vals[1]).bytes
-
     def get_kmers(self, kmers):
         assert self.num_hashes == 2
-
         return [self.get_kmer(k) for k in kmers]
 
     def __setitem__(self, key, val):
         """ Set `val` at `key`, note that the `val` must be a string. """
-
         self.storage[key] = val
 
     def __getitem__(self, key):
@@ -210,47 +246,192 @@ class ProbabilisticInMemoryStorage(BaseStorage):
         return size
 
 
-# class RocksDBStorage(BaseStorage):
+class RedisStorage(BaseStorage):
 
-#     def __init__(self, config):
-#         if 'filename' not in config:
-#             raise ValueError(
-#                 "You must supply a 'filename' in your config%s" % config)
-#         self.db_file = config['filename']
-#         try:
-#             self.storage = rocksdb.DB(
-#                 "test.db", rocksdb.Options(create_if_missing=True))
-#         except AttributeError:
-#             raise ValueError(
-#                 "Please install rocksdb to use rocks DB storage")
+    def __init__(self, config):
+        if not redis:
+            raise ImportError("redis-py is required to use Redis as storage.")
+        self.name = 'redis'
+        self.storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=2) for host, port in config])
 
-#     def keys(self):
-#         return self.storage.keys()
+    def keys(self, pattern="*"):
+        return self.storage.keys(pattern)
 
-#     def __setitem__(self, key, val):
-#         if isinstance(key, str):
-#             key = str.encode(key)
-#         self.storage.put(key, val)
+    def count_keys(self):
+        return self.storage.dbsize()
 
-#     def __getitem__(self, key):
-#         if isinstance(key, str):
-#             key = str.encode(key)
-#         self.storage.get(key)
+    def __setitem__(self, key, val):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        name = hash_key(key)
+        self.storage.hset(name, key, val, partition_arg=1)
 
-#     def get(self, key, default=None):
-#         if isinstance(key, str):
-#             key = str.encode(key)
-#         try:
-#             return self[key]
-#         except KeyError:
-#             return default
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        name = hash_key(key)
+        return self.storage.hget(name, key, partition_arg=1)
 
-#     def delete_all(self):
-#         for k in self.storage.iterkeys():
-#             db.delete(k)
+    def delete_all(self):
+        self.storage.flushall()
 
-#     def getmemoryusage(self):
-#         return 0
+    def getmemoryusage(self):
+        return self.storage.calculate_memory()
+
+    def insert_kmers(self, kmers, colour):
+        d = self._group_kmers_by_hashkey_and_connection(kmers)
+        for conn, hk in d.items():
+            _batch_insert_redis(conn, hk, colour)
+
+    def get_kmers(self, kmers):
+        kmers = [str.encode(k) if isinstance(k, str) else k for k in kmers]
+        names = [hash_key(k) for k in kmers]
+        return self.storage.hget(names, kmers, partition_arg=1)
+
+    def _group_kmers_by_hashkey_and_connection(self, kmers):
+        d = dict((el, {}) for el in self.storage.connections)
+        for k in kmers:
+            if isinstance(k, str):
+                k = str.encode(k)
+            name = hash_key(k)
+            conn = self.storage.get_connection(k)
+            try:
+                d[conn][name].append(k)
+            except KeyError:
+                d[conn][name] = [k]
+        return d
+
+
+class ProbabilisticRedisStorage(ProbabilisticStorage):
+
+    def __init__(self, config):
+        if not redis:
+            raise ImportError("redis-py is required to use Redis as storage.")
+        self.name = 'probabibistic-redis'
+        self.array_size = config['array_size']
+        self.num_hashes = config['num_hashes']
+        self.storage = redis.StrictRedis(
+            host=config['conn'][0], port=config['conn'][1], db=2)
+
+    def keys(self, pattern="*"):
+        return self.storage.keys(pattern)
+
+    def count_keys(self):
+        return self.storage.dbsize()
+
+    def __setitem__(self, key, val):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = (key).to_bytes(3, byteorder='big')
+        name = hash_key(key)
+        self.storage.hset(name, key, val)
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = (key).to_bytes(3, byteorder='big')
+        name = hash_key(key)
+        return self.storage.hget(name, key)
+
+    def delete_all(self):
+        self.storage.flushall()
+
+    def getmemoryusage(self):
+        return self.storage.info('memory').get('used_memory')
+
+    def insert_kmers(self, kmers, colour):
+        assert self.num_hashes == 2
+        # _batch_insert_prob_redis(self.storage, kmers, colour, self.array_size)
+        [self.insert_kmer(kmer, colour) for kmer in kmers]
+
+    def get_kmers(self, kmers):
+        assert self.num_hashes == 2
+        return [self.get_kmer(k) for k in kmers]
+
+
+def get_vals(r, names, list_of_list_kmers):
+    pipe2 = r.pipeline()
+    [pipe2.hmget(name, kmers)
+     for name, kmers in zip(names, list_of_list_kmers)]
+    vals = pipe2.execute()
+    return vals
+
+
+def hget_vals(r, names, list_of_list_kmers):
+    pipe2 = r.pipeline()
+    [pipe2.hget(name, kmers)
+     for name, kmers in zip(names, list_of_list_kmers)]
+    vals = pipe2.execute()
+    return vals
+
+
+def _batch_insert_prob_redis(conn, kmers, colour, array_size, count=0):
+    r = conn
+    with r.pipeline() as pipe:
+        try:
+            all_hashes = [
+                int(hashlib.sha1(kmer).hexdigest(), 16) % array_size for kmer in kmers]
+            all_hashes.extend(
+                [int(hashlib.sha256(kmer).hexdigest(), 16) % array_size for kmer in kmers])
+            names = [(key).to_bytes(3, byteorder='big') for key in all_hashes]
+            pipe.watch(names)
+            vals = hget_vals(r, names, all_hashes)
+            # print('hget', vals)
+            pipe.multi()
+            # print(names, vals, all_hashes)
+            for name, current_vals, h in zip(names, vals, all_hashes):
+                new_vals = {}
+                for j, val in enumerate(current_vals):
+                    ba = val
+                    kmer = kmers[j]
+                    if val is None:
+                        val = b'\x00'
+                    ba = setbit(val, colour)
+                    new_vals[h] = ba
+                # print('insert', name, new_vals)
+                pipe.hset(name, new_vals)
+            pipe.execute()
+        except redis.WatchError:
+            logger.warning("Retrying %s %s " % (r, name))
+            if count < 5:
+                self._batch_insert(conn, hk, colour, count=count+1)
+            else:
+                logger.warning(
+                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
+
+
+def _batch_insert_redis(conn, hk, colour, count=0):
+    r = conn
+    with r.pipeline() as pipe:
+        try:
+            names = [k for k in hk.keys()]
+            list_of_list_kmers = [v for v in hk.values()]
+            pipe.watch(names)
+            vals = get_vals(r, names, list_of_list_kmers)
+            pipe.multi()
+            for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
+                new_vals = {}
+                for j, val in enumerate(current_vals):
+                    ba = ByteArray(byte_array=val)
+                    ba.setbit(colour, 1)
+                    ba.choose_optimal_encoding(colour)
+                    new_vals[kmers[j]] = ba.bytes
+                pipe.hmset(name, new_vals)
+            pipe.execute()
+        except redis.WatchError:
+            logger.warning("Retrying %s %s " % (r, name))
+            if count < 5:
+                self._batch_insert(conn, hk, colour, count=count+1)
+            else:
+                logger.warning(
+                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
 
 
 class BerkeleyDBStorage(BaseStorage):
@@ -300,95 +481,3 @@ class BerkeleyDBStorage(BaseStorage):
 
     def getmemoryusage(self):
         return 0
-
-
-def get_vals(r, names, list_of_list_kmers):
-    pipe2 = r.pipeline()
-    [pipe2.hmget(name, kmers)
-     for name, kmers in zip(names, list_of_list_kmers)]
-    vals = pipe2.execute()
-    return vals
-
-
-def _batch_insert_redis(conn, hk, colour, count=0):
-    r = conn
-    with r.pipeline() as pipe:
-        try:
-            names = [k for k in hk.keys()]
-            list_of_list_kmers = [v for v in hk.values()]
-            pipe.watch(names)
-            vals = get_vals(r, names, list_of_list_kmers)
-            pipe.multi()
-            for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
-                new_vals = {}
-                for j, val in enumerate(current_vals):
-                    ba = ByteArray(byte_array=val)
-                    ba.setbit(colour, 1)
-                    ba.choose_optimal_encoding(colour)
-                    new_vals[kmers[j]] = ba.bytes
-                pipe.hmset(name, new_vals)
-            pipe.execute()
-        except redis.WatchError:
-            logger.warning("Retrying %s %s " % (r, name))
-            if count < 5:
-                self._batch_insert(conn, hk, colour, count=count+1)
-            else:
-                logger.warning(
-                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
-
-
-class RedisStorage(BaseStorage):
-
-    def __init__(self, config):
-        if not redis:
-            raise ImportError("redis-py is required to use Redis as storage.")
-        self.name = 'redis'
-        self.storage = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=2) for host, port in config])
-
-    def keys(self, pattern="*"):
-        return self.storage.keys(pattern)
-
-    def count_keys(self):
-        return self.storage.dbsize()
-
-    def __setitem__(self, key, val):
-        if isinstance(key, str):
-            key = str.encode(key)
-        name = hash_key(key)
-        self.storage.hset(name, key, val, partition_arg=1)
-
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            key = str.encode(key)
-        name = hash_key(key)
-        return self.storage.hget(name, key, partition_arg=1)
-
-    def delete_all(self):
-        self.storage.flushall()
-
-    def getmemoryusage(self):
-        return self.storage.calculate_memory()
-
-    def insert_kmers(self, kmers, colour):
-        d = self._group_kmers_by_hashkey_and_connection(kmers)
-        for conn, hk in d.items():
-            _batch_insert_redis(conn, hk, colour)
-
-    def get_kmers(self, kmers):
-        kmers = [str.encode(k) if isinstance(k, str) else k for k in kmers]
-        names = [hash_key(k) for k in kmers]
-        return self.storage.hget(names, kmers, partition_arg=1)
-
-    def _group_kmers_by_hashkey_and_connection(self, kmers):
-        d = dict((el, {}) for el in self.storage.connections)
-        for k in kmers:
-            if isinstance(k, str):
-                k = str.encode(k)
-            name = hash_key(k)
-            conn = self.storage.get_connection(k)
-            try:
-                d[conn][name].append(k)
-            except KeyError:
-                d[conn][name] = [k]
-        return d
