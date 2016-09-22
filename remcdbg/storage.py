@@ -1,7 +1,7 @@
 from __future__ import print_function
 from remcdbg import hash_key
 from remcdbg.bytearray import ByteArray
-
+import hashlib
 from redispartition import RedisCluster
 
 import os
@@ -35,8 +35,8 @@ def choose_storage(storage_config):
         return BerkeleyDBStorage(storage_config['berkeleydb'])
     elif 'rocksdb' in storage_config:
         return RocksDBStorage(storage_config['rocksdb'])
-    # elif 'leveldb' in storage_config:
-    #     return LevelDBStorage(storage_config['leveldb'])
+    elif 'probabilistic-inmemory' in storage_config:
+        return ProbabilisticInMemoryStorage(storage_config['probabilistic-inmemory'])
     else:
         raise ValueError(
             "Only in-memory dictionary, berkeleydb, rocksdb, and redis are supported.")
@@ -136,6 +136,77 @@ class InMemoryStorage(BaseStorage):
         size = getsizeof(d)
         size += sum(map(getsizeof, d.values())) + \
             sum(map(getsizeof, d.keys()))
+        return size
+
+
+class ProbabilisticInMemoryStorage(BaseStorage):
+
+    def __init__(self, config):
+        self.name = 'probabilistic-inmemory'
+        self.array_size = config.get('array_size', 5000000)
+        self.num_hashes = config.get('num_hashes', 2)
+        self.storage = [None]*self.array_size
+
+    def keys(self):
+        """ Returns a list of binary hashes that are used as dict keys. """
+        return NotImplementedError("Probabilistic storage doesn't store keys (only the hash of them)")
+
+    def count_keys(self):
+        return len(self.storage.keys())
+
+    def values(self):
+        return NotImplementedError("Probabilistic storage doesn't store keys (only the hash of them)")
+
+    def items(self):
+        return NotImplementedError("Probabilistic storage doesn't store keys (only the hash of them)")
+
+    def insert_kmer(self, kmer, colour):
+        assert self.num_hashes == 2
+        if isinstance(kmer, str):
+            kmer = str.encode(kmer)
+
+        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+        for h in hashes:
+            current_val = self.get(h, None)
+            ba = ByteArray(byte_array=current_val)
+            ba.setbit(colour, 1)
+            ba.choose_optimal_encoding(colour)
+            self[h] = ba.bytes
+
+    def insert_kmers(self, kmers, colour):
+        assert self.num_hashes == 2
+        [self.insert_kmer(kmer, colour) for kmer in kmers]
+
+    def get_kmer(self, kmer):
+        assert self.num_hashes == 2
+        if isinstance(kmer, str):
+            kmer = str.encode(kmer)
+        hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
+            hashlib.sha256(kmer).hexdigest(), 16) % self.array_size]
+        vals = [ByteArray(self[h]) for h in hashes]
+        return vals[0].intersect(vals[1]).bytes
+
+    def get_kmers(self, kmers):
+        assert self.num_hashes == 2
+
+        return [self.get_kmer(k) for k in kmers]
+
+    def __setitem__(self, key, val):
+        """ Set `val` at `key`, note that the `val` must be a string. """
+
+        self.storage[key] = val
+
+    def __getitem__(self, key):
+        """ Return `val` at `key`, note that the `val` must be a string. """
+        return self.storage[key]
+
+    def delete_all(self):
+        self.storage = [None]*self.array_size
+
+    def getmemoryusage(self):
+        d = self.storage
+        size = getsizeof(d)
         return size
 
 

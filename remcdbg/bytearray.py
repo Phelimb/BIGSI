@@ -48,6 +48,13 @@ class ByteArray(object):
             self.meta = BitArray(bytes=byte_array[0:1])
             self.bitstring = BitArray(bytes=byte_array[1:])
 
+    def intersect(self, ba):
+        colours = set(self.colours()) & set(ba.colours())
+        new = ByteArray()
+        for c in colours:
+            new.setbit(c, 1)
+        return new
+
     def is_sparse(self):
         # dense or sparse?
         return self.meta[0]

@@ -9,6 +9,9 @@ from remcdbg.utils import hash_key
 from remcdbg.storage import choose_storage
 from remcdbg.bytearray import ByteArray
 from remcdbg.decorators import convert_kmers
+sys.path.append("../cortex-py")
+from mccortex.cortex import encode_kmer
+from mccortex.cortex import decode_kmer
 # sys.path.append("../redis-py-partition")
 from redispartition import RedisCluster
 import redis
@@ -189,13 +192,14 @@ class McDBG(object):
 
     def _kmer_to_bytes(self, kmer):
         if isinstance(kmer, str):
-            return kmer_to_bytes(kmer, self.bitpadding)
+            return encode_kmer(kmer)
         else:
             return kmer
 
     def _bytes_to_kmer(self, _bytes):
-        bitstring = ByteArray(byte_array=_bytes).bin[::-1]
-        return bits_to_kmer(bitstring, self.kmer_size)
+        #        bitstring = ByteArray(byte_array=_bytes).bin[::-1]
+        # bits_to_kmer(bitstring, self.kmer_size)
+        return decode_kmer(_bytes, kmer_size=self.kmer_size)
 
     def _create_connections(self):
         # kmers stored in DB 2

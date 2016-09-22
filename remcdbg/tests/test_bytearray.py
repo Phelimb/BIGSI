@@ -138,3 +138,15 @@ def test_setbit_sparse_lists(poss, bits):
         assert r.getbit('tmp', pos) == a.getbit(pos)
     a.to_dense()
     assert r.get('tmp')[:len(a.bitstring.bytes)] == a.bitstring.bytes
+
+
+@given(colours1=st.lists(POSSIBLE_COLOUR, min_size=1), colours2=st.lists(POSSIBLE_COLOUR, min_size=1))
+def test_intersect(colours1, colours2):
+    a1 = ByteArray()
+    a2 = ByteArray()
+    for c in colours1:
+        a1.setbit(c, 1)
+    for c in colours2:
+        a2.setbit(c, 1)
+    assert sorted(a1.intersect(a2).colours()) == sorted(
+        list(set(colours1) & set(colours2)))

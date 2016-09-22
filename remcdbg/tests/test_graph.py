@@ -12,7 +12,7 @@ conn_config = [('localhost', 6379)]
 KMERS = ['A', 'T', 'C', 'G']
 
 POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
-                     {"redis": [('localhost', 6379)]}]
+                     {"redis": [('localhost', 6379)]}, {"probabilistic-inmemory": {"array_size": 5000000, "num_hashes": 2}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)
@@ -32,9 +32,9 @@ def test_insert_get_kmer(store, kmer, compress_kmers):
         conn_config=conn_config, compress_kmers=compress_kmers, storage=store)
     mc.delete_all()
     mc.insert_kmer(kmer, 1)
-    assert mc.get_kmer_colours(kmer) == [1]
+    assert [v for v in mc.get_kmer_colours(kmer).values()] == [[1]]
     mc.insert_kmer(kmer, 2)
-    assert mc.get_kmer_colours(kmer) == [1, 2]
+    assert [v for v in mc.get_kmer_colours(kmer).values()] == [[1, 2]]
 
 
 @given(store=st_storage, kmers=st.lists(KMER), compress_kmers=st_compress_kmers)
