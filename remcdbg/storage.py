@@ -405,6 +405,13 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         names = self._key_names_from_hashes(all_hashes)
         return self.storage.hget(names, all_hashes, partition_arg=1)
 
+    def dump(self):
+        for k in self.storage.scan_iter('*'):
+            for k2, v in self.storage.hgetall(k).items():
+                ba = bitarray()
+                ba.frombytes(v)
+                print("\t".join([str(int(k2)), ba.to01()]))
+
 
 def get_vals(r, names, list_of_list_kmers):
     pipe2 = r.pipeline()

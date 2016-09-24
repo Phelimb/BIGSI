@@ -20,9 +20,8 @@ ENV BERKELEY_VERSION 4.8.30
 # Clone rocksdb
 # RUN cd /tmp && git clone https://github.com/facebook/rocksdb.git && cd rocksdb && make clean && make
 
-
-COPY requirements.txt /usr/src/app/
-RUN pip install --no-cache-dir -r requirements.txt
 COPY . /usr/src/app
+#COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r requirements.txt
 RUN python setup.py install
 CMD remcdbg --help

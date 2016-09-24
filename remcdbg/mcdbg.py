@@ -198,8 +198,6 @@ class McDBG(object):
             return kmer
 
     def _bytes_to_kmer(self, _bytes):
-        #        bitstring = ByteArray(byte_array=_bytes).bin[::-1]
-        # bits_to_kmer(bitstring, self.kmer_size)
         return decode_kmer(_bytes, kmer_size=self.kmer_size)
 
     def _create_connections(self):
@@ -207,3 +205,6 @@ class McDBG(object):
         # stats in DB 0
         self.clusters['stats'] = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=0) for host, port in self.conn_config])
+
+    def dump(self):
+        self.storage.dump()

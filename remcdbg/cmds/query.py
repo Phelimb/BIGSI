@@ -25,7 +25,9 @@ def parse_input(infile):
 
 def run(parser, args, conn_config):
     gene_to_kmers = parse_input(args.fasta)
-    mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
+    mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
+                                                                         "array_size": 25000000, "num_hashes": 2}})
+
     colours_to_samples = mc.colours_to_sample_dict()
     results = {}
     found = {}
