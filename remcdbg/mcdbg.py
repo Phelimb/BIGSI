@@ -208,3 +208,6 @@ class McDBG(object):
 
     def dump(self):
         self.storage.dump()
+
+    def bitcount(self):
+        self.storage.bitcount()

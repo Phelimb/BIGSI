@@ -9,6 +9,7 @@ import math
 import os
 import json
 from sys import getsizeof
+import sys
 try:
     import redis
 except ImportError:
@@ -411,6 +412,13 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
                 ba = bitarray()
                 ba.frombytes(v)
                 print("\t".join([str(int(k2)), ba.to01()]))
+
+    def bitcount(self):
+        for k in self.storage.scan_iter('*'):
+            for k2, v in self.storage.hgetall(k).items():
+                ba = bitarray()
+                ba.frombytes(v)
+                sys.stdout.write("".join([str(ba.count()), " "]))
 
 
 def get_vals(r, names, list_of_list_kmers):
