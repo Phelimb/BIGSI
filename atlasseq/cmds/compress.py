@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from remcdbg.mcdbg import McDBG
+from atlasseq.mcdbg import McDBG
 import argparse
 import json
 import pickle

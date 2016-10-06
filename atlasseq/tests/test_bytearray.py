@@ -1,4 +1,4 @@
-from remcdbg.bytearray import ByteArray
+from atlasseq.bytearray import ByteArray
 from hypothesis import given
 import hypothesis.strategies as st
 import redis

@@ -13,14 +13,14 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "../redis-py")))
-from remcdbg.mcdbg import McDBG
+from atlasseq.mcdbg import McDBG
 
 keys = []
 N = 10000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 
-for storage in [{'dict': None}, {'berkeleydb': {'filename': './db'}},
+for storage in [{'dict': None},  # {'berkeleydb': {'filename': './db'}},
                 {"redis": [('localhost', 6379), ('localhost', 6380)]},
                 {"probabilistic-inmemory":
                  {"array_size": int(N*10), "num_hashes": 2}},

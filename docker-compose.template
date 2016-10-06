@@ -2,7 +2,7 @@ version: '2'
 
 services:
   main:
-    image: phelimb/remcdbg
+    image: phelimb/atlasseq
     ports:
       - "5000:5000"      
     links:
@@ -16,9 +16,9 @@ services:
       {% endfor %}          
     volumes:
         - "$DATA_DIR:/data"                   
-    command: bash -c "cd remcdbg-server && python app.py"
+    command: bash -c "cd atlasseq-server && python app.py"
   worker:  
-    image: phelimb/remcdbg
+    image: phelimb/atlasseq
     command: sh run_celery.sh   
     depends_on:
         - redisbroker            

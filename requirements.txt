@@ -8,7 +8,7 @@ cython
 flask
 celery
 biopython
-
+pyseqfile
 ## testing
 hypothesis
 pytest

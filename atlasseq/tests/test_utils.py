@@ -1,6 +1,6 @@
-from remcdbg import kmer_to_bits
-from remcdbg import bits_to_kmer
-from remcdbg import bits
+from atlasseq import kmer_to_bits
+from atlasseq import bits_to_kmer
+from atlasseq import bits
 
 
 def test_kmer_to_bits():

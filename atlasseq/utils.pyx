@@ -28,9 +28,9 @@ def min_lexo(str k):
     l.sort()
     return d[l[0]]
 
-def seq_to_kmers(str seq):
-    for i in range(len(seq)-31+1):
-        yield seq[i:i+31]
+def seq_to_kmers(str seq, int kmer_size = 31):
+    for i in range(len(seq)-kmer_size+1):
+        yield seq[i:i+kmer_size]
 
 def bits(f):
     return [(s >> i) & 1 for s in f for i in xrange(7, -1, -1)]

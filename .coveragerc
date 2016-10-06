@@ -1,2 +1,2 @@
 [run]
-omit = remcdbg/tests/*,remcdbg/cmds/*,remcdbg/version.py,remcdbg/main.py
+omit = atlasseq/tests/*,atlasseq/cmds/*,atlasseq/version.py,atlasseq/main.py

@@ -2,7 +2,7 @@ version: '2'
 
 services:
   main:
-    image: phelimb/remcdbg
+    image: phelimb/atlasseq
     ports:
       - "8001"      
     depends_on:

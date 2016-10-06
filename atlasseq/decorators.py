@@ -1,7 +1,7 @@
 from __future__ import print_function
 from functools import wraps
-from remcdbg.utils import convert_query_kmers
-from remcdbg.utils import convert_query_kmer
+from atlasseq.utils import convert_query_kmers
+from atlasseq.utils import convert_query_kmer
 
 
 def choose_convert_func(kmers):

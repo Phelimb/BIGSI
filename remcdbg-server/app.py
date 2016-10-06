@@ -16,8 +16,8 @@ sys.path.append(
             os.path.dirname(__file__),
             "..")))
 
-from remcdbg.utils import seq_to_kmers
-from remcdbg.mcdbg import McDBG
+from atlasseq.utils import seq_to_kmers
+from atlasseq.mcdbg import McDBG
 app = Flask('app')
 
 CONN_CONFIG = []

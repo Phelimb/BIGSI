@@ -1,10 +1,10 @@
-from remcdbg import McDBG
+from atlasseq import McDBG
 import random
-from remcdbg.utils import make_hash
-from remcdbg.utils import reverse_comp
+from atlasseq.utils import make_hash
+from atlasseq.utils import reverse_comp
 from hypothesis import given
 import hypothesis.strategies as st
-from remcdbg.bytearray import ByteArray
+from atlasseq.bytearray import ByteArray
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
 conn_config = [('localhost', 6379)]

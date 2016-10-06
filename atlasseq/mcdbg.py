@@ -1,14 +1,14 @@
 from __future__ import print_function
 import sys
-from remcdbg.utils import min_lexo
-from remcdbg.utils import bits
-from remcdbg.utils import kmer_to_bits
-from remcdbg.utils import bits_to_kmer
-from remcdbg.utils import kmer_to_bytes
-from remcdbg.utils import hash_key
-from remcdbg.storage import choose_storage
-from remcdbg.bytearray import ByteArray
-from remcdbg.decorators import convert_kmers
+from atlasseq.utils import min_lexo
+from atlasseq.utils import bits
+from atlasseq.utils import kmer_to_bits
+from atlasseq.utils import bits_to_kmer
+from atlasseq.utils import kmer_to_bytes
+from atlasseq.utils import hash_key
+from atlasseq.storage import choose_storage
+from atlasseq.bytearray import ByteArray
+from atlasseq.decorators import convert_kmers
 sys.path.append("cortex-py")
 from mccortex.cortex import encode_kmer
 from mccortex.cortex import decode_kmer
@@ -206,8 +206,8 @@ class McDBG(object):
         self.clusters['stats'] = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=0) for host, port in self.conn_config])
 
-    def dump(self):
-        self.storage.dump()
+    def dump(self, *args, **kwargs):
+        self.storage.dump(*args, **kwargs)
 
     def bitcount(self):
         self.storage.bitcount()

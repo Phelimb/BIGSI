@@ -1,5 +1,5 @@
 from __future__ import print_function
-from remcdbg.mcdbg import McDBG
+from atlasseq.mcdbg import McDBG
 
 
 def run(parser, args, conn_config):

@@ -9,7 +9,7 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "..")))
-from remcdbg.version import __version__
+from atlasseq.version import __version__
 
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
@@ -24,23 +24,23 @@ else:
 
 def run_subtool(parser, args):
     if args.command == 'insert':
-        from remcdbg.cmds.insert import run
+        from atlasseq.cmds.insert import run
     elif args.command == "query":
-        from remcdbg.cmds.query import run
+        from atlasseq.cmds.query import run
     elif args.command == "stats":
-        from remcdbg.cmds.stats import run
+        from atlasseq.cmds.stats import run
     elif args.command == "samples":
-        from remcdbg.cmds.samples import run
+        from atlasseq.cmds.samples import run
     elif args.command == "dump":
-        from remcdbg.cmds.dump import run
+        from atlasseq.cmds.dump import run
     elif args.command == "compress":
-        from remcdbg.cmds.compress import run
+        from atlasseq.cmds.compress import run
     elif args.command == "uncompress":
-        from remcdbg.cmds.uncompress import run
+        from atlasseq.cmds.uncompress import run
     elif args.command == "shutdown":
-        from remcdbg.cmds.shutdown import run
+        from atlasseq.cmds.shutdown import run
     elif args.command == "bitcount":
-        from remcdbg.cmds.bitcount import run
+        from atlasseq.cmds.bitcount import run
     else:
         parser.print_help()
     # run the chosen submodule.
@@ -69,7 +69,7 @@ def main():
     # create the top-level parser
     #########################################
     parser = argparse.ArgumentParser(
-        prog='remcdbg',
+        prog='atlasseq',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--version", help="atlas version",
                         action="version",
@@ -140,6 +140,7 @@ def main():
         'dump',
         help='Print kmer colour matrix',
         parents=[db_parser_mixin])
+    parser_dump.add_argument("--raw", action='store_true')
     parser_dump.set_defaults(func=run_subtool)
 
     parser_bitcount = subparsers.add_parser(

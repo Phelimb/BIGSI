@@ -1,4 +1,4 @@
-remcdbg.egg-info/
+atlasseq.egg-info/
 .coverage
 .hypothesis/
 dist/
@@ -9,8 +9,8 @@ venv
 *~
 *.pyc
 ._*
-remcdbg/utils.c
-remcdbg/utils.so
+atlasseq/utils.c
+atlasseq/utils.so
 *.fasta
 *.json
 *.txt

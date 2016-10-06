@@ -4,22 +4,22 @@ from setuptools import setup
 from Cython.Build import cythonize
 
 setup(
-    name='remcdbg',
-    version='0.1',
+    name='atlasseq',
+    version='0.0.1',
     packages=[
-        'remcdbg',
-        'remcdbg.cmds'
+        'atlasseq',
+        'atlasseq.cmds'
     ],
     license='MIT',
-    url='http://github.com/phelimb/remcdbg',
+    url='http://github.com/phelimb/atlasseq',
     description='.',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-    ext_modules=cythonize("remcdbg/utils.pyx"),
+    ext_modules=cythonize("atlasseq/utils.pyx"),
     install_requires=[
             'redis',
             'hiredis'],
     entry_points={
         'console_scripts': [
-            'remcdbg = remcdbg.main:main',
+            'atlasseq = atlasseq.main:main',
         ]})

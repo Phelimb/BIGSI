@@ -24,4 +24,4 @@ COPY . /usr/src/app
 #COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python setup.py install
-CMD remcdbg --help
+CMD atlasseq --help

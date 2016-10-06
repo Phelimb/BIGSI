@@ -1,6 +1,6 @@
 from __future__ import print_function
-from remcdbg import hash_key
-from remcdbg.bytearray import ByteArray
+from atlasseq import hash_key
+from atlasseq.bytearray import ByteArray
 import hashlib
 from bitstring import BitArray
 from redispartition import RedisCluster
@@ -406,12 +406,15 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         names = self._key_names_from_hashes(all_hashes)
         return self.storage.hget(names, all_hashes, partition_arg=1)
 
-    def dump(self):
+    def dump(self, raw=False):
         for k in self.storage.scan_iter('*'):
             for k2, v in self.storage.hgetall(k).items():
-                ba = bitarray()
-                ba.frombytes(v)
-                print("\t".join([str(int(k2)), ba.to01()]))
+                if raw:
+                    print(v)
+                else:
+                    ba = bitarray()
+                    ba.frombytes(v)
+                    print("\t".join([str(int(k2)), ba.to01()]))
 
     def bitcount(self):
         for k in self.storage.scan_iter('*'):
@@ -448,7 +451,7 @@ def _batch_insert_prob_redis(conn, names, all_hashes, colour, array_size, count=
                 for val, h in zip(values, hs):
                     ba = ByteArray(byte_array=val)
                     ba.setbit(colour, 1)
-                    ba.choose_optimal_encoding(colour)
+                    # ba.choose_optimal_encoding(colour)
                     pipe.hset(name, h, ba.bytes)
             pipe.execute()
         except redis.WatchError:

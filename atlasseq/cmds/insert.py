@@ -1,10 +1,11 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from remcdbg.mcdbg import McDBG
+from atlasseq.mcdbg import McDBG
 import os.path
 import logging
 import json
 logger = logging.getLogger(__name__)
+from pyseqfile import Reader
 
 
 def run(parser, args, conn_config):

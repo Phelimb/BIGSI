@@ -1,5 +1,5 @@
 from __future__ import print_function
-from remcdbg.storage import choose_storage
+from atlasseq.storage import choose_storage
 from hypothesis import given
 import hypothesis.strategies as st
 POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
