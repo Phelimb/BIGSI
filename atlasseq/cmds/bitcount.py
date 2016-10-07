@@ -5,7 +5,7 @@ import argparse
 import json
 
 
-def run(parser, args, conn_config):
+def bitcount(conn_config):
     mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
                                                                          "array_size": 25000000, "num_hashes": 2}})
     mc.bitcount()

@@ -10,6 +10,7 @@ sys.path.append(
             os.path.dirname(__file__),
             "..")))
 from atlasseq.version import __version__
+import hug
 
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
@@ -21,35 +22,15 @@ else:
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port))
 
-
-def run_subtool(parser, args):
-    if args.command == 'insert':
-        from atlasseq.cmds.insert import run
-    elif args.command == "query":
-        from atlasseq.cmds.query import run
-    elif args.command == "stats":
-        from atlasseq.cmds.stats import run
-    elif args.command == "samples":
-        from atlasseq.cmds.samples import run
-    elif args.command == "dump":
-        from atlasseq.cmds.dump import run
-    elif args.command == "compress":
-        from atlasseq.cmds.compress import run
-    elif args.command == "uncompress":
-        from atlasseq.cmds.uncompress import run
-    elif args.command == "shutdown":
-        from atlasseq.cmds.shutdown import run
-    elif args.command == "bitcount":
-        from atlasseq.cmds.bitcount import run
-    else:
-        parser.print_help()
-    # run the chosen submodule.
-    try:
-        run(parser, args, CONN_CONFIG)
-    except (UnboundLocalError, redis.exceptions.BusyLoadingError) as e:
-        if e is isinstance(e, redis.exceptions.BusyLoadingError):
-            print(
-                "Redis is loading the dataset in memory. Please try again when finished. ")
+from atlasseq.cmds.insert import insert
+from atlasseq.cmds.query import query
+from atlasseq.cmds.stats import stats
+from atlasseq.cmds.samples import samples
+from atlasseq.cmds.dump import dump
+from atlasseq.cmds.compress import compress
+from atlasseq.cmds.uncompress import uncompress
+from atlasseq.cmds.shutdown import shutdown
+from atlasseq.cmds.bitcount import bitcount
 
 
 class ArgumentParserWithDefaults(argparse.ArgumentParser):
@@ -63,101 +44,59 @@ class ArgumentParserWithDefaults(argparse.ArgumentParser):
             action="store_true",
             dest="quiet")
 
+API = hug.API('seq')
 
-def main():
-    #########################################
-    # create the top-level parser
-    #########################################
-    parser = argparse.ArgumentParser(
-        prog='atlasseq',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--version", help="atlas version",
-                        action="version",
-                        version="%(prog)s " + str(__version__))
-    parser.set_defaults(func=run_subtool)
 
-    subparsers = parser.add_subparsers(
-        title='[sub-commands]',
-        dest='command',
-        parser_class=ArgumentParserWithDefaults)
+@hug.object(name='seq', version='0.0.1', api=API)
+@hug.object.urls('/', requires=())
+class AtlasSeq(object):
 
-    db_parser_mixin = argparse.ArgumentParser(add_help=False)
-    compress_mixin = argparse.ArgumentParser(add_help=False)
-    compress_mixin.add_argument(
-        '--sparsity_threshold', type=float, default=0.05, help="Default=0.05")
+    @hug.object.cli
+    @hug.object.post('/insert')
+    def insert(self, kmer_file, conn_config=CONN_CONFIG, sample_name=None):
+        return insert(
+            kmer_file=kmer_file, conn_config=conn_config, sample_name=sample_name)
 
-    ##########
-    # Insert
-    ##########
-    parser_insert = subparsers.add_parser(
-        'insert',
-        help='adds a set of kmers to the DB',
-        parents=[db_parser_mixin])
-    parser_insert.add_argument('kmer_file', type=str, help='kmer_file')
-    parser_insert.add_argument("--sample_name", required=False)
-    parser_insert.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/query')
+    def query(self, fasta_file, threshold: hug.types.float_number=1.0, conn_config=CONN_CONFIG):
+        return query(
+            fasta_file=fasta_file, threshold=threshold, conn_config=conn_config)
 
-    ##########
-    # Query
-    ##########
-    parser_query = subparsers.add_parser(
-        'query',
-        help='querys a fasta against the DB',
-        parents=[db_parser_mixin])
-    parser_query.add_argument("fasta", type=str, help='fastafile')
-    parser_query.add_argument("--threshold", type=int,
-                              help='One show results that have this %% identity. Default:100%', default=100)
-    parser_query.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/stats')
+    def stats(self, conn_config=CONN_CONFIG):
+        return stats(conn_config=conn_config)
 
-    ##########
-    # Stats
-    ##########
-    parser_stats = subparsers.add_parser(
-        'stats',
-        help='adds a set of kmers to the DB',
-        parents=[db_parser_mixin])
-    parser_stats.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/samples')
+    def samples(self, conn_config=CONN_CONFIG):
+        return samples(conn_config=conn_config)
 
-    parser_samples = subparsers.add_parser(
-        'samples',
-        help='Colour to sample ID',
-        parents=[db_parser_mixin])
-    parser_samples.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/compress')
+    def compress(self, conn_config=CONN_CONFIG):
+        return compress(conn_config=conn_config)
 
-    parser_compress = subparsers.add_parser(
-        'compress',
-        help='Compresses the database',
-        parents=[db_parser_mixin, compress_mixin])
-    parser_compress.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/uncompress')
+    def uncompress(self, conn_config=CONN_CONFIG):
+        return uncompress(conn_config=conn_config)
 
-    parser_uncompress = subparsers.add_parser(
-        'uncompress',
-        help='Uncompresses the database',
-        parents=[db_parser_mixin, compress_mixin])
-    parser_uncompress.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/dump')
+    def dump(self, conn_config=CONN_CONFIG):
+        return dump(conn_config=conn_config)
 
-    parser_dump = subparsers.add_parser(
-        'dump',
-        help='Print kmer colour matrix',
-        parents=[db_parser_mixin])
-    parser_dump.add_argument("--raw", action='store_true')
-    parser_dump.set_defaults(func=run_subtool)
+    @hug.object.cli
+    @hug.object.get('/bitcount')
+    def bitcount(self, conn_config=CONN_CONFIG):
+        return bitcount(conn_config=conn_config)
 
-    parser_bitcount = subparsers.add_parser(
-        'bitcount',
-        help='What is the distribution of bitcounts',
-        parents=[db_parser_mixin])
-    parser_bitcount.set_defaults(func=run_subtool)
-    ##
-    parser_shutdown = subparsers.add_parser(
-        'shutdown',
-        help='shutsdown all the redis instances',
-        parents=[db_parser_mixin])
-    parser_shutdown.set_defaults(func=run_subtool)
+    @hug.object.cli
+    def shutdown(self, conn_config=CONN_CONFIG):
+        return shutdown(conn_config=conn_config)
 
-    args = parser.parse_args()
-
-    args.func(parser, args)
 
 if __name__ == "__main__":
-    main()
+    API.cli()

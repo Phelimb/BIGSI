@@ -6,7 +6,7 @@ import json
 import pickle
 
 
-def run(parser, args, conn_config):
+def samples(conn_config):
     mc = McDBG(conn_config=conn_config)
     out = mc.colours_to_sample_dict()
     print(json.dumps(out, indent=4))

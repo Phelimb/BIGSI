@@ -23,8 +23,8 @@ def parse_input(infile):
     return gene_to_kmers
 
 
-def run(parser, args, conn_config):
-    gene_to_kmers = parse_input(args.fasta)
+def query(fasta_file, threshold, conn_config):
+    gene_to_kmers = parse_input(fasta_file)
     mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
                                                                          "array_size": 25000000, "num_hashes": 2}})
 
@@ -34,7 +34,7 @@ def run(parser, args, conn_config):
     for gene, kmers in gene_to_kmers.items():
         found[gene] = {}
         start = time.time()
-        found[gene]['results'] = mc.query_kmers(kmers, args.threshold)
+        found[gene]['results'] = mc.query_kmers(kmers, threshold)
         diff = time.time() - start
         found[gene]['time'] = diff
     print(json.dumps(found, indent=4))

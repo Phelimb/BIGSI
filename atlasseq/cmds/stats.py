@@ -7,14 +7,14 @@ import pickle
 import collections
 
 
-stats = {}
+_stats = {}
 
 
-def run(parser, args, conn_config):
+def stats(conn_config):
     mc = McDBG(conn_config=conn_config, storage={'redis': conn_config})
-    stats["memory (bytes)"] = mc.calculate_memory()
-    stats["keys"] = mc.count_keys()
-    stats["kmers"] = mc.count_kmers()
-    stats["samples"] = mc.get_num_colours()
+    _stats["memory (bytes)"] = mc.calculate_memory()
+    _stats["keys"] = mc.count_keys()
+    _stats["kmers"] = mc.count_kmers()
+    _stats["samples"] = mc.get_num_colours()
 
-    print(json.dumps(collections.OrderedDict(sorted(stats.items())), indent=4))
+    return _stats  # collections.OrderedDict(sorted(.items()))
