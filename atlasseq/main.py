@@ -58,8 +58,8 @@ class AtlasSeq(object):
             kmer_file=kmer_file, conn_config=conn_config, sample_name=sample_name)
 
     @hug.object.cli
-    @hug.object.get('/query')
-    def query(self, fasta_file, threshold: hug.types.float_number=1.0, conn_config=CONN_CONFIG):
+    @hug.object.get('/search')
+    def search(self, fasta_file, threshold: hug.types.float_number=1.0, conn_config=CONN_CONFIG):
         return query(
             fasta_file=fasta_file, threshold=threshold, conn_config=conn_config)
 
