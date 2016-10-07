@@ -111,7 +111,7 @@ services:
                 
     volumes:
         - "$DATA_DIR:/data"                   
-    command: bash -c "cd atlasseq-server && python app.py"
+    command: tail -f /etc/hosts
   worker:  
     image: phelimb/atlasseq
     command: sh run_celery.sh   
