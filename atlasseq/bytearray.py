@@ -29,16 +29,6 @@ def choose_int_encoding(ints):
     return byteorder
 
 
-def find_all(a_str, sub):
-    start = 0
-    while True:
-        start = a_str.find(sub, start)
-        if start == -1:
-            return
-        yield start
-        start += len(sub)  # use start += 1 to find overlapping matches
-
-
 class ByteArray(object):
 
     def __init__(self, byte_array=None, meta=b'\x00', bitstring=b'\x00'):
@@ -62,7 +52,7 @@ class ByteArray(object):
         return self.__str__()
 
     def __str__(self):
-        return "".join(str(self.meta)+str(self.bitstring))
+        return self.bin
 
     def is_sparse(self):
         # dense or sparse?
@@ -179,7 +169,7 @@ class ByteArray(object):
 
     @property
     def bin(self):
-        return ''.join([self.meta.bin, self.bitstring.bin])
+        return ''.join([self.meta.to01(), self.bitstring.to01()])
 
     def choose_optimal_encoding(self, colour=None):
         colours = self.colours()

@@ -27,39 +27,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# def byte_to_bitstring(byte):
-#     a = str("{0:b}".format(byte))
-#     if len(a) < 8:
-#         a = "".join(['0'*(8-len(a)), a])
-#     return a
-
-
-def _batch_compress(conn, hk, count=0):
-    r = conn
-    with r.pipeline() as pipe:
-        try:
-            names = [k for k in hk.keys()]
-            list_of_list_kmers = [v for v in hk.values()]
-            pipe.watch(names)
-            vals = get_vals(r, names, list_of_list_kmers)
-            pipe.multi()
-            for name, current_vals, kmers in zip(names, vals, list_of_list_kmers):
-                new_vals = {}
-                for j, val in enumerate(current_vals):
-                    ba = ByteArray(byte_array=val)
-                    ba.choose_optimal_encoding()
-                    new_vals[kmers[j]] = ba.bytes
-                pipe.hmset(name, new_vals)
-            pipe.execute()
-        except redis.WatchError:
-            logger.warning("Retrying %s %s " % (r, name))
-            if count < 5:
-                self._batch_insert(conn, hk, count=count+1)
-            else:
-                logger.warning(
-                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
-
-
 class McDBG(object):
 
     def __init__(self, conn_config, kmer_size=31, compress_kmers=True, storage={'dict': None}):
