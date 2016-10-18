@@ -1,43 +1,24 @@
 # atlasseq
-[![Build Status](https://travis-ci.com/Phelimb/redis-mcdbg.svg?token=zS56Z2pmznVQKhUTxqcq&branch=master)](https://travis-ci.com/Phelimb/redis-mcdbg)
+[![Build Status](https://travis-ci.com/Phelimb/atlas-seq.svg?token=zS56Z2pmznVQKhUTxqcq&branch=master)](https://travis-ci.com/Phelimb/atlas-seq)
 
-A redis backed kmer -> sample lookup. 
+	git clone https://github.com/Phelimb/atlas-seq.git
 
-# Usage
 
-## Launch redis
 
-	redis-server --port 6201 &
-	redis-server --port 6202 &
-	redis-server --port 6203 &
-	redis-server --port 6204 &
-
-## Insert kmers
-
-	./atlasseq/main.py insert sample_kmers.txt --ports 6201 6202 6203 6204
+# Launch
 	
-Or in parallel
-	
-	parallel --gnu -j 20 ./atlasseq/main.py insert {} --ports 6201 6202 6203 6204
- ::: kmers/* 
-	
-## Search
 
-	time ./atlasseq/main.py query gn-amr-genes.fasta --ports 6201 6202 6203 6204
+Docker installation - highly reccommended! (install docker toolbox first). 
 
-	
-or using the api
+	docker-compose pull && docker-compose up -d
 
-	# Start the server
-	export REDIS_PORT_1=6201
-	export REDIS_PORT_2=6202
-	export REDIS_PORT_3=6203
-	export REDIS_PORT_4=6204	
-	atlasseq-server/app.py
-	
-	curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '{"seq":{"oxa1":"ATGAAAAACACAATACATATCAACTTCGCTATTTTTTTAATAATTGCAAATATTATCTACAGCAGCGCCAGTGCATCAACAGATATCTCTACTGTTGCATCTCCATTATTTGAAGGAACTGAAGGTTGTTTTTTACTTTACGATGCATCCACAAACGCTGAAATTGCTCAATTCAATAAAGCAAAGTGTGCAACGCAAATGGCACCAGATTCAACTTTCAAGATCGCATTATCACTTATGGCATTTGATGCGGAAATAATAGATCAGAAAACCATATTCAAATGGGATAAAACCCCCAAAGGAATGGAGATCTGGAACAGCAATCATACACCAAAGACGTGGATGCAATTTTCTGTTGTTTGGGTTTCGCAAGAAATAACCCAAAAAATTGGATTAAATAAAATCAAGAATTATCTCAAAGATTTTGATTATGGAAATCAAGACTTCTCTGGAGATAAAGAAAGAAACAACGGATTAACAGAAGCATGGCTCGAAAGTAGCTTAAAAATTTCACCAGAAGAACAAATTCAATTCCTGCGTAAAATTATTAATCACAATCTCCCAGTTAAAAACTCAGCCATAGAAAACACCATAGAGAACATGTATCTACAAGATCTGGATAATAGTACAAAACTGTATGGGAAAACTGGTGCAGGATTCACAGCAAATAGAACCTTACAAAACGGATGGTTTGAAGGGTTTATTATAAGCAAATCAGGACATAAATATGTTTTTGTGTCCGCACTTACAGGAAACTTGGGGTCGAATTTAACATCAAGCATAAAAGCCAAGAAAAATGCGATCACCATTCTAAACACACTAAATTTATAA"}}' http://localhost:5000/api/v1.0/search	
-	
-Mac install Berkely DB
+# Insert sample
 
-BERKELEYDB_DIR=/usr/local/Cellar/berkeley-db4/4.8.30/  pip install bsddb3
+	docker exec redismcdbg_main_1 remcdbg/main.py insert sample.txt
+
+# Query for sequence
+
+	docker exec redismcdbg_main_1 remcdbg/main.py query /data/gn-amr-genes.fasta
+
+
 
