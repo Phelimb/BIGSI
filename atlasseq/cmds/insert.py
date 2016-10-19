@@ -10,9 +10,9 @@ logger.setLevel(logging.DEBUG)
 from atlasseq.utils import seq_to_kmers
 
 
-def insert_kmers(mc, kmers, colour):
-    mc.insert_kmers(kmers, colour)
-    mc.clusters['stats'].pfadd('kmer_count', *kmers)
+def insert_kmers(mc, kmers, colour, sample):
+    # mc.insert_kmers(kmers, colour)
+    mc.add_to_kmers_count(kmers, sample)
 
 
 def insert(kmer_file, conn_config, sample_name=None):
@@ -32,11 +32,16 @@ def insert(kmer_file, conn_config, sample_name=None):
                 for kmer in seq_to_kmers(read):
                     kmers.append(kmer)
                     if i % 100000 == 0 and i > 1:
-                        insert_kmers(mc, kmers, colour)
+                        insert_kmers(mc, kmers, colour, sample_name)
                         kmers = []
-        insert_kmers(mc, kmers, colour)
-        print(json.dumps({"result": "success", "colour": colour, "kmers": mc.count_kmers(
-        ), "memory": mc.calculate_memory()}))
+        insert_kmers(mc, kmers, colour, sample_name)
+        print(json.dumps({"result": "success",
+                          "colour": colour,
+                          "total-kmers": mc.count_kmers(),
+                          "kmers-added": mc.count_kmers(sample_name),
+                          "memory": mc.calculate_memory()}))
     except ValueError as e:
-        print(json.dumps({"result": "failed", "message": str(e), "kmers": mc.count_kmers(
-        ), "memory": mc.calculate_memory()}))
+        print(json.dumps({"result": "failed", "message": str(e),
+                          "total-kmers": mc.count_kmers(),
+                          "kmers-added": mc.count_kmers(sample_name),
+                          "memory": mc.calculate_memory()}))

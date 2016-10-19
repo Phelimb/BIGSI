@@ -37,6 +37,7 @@ from atlasseq.cmds.compress import compress
 from atlasseq.cmds.uncompress import uncompress
 from atlasseq.cmds.shutdown import shutdown
 from atlasseq.cmds.bitcount import bitcount
+from atlasseq.cmds.jaccard_index import jaccard_index
 
 
 class ArgumentParserWithDefaults(argparse.ArgumentParser):
@@ -74,6 +75,11 @@ class AtlasSeq(object):
     @hug.object.get('/stats')
     def stats(self):
         return stats(conn_config=CONN_CONFIG)
+
+    @hug.object.cli
+    @hug.object.get('/js')
+    def distance(self, s1, s2):
+        return jaccard_index(s1, s2, conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/samples')

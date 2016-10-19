@@ -3,12 +3,13 @@ import random
 from atlasseq.utils import make_hash
 from atlasseq.utils import reverse_comp
 from hypothesis import given
+from hypothesis import example
 import hypothesis.strategies as st
 from atlasseq.bytearray import ByteArray
 conn_config = [('localhost', 6200), ('localhost', 6201),
                ('localhost', 6202), ('localhost', 6203)]
 conn_config = [('localhost', 6379)]
-#ports = [6200, 6201, 6202, 6203]
+# ports = [6200, 6201, 6202, 6203]
 KMERS = ['A', 'T', 'C', 'G']
 
 POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
@@ -17,6 +18,8 @@ POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
                          {"array_size": 5000000, "num_hashes": 2}},
                      {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
+
+
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)
 
@@ -98,6 +101,87 @@ def test_kmers_to_bytes(kmers):
     for kmer in kmers:
         assert mc._bytes_to_kmer(mc._kmer_to_bytes(kmer)) == kmer
     # print(mc._bytes_to_kmer(b'\x1bI\xe94\x82\xb2ph'))
+
+storage_no_berkeley = st.sampled_from([{'dict': None}, {"redis": [
+    ('localhost', 6379)]},
+    {"probabilistic-inmemory":
+     {"array_size": 5000000, "num_hashes": 2}},
+    {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}])
+
+
+@given(kmers=st.lists(KMER, min_size=10, max_size=10, unique=True), compress_kmers=st_compress_kmers, store=storage_no_berkeley)
+def test_count_kmers(kmers, compress_kmers, store):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage=store)
+    mc.delete_all()
+    mc.add_sample('1234')
+    mc.insert_kmers(kmers, 0, sample='1234')
+    mc.add_to_kmers_count(kmers, sample='1234')
+    assert 8 < mc.count_kmers(sample='1234') < 12
+
+
+# Todo - test this accross multiple backends
+@given(kmers=st.lists(KMER, min_size=10, max_size=10, unique=True), compress_kmers=st_compress_kmers)
+def test_jaccard_simillarity(kmers, compress_kmers):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage={"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}})
+    mc.delete_all()
+    mc.add_sample('1234')
+    mc.add_sample('1235')
+    mc.insert_kmers(kmers, 0)
+    mc.insert_kmers(kmers, 1)
+    mc.add_to_kmers_count(kmers, sample='1234')
+    mc.add_to_kmers_count(kmers, sample='1235')
+    assert mc.jaccard_simillarity('1234', '1235') == 1
+
+
+@given(kmers1=st.lists(KMER, min_size=10, max_size=10, unique=True),
+       kmers2=st.lists(KMER, min_size=10, max_size=10, unique=True),
+       compress_kmers=st_compress_kmers)
+def test_jaccard_simillarity2(kmers1, kmers2, compress_kmers):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage={"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}})
+    mc.delete_all()
+    mc.add_sample('1234')
+    mc.add_sample('1235')
+    mc.insert_kmers(kmers1, 0)
+    mc.insert_kmers(kmers2, 1)
+    mc.add_to_kmers_count(kmers1, sample='1234')
+    mc.add_to_kmers_count(kmers2, sample='1235')
+    skmers1 = set(kmers1)
+    skmers2 = set(kmers2)
+    true_sim = float(len(skmers1 & skmers2)) / float(len(skmers1 | skmers2))
+    assert true_sim*.9 <= mc.jaccard_simillarity(
+        '1234', '1235') <= true_sim*1.1
+
+
+@given(kmers1=st.lists(KMER, min_size=10, max_size=10, unique=True),
+       kmers2=st.lists(KMER, min_size=10, max_size=10, unique=True),
+       compress_kmers=st_compress_kmers)
+def test_kmer_diff(kmers1, kmers2, compress_kmers):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage={"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}})
+    mc.delete_all()
+    mc.add_sample('1234')
+    mc.add_sample('1235')
+    mc.insert_kmers(kmers1, 0)
+    mc.insert_kmers(kmers2, 1)
+    mc.add_to_kmers_count(kmers1, sample='1234')
+    mc.add_to_kmers_count(kmers2, sample='1235')
+    skmers1 = set(kmers1)
+    skmers2 = set(kmers2)
+    true_diff = float(len(skmers1 ^ skmers2))
+    # true_diff2 = float(len(skmers2 - skmers1))
+    assert true_diff*.9 <= mc.symmetric_difference(
+        '1234', '1235') <= true_diff*1.1
+    true_diff = float(len(skmers1 - skmers2))
+
+    assert true_diff*.9 <= mc.difference(
+        '1234', '1235') <= true_diff*1.1
+    true_diff = float(len(skmers2 - skmers1))
+
+    assert true_diff*.9 <= mc.difference(
+        '1235', '1234') <= true_diff*1.1
 
 
 # def test_samples():

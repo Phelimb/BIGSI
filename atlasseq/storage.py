@@ -10,6 +10,7 @@ import os
 import json
 from sys import getsizeof
 import sys
+from HLL import HyperLogLog
 try:
     import redis
 except ImportError:
@@ -105,12 +106,19 @@ class BaseStorage(object):
     def count_keys(self):
         raise NotImplementedError
 
+    def add_to_kmers_count(self, kmers, sample):
+        raise NotImplementedError
+
+    def count_kmers(self, sample=None):
+        raise NotImplementedError
+
 
 class InMemoryStorage(BaseStorage):
 
     def __init__(self, config):
         self.name = 'dict'
         self.storage = dict()
+        self.stats_storage = dict()
 
     def keys(self):
         """ Returns a list of binary hashes that are used as dict keys. """
@@ -142,6 +150,18 @@ class InMemoryStorage(BaseStorage):
         size += sum(map(getsizeof, d.values())) + \
             sum(map(getsizeof, d.keys()))
         return size
+
+    def add_to_kmers_count(self, kmers, sample):
+        try:
+            hll = self.stats_storage[sample]
+        except KeyError:
+            self.stats_storage[sample] = HyperLogLog(5)
+            hll = self.stats_storage[sample]
+        [hll.add(k) for k in kmers]
+
+    def count_kmers(self, sample):
+        hll = self.stats_storage[sample]
+        return int(hll.cardinality())
 
 
 def byte_to_bitstring(byte):
@@ -211,6 +231,18 @@ class ProbabilisticStorage(BaseStorage):
 
         return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).tobytes()])
 
+    def add_to_kmers_count(self, kmers, sample):
+        try:
+            hll = self.stats_storage[sample]
+        except KeyError:
+            self.stats_storage[sample] = HyperLogLog(5)
+            hll = self.stats_storage[sample]
+        [hll.add(k) for k in kmers]
+
+    def count_kmers(self, sample):
+        hll = self.stats_storage[sample]
+        return int(hll.cardinality())
+
 
 class ProbabilisticInMemoryStorage(ProbabilisticStorage):
 
@@ -219,6 +251,7 @@ class ProbabilisticInMemoryStorage(ProbabilisticStorage):
         self.array_size = config.get('array_size', 5000000)
         self.num_hashes = config.get('num_hashes', 2)
         self.storage = [None]*self.array_size
+        self.stats_storage = {}
 
     def keys(self):
         """ Returns a list of binary hashes that are used as dict keys. """
@@ -257,6 +290,18 @@ class ProbabilisticInMemoryStorage(ProbabilisticStorage):
         size = getsizeof(d)
         return size
 
+    def add_to_kmers_count(self, kmers, sample):
+        try:
+            hll = self.stats_storage[sample]
+        except KeyError:
+            self.stats_storage[sample] = HyperLogLog(5)
+            hll = self.stats_storage[sample]
+        [hll.add(k) for k in kmers]
+
+    def count_kmers(self, sample):
+        hll = self.stats_storage[sample]
+        return int(hll.cardinality())
+
 
 class RedisStorage(BaseStorage):
 
@@ -266,6 +311,8 @@ class RedisStorage(BaseStorage):
         self.name = 'redis'
         self.storage = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=2) for host, port in config])
+        self.stats_storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=0) for host, port in config])
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
@@ -318,6 +365,15 @@ class RedisStorage(BaseStorage):
                 d[conn][name] = [k]
         return d
 
+    def add_to_kmers_count(self, kmers, sample):
+        self.stats_storage.pfadd('kmer_count_%s' % sample, *kmers)
+
+    def count_kmers(self, sample):
+        if sample is None:
+            return self.stats_storage.pfcount('kmer_count')
+        else:
+            return self.stats_storage.pfcount('kmer_count_%s' % sample)
+
 
 class ProbabilisticRedisStorage(ProbabilisticStorage):
 
@@ -329,6 +385,8 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         self.num_hashes = config['num_hashes']
         self.storage = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=2) for host, port in config['conn']])
+        self.stats_storage = redis.StrictRedis(
+            host=config['conn'][0][0], port=config['conn'][0][1], db=0)
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
@@ -418,6 +476,21 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
                 ba = bitarray()
                 ba.frombytes(v)
                 sys.stdout.write("".join([str(ba.count()), " "]))
+
+    def add_to_kmers_count(self, kmers, sample):
+        self.stats_storage.pfadd('kmer_count_%s' % sample, *kmers)
+        self.stats_storage.pfadd('kmer_count', *kmers)
+
+    def count_kmers(self, sample):
+        if sample is None:
+            return self.stats_storage.pfcount('kmer_count')
+        else:
+            return self.stats_storage.pfcount('kmer_count_%s' % sample)
+
+    def kmer_union(self, sample1, sample2):
+        samples = ['kmer_count_%s' % sample1, 'kmer_count_%s' % sample2]
+        self.stats_storage.pfcount(*samples)
+        return self.stats_storage.pfcount(*samples)
 
 
 def get_vals(r, names, list_of_list_kmers):

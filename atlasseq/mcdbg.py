@@ -43,12 +43,16 @@ class McDBG(object):
         self.storage = choose_storage(storage)
 
     @convert_kmers
-    def insert_kmer(self, kmer, colour, min_lexo=False):
+    def insert_kmer(self, kmer, colour, sample=None, min_lexo=False):
         self.storage.insert_kmer(kmer, colour)
 
     @convert_kmers
-    def insert_kmers(self, kmers, colour, min_lexo=False):
+    def insert_kmers(self, kmers, colour, sample=None, min_lexo=False):
         self.storage.insert_kmers(kmers, colour)
+
+    @convert_kmers
+    def add_to_kmers_count(self, kmers, sample, min_lexo=False):
+        return self.storage.add_to_kmers_count(kmers, sample)
 
     @convert_kmers
     def get_kmer_raw(self, kmer, min_lexo=False):
@@ -104,6 +108,39 @@ class McDBG(object):
                 out[colours_to_sample_dict.get(k, k)] = res
         return out
 
+    def kmer_union(self, sample1, sample2):
+        return self.storage.kmer_union(sample1, sample2)
+
+    def kmer_intersection(self, sample1, sample2):
+        count1 = self.count_kmers(sample1)
+        count2 = self.count_kmers(sample2)
+        union = self.kmer_union(sample1, sample2)
+        # http://dsinpractice.com/2015/09/07/counting-unique-items-fast-unions-and-intersections/
+        intersection = count1+count2-union
+        return intersection
+
+    def jaccard_index(self, sample1, sample2):
+        union = self.kmer_union(sample1, sample2)
+        # http://dsinpractice.com/2015/09/07/counting-unique-items-fast-unions-and-intersections/
+        intersection = self.kmer_intersection(sample1, sample2)
+        return intersection/float(union)
+
+    def jaccard_distance(self, sample1, sample2):
+        union = self.kmer_union(sample1, sample2)
+        # http://dsinpractice.com/2015/09/07/counting-unique-items-fast-unions-and-intersections/
+        intersection = self.kmer_intersection(sample1, sample2)
+        return (union-intersection)/float(union)
+
+    def symmetric_difference(self, sample1, sample2):
+        union = self.kmer_union(sample1, sample2)
+        intersection = self.kmer_intersection(sample1, sample2)
+        return union-intersection
+
+    def difference(self, sample1, sample2):
+        count1 = self.count_kmers(sample1)
+        intersection = self.kmer_intersection(sample1, sample2)
+        return count1-intersection
+
     def add_sample(self, sample_name):
         existing_index = self.get_sample_colour(sample_name)
         if existing_index is not None:
@@ -142,8 +179,8 @@ class McDBG(object):
         except TypeError:
             return 0
 
-    def count_kmers(self):
-        return self.clusters['stats'].pfcount('kmer_count')
+    def count_kmers(self, sample=None):
+        return self.storage.count_kmers(sample)
 
     def count_keys(self):
         return self.storage.count_keys()
