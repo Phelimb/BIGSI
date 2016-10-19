@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import redis
+import json
 sys.path.append(
     os.path.realpath(
         os.path.join(
@@ -78,8 +79,8 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/js')
-    def distance(self, s1, s2):
-        return jaccard_index(s1, s2, conn_config=CONN_CONFIG)
+    def distance(self, s1=None, s2=None):
+        return json.dumps(jaccard_index(s1, s2, conn_config=CONN_CONFIG), indent=1)
 
     @hug.object.cli
     @hug.object.get('/samples')
