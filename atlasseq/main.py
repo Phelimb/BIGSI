@@ -10,6 +10,12 @@ sys.path.append(
             os.path.dirname(__file__),
             "..")))
 from atlasseq.version import __version__
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 import hug
 
 CONN_CONFIG = []
@@ -53,49 +59,50 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert')
-    def insert(self, kmer_file, conn_config=CONN_CONFIG, sample_name=None):
+    def insert(self, kmer_file, sample_name=None):
+        logger.info("insert")
         return insert(
-            kmer_file=kmer_file, conn_config=conn_config, sample_name=sample_name)
+            kmer_file=kmer_file, conn_config=CONN_CONFIG, sample_name=sample_name)
 
     @hug.object.cli
     @hug.object.get('/search')
-    def search(self, fasta_file, threshold: hug.types.float_number=1.0, conn_config=CONN_CONFIG):
+    def search(self, fasta_file, threshold: hug.types.float_number=1.0):
         return query(
-            fasta_file=fasta_file, threshold=threshold, conn_config=conn_config)
+            fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/stats')
-    def stats(self, conn_config=CONN_CONFIG):
-        return stats(conn_config=conn_config)
+    def stats(self):
+        return stats(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/samples')
-    def samples(self, conn_config=CONN_CONFIG):
-        return samples(conn_config=conn_config)
+    def samples(self):
+        return samples(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/compress')
-    def compress(self, conn_config=CONN_CONFIG):
-        return compress(conn_config=conn_config)
+    def compress(self):
+        return compress(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/uncompress')
-    def uncompress(self, conn_config=CONN_CONFIG):
-        return uncompress(conn_config=conn_config)
+    def uncompress(self):
+        return uncompress(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/dump')
-    def dump(self, conn_config=CONN_CONFIG):
-        return dump(conn_config=conn_config)
+    def dump(self):
+        return dump(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/bitcount')
-    def bitcount(self, conn_config=CONN_CONFIG):
-        return bitcount(conn_config=conn_config)
+    def bitcount(self):
+        return bitcount(conn_config=CONN_CONFIG)
 
     @hug.object.cli
-    def shutdown(self, conn_config=CONN_CONFIG):
-        return shutdown(conn_config=conn_config)
+    def shutdown(self):
+        return shutdown(conn_config=CONN_CONFIG)
 
 
 if __name__ == "__main__":

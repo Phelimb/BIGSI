@@ -5,38 +5,36 @@ import os.path
 import logging
 import json
 logger = logging.getLogger(__name__)
-from pyseqfile import Reader
+logger.setLevel(logging.DEBUG)
+# from pyseqfile import Reader
+from atlasseq.utils import seq_to_kmers
+
+
+def insert_kmers(mc, kmers, colour):
+    mc.insert_kmers(kmers, colour)
+    mc.clusters['stats'].pfadd('kmer_count', *kmers)
 
 
 def insert(kmer_file, conn_config, sample_name=None):
     if sample_name is None:
         sample_name = os.path.basename(kmer_file).split('.')[0]
+    logger.info("Inserting kmers from {0} to {1} into database at {2} ".format(
+        kmer_file, sample_name, conn_config))
+
     mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
                                                                          "array_size": 25000000, "num_hashes": 2}})
     try:
         colour = mc.add_sample(sample_name)
         kmers = []
         with open(kmer_file, 'r') as inf:
-            kmers.extend(inf.read().splitlines())
-        mc.insert_kmers(kmers, colour)
-
-        #     kmers = []
-        #     for i, line in enumerate(inf):
-        #         kmer = line.strip()
-        #         kmers.append(kmer)
-        #         if i % 1000000 == 0 and i > 1:
-        #             mc.insert_kmers(kmers, colour)
-        #             kmers = []
-        # mc.insert_kmers(kmers, colour)
-        ckmers = []
-        for i, kmer in enumerate(kmers):
-            ckmers.append(kmer)
-            if i % 100000 == 0 and i > 1:
-                mc.clusters['stats'].pfadd('kmer_count', *ckmers)
-                ckmers = []
-
-        # kmers = inf.read().splitlines()
-
+            for i, line in enumerate(inf):
+                read = line.strip()
+                for kmer in seq_to_kmers(read):
+                    kmers.append(kmer)
+                    if i % 100000 == 0 and i > 1:
+                        insert_kmers(mc, kmers, colour)
+                        kmers = []
+        insert_kmers(mc, kmers, colour)
         print(json.dumps({"result": "success", "colour": colour, "kmers": mc.count_kmers(
         ), "memory": mc.calculate_memory()}))
     except ValueError as e:

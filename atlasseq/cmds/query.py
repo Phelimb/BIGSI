@@ -35,6 +35,11 @@ def query(fasta_file, threshold, conn_config):
         found[gene] = {}
         start = time.time()
         found[gene]['results'] = mc.query_kmers(kmers, threshold)
+        d = mc.get_kmers_colours(kmers)
+        d2 = {}
+        for k, v in d.items():
+            d2[mc._bytes_to_kmer(k)] = v
+        found[gene]['kresults'] = d2
         diff = time.time() - start
         found[gene]['time'] = diff
     print(json.dumps(found, indent=4))

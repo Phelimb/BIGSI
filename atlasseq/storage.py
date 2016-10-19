@@ -383,10 +383,6 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
                 d[conn][name] = [k]
         return d
 
-    # def get_kmers(self, kmers):
-    #     assert self.num_hashes == 2
-    #     return [self.get_kmer(k) for k in kmers]
-
     def _kmers_to_hash_indexes(self, kmers):
         kmers = [str.encode(kmer) if isinstance(
             kmer, str) else kmer for kmer in kmers]
