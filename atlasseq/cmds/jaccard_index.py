@@ -13,10 +13,8 @@ _stats = {}
 def calc_ji(mc, s1, s2):
     d = {}
     d["jaccard-index"] = mc.jaccard_index(s1, s2)
-    d[
-        "jaccard-distance"] = mc.jaccard_distance(s1, s2)
-    d[
-        "symmetric_difference"] = mc.symmetric_difference(s1, s2)
+    d["jaccard-distance"] = mc.jaccard_distance(s1, s2)
+    d["symmetric_difference"] = mc.symmetric_difference(s1, s2)
     d["num-kmers-unique-to-%s" %
       s1] = mc.difference(s1, s2)
     d["num-kmers-unique-to-%s" %
@@ -28,7 +26,8 @@ def calc_ji(mc, s1, s2):
 
 def jaccard_index(s1=None, s2=None, conn_config=None):
     mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
-                                                                         "array_size": 25000000, "num_hashes": 2}})
+                                                                         "array_size": 25000000,
+                                                                         "num_hashes": 2}})
     if s1 is None and s2 is None:
         samples = mc.colours_to_sample_dict().values()
         for pair in list(itertools.combinations(samples, 2)):

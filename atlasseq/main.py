@@ -61,10 +61,11 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert')
-    def insert(self, kmer_file, sample_name=None):
+    def insert(self, kmer_file, force: hug.types.smart_boolean=False, sample_name=None, intersect_kmers_file=None, count_only=False):
         logger.info("insert")
         return insert(
-            kmer_file=kmer_file, conn_config=CONN_CONFIG, sample_name=sample_name)
+            kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample_name,
+            intersect_kmers_file=intersect_kmers_file, count_only=count_only)
 
     @hug.object.cli
     @hug.object.get('/search')
