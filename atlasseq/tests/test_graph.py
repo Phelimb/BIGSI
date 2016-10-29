@@ -17,8 +17,14 @@ POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
                      {"probabilistic-inmemory":
                          {"array_size": 5000000, "num_hashes": 2}},
                      {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}]
-st_storage = st.sampled_from(POSSIBLE_STORAGES)
 
+storage_no_berkeley = st.sampled_from([{'dict': None}, {"redis": [
+    ('localhost', 6379)]},
+    {"probabilistic-inmemory":
+     {"array_size": 5000000, "num_hashes": 2}},
+    {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}])
+st_storage = st.sampled_from(POSSIBLE_STORAGES)
+st_sample_colour = st.integers(min_value=0, max_value=1000000)
 
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)
@@ -41,6 +47,17 @@ def test_insert_get_kmer(store, kmer, compress_kmers):
     assert [v for v in mc.get_kmer_colours(kmer).values()] == [[1]]
     mc.insert_kmer(kmer, 2)
     assert [v for v in mc.get_kmer_colours(kmer).values()] == [[1, 2]]
+
+
+@given(store=storage_no_berkeley, compress_kmers=st_compress_kmers, primary_colour=st_sample_colour, secondary_colour=st_sample_colour, diffs=st.lists(st_sample_colour, max_size=1000))
+def test_insert_primary_secondary_diffs(store, compress_kmers, primary_colour, secondary_colour, diffs):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage=store)
+    mc.delete_all()
+    mc.insert_primary_secondary_diffs(primary_colour, secondary_colour, diffs)
+    for i in diffs:
+        assert secondary_colour in mc.lookup_primary_secondary_diff(
+            primary_colour, i)
 
 
 @given(store=st_storage, kmers=st.lists(KMER), compress_kmers=st_compress_kmers)
@@ -101,12 +118,6 @@ def test_kmers_to_bytes(kmers):
     for kmer in kmers:
         assert mc._bytes_to_kmer(mc._kmer_to_bytes(kmer)) == kmer
     # print(mc._bytes_to_kmer(b'\x1bI\xe94\x82\xb2ph'))
-
-storage_no_berkeley = st.sampled_from([{'dict': None}, {"redis": [
-    ('localhost', 6379)]},
-    {"probabilistic-inmemory":
-     {"array_size": 5000000, "num_hashes": 2}},
-    {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}])
 
 
 @given(kmers=st.lists(KMER, min_size=10, max_size=10, unique=True), compress_kmers=st_compress_kmers, store=storage_no_berkeley)
@@ -182,18 +193,3 @@ def test_kmer_diff(kmers1, kmers2, compress_kmers):
 
     assert true_diff*.9 <= mc.difference(
         '1235', '1234') <= true_diff*1.1
-
-
-# def test_samples():
-#     mc = McDBG(conn_config=conn_config, compress_kmers=False)
-#     mc.flushall()
-#     assert mc.get_num_colours() == 0
-
-#     mc.add_sample('1234')
-#     mc.add_sample('1235')
-
-#     assert mc.get_sample_colour('1234') == 0
-#     assert mc.get_num_colours() == 2
-
-#     assert mc.get_sample_colour('1235') == 1
-#     assert mc.get_num_colours() == 2

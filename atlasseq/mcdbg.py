@@ -50,6 +50,14 @@ class McDBG(object):
     def insert_kmers(self, kmers, colour, sample=None, min_lexo=False):
         self.storage.insert_kmers(kmers, colour)
 
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        self.storage.insert_primary_secondary_diffs(
+            primary_colour, secondary_colour, diffs)
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        return self.storage.lookup_primary_secondary_diff(
+            primary_colour, index)
+
     @convert_kmers
     def add_to_kmers_count(self, kmers, sample, min_lexo=False):
         return self.storage.add_to_kmers_count(kmers, sample)

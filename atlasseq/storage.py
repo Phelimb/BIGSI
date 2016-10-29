@@ -112,6 +112,12 @@ class BaseStorage(object):
     def count_kmers(self, sample=None):
         raise NotImplementedError
 
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        raise NotImplementedError
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        raise NotImplementedError
+
 
 class InMemoryStorage(BaseStorage):
 
@@ -119,6 +125,7 @@ class InMemoryStorage(BaseStorage):
         self.name = 'dict'
         self.storage = dict()
         self.stats_storage = dict()
+        self.secondary_storage = dict()
 
     def keys(self):
         """ Returns a list of binary hashes that are used as dict keys. """
@@ -162,6 +169,19 @@ class InMemoryStorage(BaseStorage):
     def count_kmers(self, sample):
         hll = self.stats_storage[sample]
         return int(hll.cardinality())
+
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        if not primary_colour in self.secondary_storage:
+            self.secondary_storage[primary_colour] = {}
+
+        for index in diffs:
+            if not index in self.secondary_storage[primary_colour]:
+                self.secondary_storage[primary_colour][index] = []
+            self.secondary_storage[primary_colour][
+                index].append(secondary_colour)
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        return self.secondary_storage[primary_colour].get(index, [])
 
 
 def byte_to_bitstring(byte):
@@ -231,6 +251,19 @@ class ProbabilisticStorage(BaseStorage):
 
         return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).tobytes()])
 
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        if not primary_colour in self.secondary_storage:
+            self.secondary_storage[primary_colour] = {}
+
+        for index in diffs:
+            if not index in self.secondary_storage[primary_colour]:
+                self.secondary_storage[primary_colour][index] = []
+            self.secondary_storage[primary_colour][
+                index].append(secondary_colour)
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        return self.secondary_storage[primary_colour].get(index, [])
+
     def add_to_kmers_count(self, kmers, sample):
         try:
             hll = self.stats_storage[sample]
@@ -252,6 +285,7 @@ class ProbabilisticInMemoryStorage(ProbabilisticStorage):
         self.num_hashes = config.get('num_hashes', 2)
         self.storage = [None]*self.array_size
         self.stats_storage = {}
+        self.secondary_storage = dict()
 
     def keys(self):
         """ Returns a list of binary hashes that are used as dict keys. """
@@ -313,6 +347,8 @@ class RedisStorage(BaseStorage):
             host=host, port=port, db=2) for host, port in config])
         self.stats_storage = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=0) for host, port in config])
+        self.secondary_storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=1) for host, port in config])
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
@@ -346,6 +382,17 @@ class RedisStorage(BaseStorage):
         d = self._group_kmers_by_hashkey_and_connection(kmers)
         for conn, hk in d.items():
             _batch_insert_redis(conn, hk, colour)
+
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        for diff in diffs:
+            current_val = self.secondary_storage.hget(primary_colour, diff)
+            ba = ByteArray(byte_array=current_val)
+            ba.setbit(secondary_colour, 1)
+            ba.to_sparse()
+            self.secondary_storage.hset(primary_colour, diff, ba.bytes)
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        return ByteArray(self.secondary_storage.hget(primary_colour, index)).colours()
 
     def get_kmers(self, kmers):
         kmers = [str.encode(k) if isinstance(k, str) else k for k in kmers]
@@ -387,6 +434,8 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
             host=host, port=port, db=2) for host, port in config['conn']])
         self.stats_storage = redis.StrictRedis(
             host=config['conn'][0][0], port=config['conn'][0][1], db=0)
+        self.secondary_storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=1) for host, port in config['conn']])
 
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
@@ -429,6 +478,17 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
                 conn, names, hashes, colour, self.array_size)
         # [self.insert_kmer(kmer, colour) for kmer in kmers]
         # print(names, all_hashes)
+
+    def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
+        for diff in diffs:
+            current_val = self.secondary_storage.hget(primary_colour, diff)
+            ba = ByteArray(byte_array=current_val)
+            ba.setbit(secondary_colour, 1)
+            ba.to_sparse()
+            self.secondary_storage.hset(primary_colour, diff, ba.bytes)
+
+    def lookup_primary_secondary_diff(self, primary_colour, index):
+        return ByteArray(self.secondary_storage.hget(primary_colour, index)).colours()
 
     def _group_kmers_by_hashkey_and_connection(self, all_hashes):
         d = dict((el, {}) for el in self.storage.connections)
