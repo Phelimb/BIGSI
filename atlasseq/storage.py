@@ -118,6 +118,13 @@ class BaseStorage(object):
     def lookup_primary_secondary_diff(self, primary_colour, index):
         raise NotImplementedError
 
+    def diffs_between_primary_and_secondary_bloom_filter(self, primary_colour, kmers):
+        raise NotImplementedError
+
+    def get_bloom_filter(self, primary_colour):
+        raise NotImplementedError(
+            "get_bloom_filter only implemented for probabilistic storage")
+
 
 class InMemoryStorage(BaseStorage):
 
@@ -183,6 +190,9 @@ class InMemoryStorage(BaseStorage):
     def lookup_primary_secondary_diff(self, primary_colour, index):
         return self.secondary_storage[primary_colour].get(index, [])
 
+    def diffs_between_primary_and_secondary_bloom_filter(self, primary_colour, kmers):
+        raise NotImplementedError
+
 
 def byte_to_bitstring(byte):
     a = str("{0:b}".format(byte))
@@ -204,23 +214,42 @@ def setbit(bytes, i):
         return setbit(_bytes, i)
 
 
+def indexes(bitarray):
+    indexes = []
+    i = 0
+    while True:
+        try:
+            i = bitarray.index(True, i)
+            indexes.append(i)
+            i += 1
+        except ValueError:
+            break
+    return indexes
+
+
 class ProbabilisticStorage(BaseStorage):
 
-    def insert_kmer(self, kmer, colour):
-        assert self.num_hashes == 2
+    def kmer_to_hashes(self, kmer):
         if isinstance(kmer, str):
             kmer = str.encode(kmer)
-
         hashes = [int(hashlib.sha1(kmer).hexdigest(), 16) % self.array_size, int(
             hashlib.sha256(kmer).hexdigest(), 16) % self.array_size,
             int(hashlib.sha384(kmer).hexdigest(), 16) % self.array_size
         ]
+        return hashes
+
+    def insert_kmer(self, kmer, colour):
+        assert self.num_hashes == 2
+        hashes = self.kmer_to_hashes(kmer)
         for h in hashes:
-            val = self.get(h, None)
-            ba = ByteArray(byte_array=val)
-            ba.setbit(colour, 1)
-            ba.choose_optimal_encoding(colour)
-            self[h] = ba.bytes
+            self.set_bit_in_bloomfilter(h, colour)
+
+    def set_bit_in_bloomfilter(self, h, colour):
+        val = self.get(h, None)
+        ba = ByteArray(byte_array=val)
+        ba.setbit(colour, 1)
+        ba.choose_optimal_encoding(colour)
+        self[h] = ba.bytes
 
     def get_kmer(self, kmer):
         assert self.num_hashes == 2
@@ -247,9 +276,10 @@ class ProbabilisticStorage(BaseStorage):
         ba2.to_dense()
         ba3.to_dense()
 
-        # print('get', kmer, hashes, v1, v2, (v1 & v2).tobytes())
+        primary_colour_presence = b"".join(
+            [b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).tobytes()])
 
-        return b"".join([b'\x00', (ba1.bitstring & ba2.bitstring & ba3.bitstring).tobytes()])
+        return primary_colour_presence
 
     def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
         if not primary_colour in self.secondary_storage:
@@ -263,6 +293,17 @@ class ProbabilisticStorage(BaseStorage):
 
     def lookup_primary_secondary_diff(self, primary_colour, index):
         return self.secondary_storage[primary_colour].get(index, [])
+
+    def diffs_between_primary_and_secondary_bloom_filter(self, primary_colour, kmers):
+        primary_bloom_filter = self.get_bloom_filter(primary_colour)
+        secondary_bloom_filter = bitarray(self.array_size)
+        secondary_bloom_filter.setall(False)
+        for kmer in kmers:
+            hashes = self.kmer_to_hashes(kmer)
+            for i in hashes:
+                secondary_bloom_filter[i] = True
+        difference_bitarray = primary_bloom_filter ^ secondary_bloom_filter
+        return indexes(difference_bitarray)
 
     def add_to_kmers_count(self, kmers, sample):
         try:
@@ -470,14 +511,11 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
         all_hashes = self._kmers_to_hash_indexes(kmers)
         names = self._key_names_from_hashes(all_hashes)
         hk = self._group_kmers_by_hashkey_and_connection(all_hashes)
-        # print(hk)
         for conn, names_hashes in hk.items():
             names = [k for k in names_hashes.keys()]
             hashes = [hs for hs in names_hashes.values()]
             _batch_insert_prob_redis(
                 conn, names, hashes, colour, self.array_size)
-        # [self.insert_kmer(kmer, colour) for kmer in kmers]
-        # print(names, all_hashes)
 
     def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
         for diff in diffs:
@@ -518,7 +556,9 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
     def get_kmers(self, kmers):
         all_hashes = self._kmers_to_hash_indexes(kmers)
         names = self._key_names_from_hashes(all_hashes)
-        return self.storage.hget(names, all_hashes, partition_arg=1)
+        primary_colour_presence = self.storage.hget(
+            names, all_hashes, partition_arg=1)
+        return primary_colour_presence
 
     def dump(self, raw=False):
         for k in self.storage.scan_iter('*'):
@@ -536,6 +576,20 @@ class ProbabilisticRedisStorage(ProbabilisticStorage):
                 ba = bitarray()
                 ba.frombytes(v)
                 sys.stdout.write("".join([str(ba.count()), " "]))
+
+    def get_bloom_filter(self, primary_colour):
+        bf = bitarray()
+        names = [self.get_name(key) for key in range(self.array_size)]
+        vals = self.storage.hget(
+            names, range(self.array_size), partition_arg=1)
+        for i, v in enumerate(vals):
+            v = self.get(i, 0)
+            j = False
+            if v:
+                ba = ByteArray(byte_array=v)
+                j = bool(ba.getbit(primary_colour))
+            bf.append(j)
+        return bf
 
     def add_to_kmers_count(self, kmers, sample):
         self.stats_storage.pfadd('kmer_count_%s' % sample, *kmers)

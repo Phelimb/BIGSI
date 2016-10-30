@@ -50,6 +50,13 @@ class McDBG(object):
     def insert_kmers(self, kmers, colour, sample=None, min_lexo=False):
         self.storage.insert_kmers(kmers, colour)
 
+    @convert_kmers
+    def insert_secondary_kmers(self, kmers, primary_colour, secondary_colour, sample=None, min_lexo=False):
+        diffs = self.diffs_between_primary_and_secondary_bloom_filter(kmers,
+                                                                      primary_colour, min_lexo=True)
+        self.insert_primary_secondary_diffs(
+            primary_colour, secondary_colour, diffs)
+
     def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
         self.storage.insert_primary_secondary_diffs(
             primary_colour, secondary_colour, diffs)
@@ -57,6 +64,13 @@ class McDBG(object):
     def lookup_primary_secondary_diff(self, primary_colour, index):
         return self.storage.lookup_primary_secondary_diff(
             primary_colour, index)
+
+    @convert_kmers
+    def diffs_between_primary_and_secondary_bloom_filter(self, kmers, primary_colour, min_lexo=False):
+        return self.storage.diffs_between_primary_and_secondary_bloom_filter(primary_colour, kmers)
+
+    def get_bloom_filter(self, primary_colour):
+        return self.storage.get_bloom_filter(primary_colour)
 
     @convert_kmers
     def add_to_kmers_count(self, kmers, sample, min_lexo=False):
@@ -81,17 +95,33 @@ class McDBG(object):
         return [ByteArray(raw) for raw in raws]
 
     @convert_kmers
-    def get_kmer_colours(self, kmer, min_lexo=False):
+    def get_kmer_primary_colours(self, kmer, min_lexo=False):
         ba = self.get_kmer(kmer, min_lexo=True)
         return {kmer: ba.colours()}
 
+    # @convert_kmers
+    # def get_kmer_secondary_colours(self, kmer, min_lexo=False):
+    #     primary_colours = self.get_kmer_primary_colours(kmer, min_lexo=True)
+    #     secondary_colours = []
+    #     for primary_colour in primary_colours:
+    #         primary_colours.extend(self.storage.get_kmer_secondary_colours(kmer, primary_colour))
+    #     return {kmer: ba.colours()}
+
     @convert_kmers
-    def get_kmers_colours(self, kmers, min_lexo=False):
+    def get_kmer_colours(self, kmer, min_lexo=False):
+        return self.get_kmer_primary_colours(kmer, min_lexo=True)
+
+    @convert_kmers
+    def get_kmers_primary_colours(self, kmers, min_lexo=False):
         bas = self.get_kmers(kmers, min_lexo=True)
         o = {}
         for kmer, bas in zip(kmers, bas):
             o[kmer] = bas.colours()
         return o
+
+    @convert_kmers
+    def get_kmers_colours(self, kmers, min_lexo=False):
+        return self.get_kmers_primary_colours(kmers, min_lexo=True)
 
     @convert_kmers
     def query_kmer(self, kmer, min_lexo=False):

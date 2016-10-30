@@ -102,7 +102,6 @@ class ByteArray(object):
                     i += 1
                 except ValueError:
                     break
-
         return indexes
 
     def to_dense(self):

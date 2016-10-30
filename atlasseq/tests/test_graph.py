@@ -18,13 +18,15 @@ POSSIBLE_STORAGES = [{'dict': None}, {'berkeleydb': {'filename': './db'}},
                          {"array_size": 5000000, "num_hashes": 2}},
                      {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}]
 
+probabilistic_redis_storage = {"probabilistic-redis": {"conn": [
+    ('localhost', 6379), ('localhost', 6380)], "array_size": 100, "num_hashes": 2}}
 storage_no_berkeley = st.sampled_from([{'dict': None}, {"redis": [
     ('localhost', 6379)]},
     {"probabilistic-inmemory":
      {"array_size": 5000000, "num_hashes": 2}},
     {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)], "array_size": 100000, "num_hashes": 2}}])
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
-st_sample_colour = st.integers(min_value=0, max_value=1000000)
+st_sample_colour = st.integers(min_value=0, max_value=10)
 
 COMPRESS_KMERS_OR_NOT = [True, False]
 st_compress_kmers = st.sampled_from(COMPRESS_KMERS_OR_NOT)
@@ -49,6 +51,45 @@ def test_insert_get_kmer(store, kmer, compress_kmers):
     assert [v for v in mc.get_kmer_colours(kmer).values()] == [[1, 2]]
 
 
+@given(
+    compress_kmers=st_compress_kmers,
+    primary_colour=st_sample_colour,
+    secondary_colour=st_sample_colour,
+    kmer=KMER)
+def test_insert_secondary_kmer(compress_kmers, primary_colour, secondary_colour, kmer):
+
+    mc = McDBG(
+        conn_config=conn_config,
+        compress_kmers=compress_kmers, storage=probabilistic_redis_storage)
+    mc.delete_all()
+    if not primary_colour == secondary_colour:
+        mc.insert_kmers([kmer], primary_colour)
+        mc.insert_secondary_kmers([kmer], primary_colour, secondary_colour)
+        # for i in range(mc.storage.array_size):
+        #     assert not mc.lookup_primary_secondary_diff(primary_colour, i)
+        assert [v for v in mc.get_kmer_primary_colours(
+            kmer).values()] == [[primary_colour]]
+        assert [v for v in mc.get_kmer_secondary_colours(primary_colour, kmer).values()] = [secondary_colour]
+        assert [v for v in mc.get_kmer_colours(kmer).values()] == [
+            [primary_colour, secondary_colour]]*len(kmer)
+
+
+# @given(
+#     compress_kmers=st_compress_kmers,
+#     primary_colour=st_sample_colour,
+#     secondary_colour=st_sample_colour,
+#     kmers=st.lists(KMER, max_size=10))
+# def test_insert_secondary_kmers2(compress_kmers, primary_colour, secondary_colour, kmers):
+#     mc = McDBG(
+#         conn_config=conn_config,
+#         compress_kmers=compress_kmers, storage=probabilistic_redis_storage)
+#     mc.delete_all()
+#     mc.insert_secondary_kmers(kmers, primary_colour, secondary_colour)
+#     for i in range(mc.storage.array_size):
+#         print(mc.lookup_primary_secondary_diff(primary_colour, i))
+#         assert not mc.lookup_primary_secondary_diff(primary_colour, i)
+
+
 @given(store=storage_no_berkeley, compress_kmers=st_compress_kmers, primary_colour=st_sample_colour, secondary_colour=st_sample_colour, diffs=st.lists(st_sample_colour, max_size=1000))
 def test_insert_primary_secondary_diffs(store, compress_kmers, primary_colour, secondary_colour, diffs):
     mc = McDBG(
@@ -60,7 +101,28 @@ def test_insert_primary_secondary_diffs(store, compress_kmers, primary_colour, s
             primary_colour, i)
 
 
-@given(store=st_storage, kmers=st.lists(KMER), compress_kmers=st_compress_kmers)
+@given(compress_kmers=st_compress_kmers, primary_colour=st_sample_colour, kmers=st.lists(KMER, max_size=10))
+def test_get_bloomfilter(compress_kmers, primary_colour, kmers):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage=probabilistic_redis_storage)
+    mc.delete_all()
+    mc.insert_kmers(kmers, primary_colour)
+    bf = mc.get_bloom_filter(primary_colour)
+    assert len(bf) == mc.storage.array_size
+
+
+@given(compress_kmers=st_compress_kmers, primary_colour=st_sample_colour, kmers=st.lists(KMER, max_size=100))
+def test_get_diffs_between_primary_and_secondary_bloom_filter(compress_kmers, primary_colour, kmers):
+    mc = McDBG(
+        conn_config=conn_config, compress_kmers=compress_kmers, storage=probabilistic_redis_storage)
+    mc.delete_all()
+    mc.insert_kmers(kmers, primary_colour)
+    diffs = mc.diffs_between_primary_and_secondary_bloom_filter(
+        primary_colour=primary_colour, kmers=kmers)
+    assert diffs == []
+
+
+@given(store=st_storage, kmers=st.lists(KMER, max_size=100), compress_kmers=st_compress_kmers)
 def test_insert_get_kmers(store, kmers, compress_kmers):
     mc = McDBG(
         conn_config=conn_config, compress_kmers=compress_kmers, storage=store)
