@@ -1,19 +1,4 @@
-from __future__ import print_function
 import sys
-from atlasseq.utils import min_lexo
-from atlasseq.utils import bits
-from atlasseq.utils import kmer_to_bits
-from atlasseq.utils import bits_to_kmer
-from atlasseq.utils import kmer_to_bytes
-from atlasseq.utils import hash_key
-from atlasseq.storage import choose_storage
-from atlasseq.bytearray import ByteArray
-from atlasseq.decorators import convert_kmers
-sys.path.append("cortex-py")
-from mccortex.cortex import encode_kmer
-from mccortex.cortex import decode_kmer
-# sys.path.append("../redis-py-partition")
-from redispartition import RedisCluster
 import redis
 import math
 import uuid
@@ -21,26 +6,81 @@ import time
 from collections import Counter
 import json
 import logging
+
+from atlasseq.graph.base import BaseGraph
+
+sys.path.append("../cortex-py")
+
+from mccortex.cortex import encode_kmer
+from mccortex.cortex import decode_kmer
+
+from atlasseq.utils import min_lexo
+from atlasseq.utils import bits
+from atlasseq.utils import kmer_to_bits
+from atlasseq.utils import bits_to_kmer
+from atlasseq.utils import kmer_to_bytes
+from atlasseq.utils import hash_key
+
+from atlasseq.decorators import convert_kmers
+
+from atlasseq.bytearray import ByteArray
+
+
+from atlasseq.storage.probabilistic import ProbabilisticInMemoryStorage
+from atlasseq.storage.probabilistic import ProbabilisticRedisStorage
+import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class McDBG(object):
+class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
-    def __init__(self, conn_config, kmer_size=31, compress_kmers=True, storage={'dict': None}):
-        # colour
-        self.conn_config = conn_config
-        self.hostnames = [c[0] for c in conn_config]
-        self.ports = [c[1] for c in conn_config]
-        self.clusters = {}
-        self._create_connections()
-        self.num_colours = self.get_num_colours()
-        self.kmer_size = kmer_size
-        self.bitpadding = 2  # TODO. This should be dependant on kmer size
-        self.compress_kmers = compress_kmers
-        self.storage = choose_storage(storage)
+    def __init__(self, kmer_size=31, binary_kmers=True, storage={'dict': None},
+                 bloom_filter_size=20000000, num_hashes=3):
+
+        self.bloom_filter_size = bloom_filter_size
+        self.num_hashes = num_hashes
+        super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
+                         storage=storage)
+
+    @convert_kmers
+    def insert(self, sample, kmers):
+        """Insert kmers into the multicoloured graph.
+           sample can not already exist in the graph
+        """
+        raise NotImplementedError("")
+
+    @convert_kmers
+    def lookup(self, kmers):
+        """Return sample names where this kmer is present"""
+        raise NotImplementedError("")
+
+    def dump(self, *args, **kwargs):
+        self.storage.dump(*args, **kwargs)
+
+    def dumps(self, *args, **kwargs):
+        self.storage.dumps(*args, **kwargs)
+
+    def load(self):
+        pass
+
+        def loads(self):
+            pass
+
+    def _choose_storage(self, storage_config):
+        if 'dict' in storage_config:
+            return ProbabilisticInMemoryStorage(storage_config['dict'],
+                                                bloom_filter_size=self.bloom_filter_size,
+                                                num_hashes=self.num_hashes)
+        elif 'redis' in storage_config:
+            return ProbabilisticRedisStorage(storage_config['redis'],
+                                             bloom_filter_size=self.bloom_filter_size,
+                                             num_hashes=self.num_hashes)
+        else:
+            raise ValueError(
+                "Only in-memory dictionary and redis are supported.")
 
     @convert_kmers
     def insert_kmer(self, kmer, colour, sample=None, min_lexo=False):
@@ -49,13 +89,6 @@ class McDBG(object):
     @convert_kmers
     def insert_kmers(self, kmers, colour, sample=None, min_lexo=False):
         self.storage.insert_kmers(kmers, colour)
-
-    @convert_kmers
-    def insert_secondary_kmers(self, kmers, primary_colour, secondary_colour, sample=None, min_lexo=False):
-        diffs = self.diffs_between_primary_and_secondary_bloom_filter(kmers,
-                                                                      primary_colour, min_lexo=True)
-        self.insert_primary_secondary_diffs(
-            primary_colour, secondary_colour, diffs)
 
     def insert_primary_secondary_diffs(self, primary_colour, secondary_colour, diffs):
         self.storage.insert_primary_secondary_diffs(
@@ -180,42 +213,16 @@ class McDBG(object):
         return count1-intersection
 
     def add_sample(self, sample_name):
-        existing_index = self.get_sample_colour(sample_name)
-        if existing_index is not None:
-            raise ValueError("%s already exists in the db" % sample_name)
-        else:
-            num_colours = self.get_num_colours()
-            if num_colours is None:
-                num_colours = 0
-            else:
-                num_colours = int(num_colours)
-            self.sample_redis.set('s%s' % sample_name, num_colours)
-            self.sample_redis.incr('num_colours')
-            self.num_colours = self.get_num_colours()
-            return num_colours
+        return self.storage.add_sample(sample_name)
 
     def get_sample_colour(self, sample_name):
-        c = self.sample_redis.get('s%s' % sample_name)
-        if c is not None:
-            return int(c)
-        else:
-            return c
-
-    def colours_to_sample_dict(self):
-        o = {}
-        for s in self.sample_redis.keys('s*'):
-            o[int(self.sample_redis.get(s))] = s[1:].decode("utf-8")
-        return o
-
-    @property
-    def sample_redis(self):
-        return self.clusters['stats'].connections[0]
+        return self.storage.get_sample_colour(sample_name)
 
     def get_num_colours(self):
-        try:
-            return int(self.sample_redis.get('num_colours'))
-        except TypeError:
-            return 0
+        return self.storage.get_num_colours()
+
+    def colours_to_sample_dict(self):
+        return self.storage.colours_to_sample_dict()
 
     def count_kmers(self, sample=None):
         return self.storage.count_kmers(sample)
@@ -228,7 +235,6 @@ class McDBG(object):
 
     def delete_all(self):
         self.storage.delete_all()
-        [v.flushall() for v in self.clusters.values()]
 
     def shutdown(self):
         [v.shutdown() for v in self.clusters.values()]
@@ -241,15 +247,6 @@ class McDBG(object):
 
     def _bytes_to_kmer(self, _bytes):
         return decode_kmer(_bytes, kmer_size=self.kmer_size)
-
-    def _create_connections(self):
-        # kmers stored in DB 2
-        # stats in DB 0
-        self.clusters['stats'] = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=0) for host, port in self.conn_config])
-
-    def dump(self, *args, **kwargs):
-        self.storage.dump(*args, **kwargs)
 
     def bitcount(self):
         self.storage.bitcount()

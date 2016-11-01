@@ -13,9 +13,9 @@ def choose_convert_func(kmers):
 
 
 def kmers_or_bytes(self, kmers):
-    if self.compress_kmers and isinstance(kmers, list):
+    if self.binary_kmers and isinstance(kmers, list):
         return [self._kmer_to_bytes(k) for k in kmers]
-    elif self.compress_kmers:
+    elif self.binary_kmers:
         return self._kmer_to_bytes(kmers)
     else:
         return kmers
