@@ -1,6 +1,7 @@
 from atlasseq.storage.base import BaseStorage
 from atlasseq.storage.base import BaseInMemoryStorage
 from atlasseq.storage.base import BaseRedisStorage
+from atlasseq.storage.base import BaseBerkeleyDBStorage
 from atlasseq import hash_key
 from atlasseq.bytearray import ByteArray
 from redispartition import RedisCluster
@@ -117,9 +118,12 @@ class BaseProbabilisticStorage(BaseStorage):
         self.bloomfilter = BloomFilterMatrix(
             size=bloom_filter_size, num_hashes=num_hashes, storage=self)
 
-    def insert(self, kmer, colour):
-        """Insert kmer into a colour"""
-        self.bloomfilter.add(kmer, colour)
+    def insert(self, kmers, colour):
+        """Insert kmer/s into a colour"""
+        if isinstance(kmers, list):
+            self.bloomfilter.update(kmers)
+        else:
+            self.bloomfilter.add(kmers, colour)
 
     def lookup(self, kmer):
         return self.bloomfilter.lookup(kmer)
@@ -148,6 +152,16 @@ class ProbabilisticRedisStorage(BaseProbabilisticStorage, BaseRedisStorage):
             raise ImportError("redis-py is required to use Redis as storage.")
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabibistic-redis'
+
+
+class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BaseBerkeleyDBStorage):
+
+    def __init__(self, config={'filename': './db'}, bloom_filter_size=1000000, num_hashes=3):
+        if not bsddb:
+            raise ImportError(
+                "bsddb is required to use BerkeleyDB as storage.")
+        super().__init__(config, bloom_filter_size, num_hashes)
+        self.name = 'probabibistic-bsddb'
 
     # # def get_name(self, key):
     # #     if isinstance(key, str):

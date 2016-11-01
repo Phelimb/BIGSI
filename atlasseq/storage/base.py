@@ -1,8 +1,13 @@
 import redis
 import sys
-
+import os
 from redispartition import RedisCluster
 from atlasseq import hash_key
+
+try:
+    import bsddb3 as bsddb
+except ImportError:
+    bsddb = None
 
 
 class BaseStorage(object):
@@ -33,30 +38,6 @@ class BaseStorage(object):
             return int(self.metadata.get('num_colours'))
         except TypeError:
             return 0
-    # def insert_kmer(self, kmer, colour):
-    #     current_val = self.get(kmer, None)
-    #     ba = ByteArray(byte_array=current_val)
-    #     ba.setbit(colour, 1)
-    #     ba.choose_optimal_encoding(colour)
-    #     self[kmer] = ba.bytes
-
-    # def insert_kmers(self, kmers, colour):
-    #     [self.insert_kmer(kmer, colour) for kmer in kmers]
-
-    # def get_kmer(self, kmer):
-    #     return self[kmer]
-
-    # def get_kmers(self, kmers):
-    #     return [self.get_kmer(k) for k in kmers]
-
-    # def count_keys(self):
-    #     raise NotImplementedError
-
-    # def add_to_kmers_count(self, kmers, sample):
-    #     raise NotImplementedError
-
-    # def count_kmers(self, sample=None):
-    #     raise NotImplementedError
 
 
 class BaseInMemoryStorage(BaseStorage):
@@ -66,6 +47,17 @@ class BaseInMemoryStorage(BaseStorage):
         self.storage = dict()
         self.metadata = dict()
         self.secondary_storage = dict()
+
+    def __setitem__(self, key, val):
+        """ Set `val` at `key`, note that the `val` must be a string. """
+        self.storage.__setitem__(key, val)
+
+    def __getitem__(self, key):
+        """ Return `val` at `key`, note that the `val` must be a string. """
+        return self.storage.__getitem__(key)
+
+    def delete_all(self):
+        self.storage = dict()
 
     def add_sample(self, sample_name):
         existing_index = self.get_sample_colour(sample_name)
@@ -110,17 +102,6 @@ class BaseInMemoryStorage(BaseStorage):
 
     def items(self):
         return self.storage.items()
-
-    def __setitem__(self, key, val):
-        """ Set `val` at `key`, note that the `val` must be a string. """
-        self.storage.__setitem__(key, val)
-
-    def __getitem__(self, key):
-        """ Return `val` at `key`, note that the `val` must be a string. """
-        return self.storage.__getitem__(key)
-
-    def delete_all(self):
-        self.storage = dict()
 
     def getmemoryusage(self):
         d = self.storage
@@ -171,14 +152,6 @@ class BaseRedisStorage(BaseStorage):
         self.secondary_storage = RedisCluster([redis.StrictRedis(
             host=host, port=port, db=1) for host, port in config['conn']])
 
-    def get_name(self, key):
-        if isinstance(key, str):
-            hkey = str.encode(key)
-        elif isinstance(key, int):
-            hkey = (key).to_bytes(4, byteorder='big')
-        name = hash_key(hkey)
-        return name
-
     def __setitem__(self, key, val):
         name = self.get_name(key)
         self.storage.hset(name, key, val, partition_arg=1)
@@ -196,6 +169,14 @@ class BaseRedisStorage(BaseStorage):
                 return self[key]
         except KeyError:
             return default
+
+    def get_name(self, key):
+        if isinstance(key, str):
+            hkey = str.encode(key)
+        elif isinstance(key, int):
+            hkey = (key).to_bytes(4, byteorder='big')
+        name = hash_key(hkey)
+        return name
 
     def add_sample(self, sample_name):
         existing_index = self.get_sample_colour(sample_name)
@@ -279,3 +260,58 @@ class BaseRedisStorage(BaseStorage):
             return self.metadata.pfcount('kmer_count')
         else:
             return self.metadata.pfcount('kmer_count_%s' % sample)
+
+
+class BaseBerkeleyDBStorage(BaseStorage):
+
+    def __init__(self, config):
+        if 'filename' not in config:
+            raise ValueError(
+                "You must supply a 'filename' in your config%s" % config)
+        self.db_file = config['filename']
+        try:
+            self.storage = bsddb.hashopen(self.db_file)
+        except AttributeError:
+            raise ValueError(
+                "Please install bsddb3 to use berkeley DB storage")
+
+    def __exit__(self, type, value, traceback):
+        self.storage.sync()
+
+    def keys(self):
+        return self.storage.keys()
+
+    def count_keys(self):
+        return len(self.keys())
+
+    def __setitem__(self, key, val):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        self.storage[key] = val
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        return self.storage[key]
+
+    def get(self, key, default=None):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def delete_all(self):
+        self.storage.close()
+        os.remove(self.db_file)
+        self.storage = bsddb.hashopen(self.db_file)
+
+    def getmemoryusage(self):
+        return 0
