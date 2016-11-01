@@ -50,6 +50,12 @@ class BitArray(bitarray):
             self.extend([False]*(1+i-self.length()))
             return self.setbit(i, bit)
 
+    def getbit(self, i):
+        try:
+            return self[i]
+        except IndexError:
+            return False
+
 
 class BloomFilterMatrix:
 
@@ -70,6 +76,9 @@ class BloomFilterMatrix:
     def add(self, element, colour):
         for result in self.hashes(element):
             self._setbit(colour, result, 1)
+
+    def update(self, elements, colour):
+        [self.add(element, colour) for element in elements]
 
     def contains(self, element, colour):
         for result in self.hashes(element):
@@ -92,7 +101,7 @@ class BloomFilterMatrix:
         self.storage.set_row(index, r)
 
     def _getbit(self, colour, index):
-        return self.storage.get_row(index)[colour]
+        return self.storage.get_row(index).getbit(colour)
 
     def _get_row(self, index):
         return self.storage.get_row(index)
