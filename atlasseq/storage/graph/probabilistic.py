@@ -2,6 +2,7 @@ from atlasseq.storage.base import BaseStorage
 from atlasseq.storage.graph.base import BaseGraphStorage
 from atlasseq.storage import InMemoryStorage
 from atlasseq.storage import RedisStorage
+from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq import hash_key
 from atlasseq.bytearray import ByteArray
@@ -54,6 +55,21 @@ class BitArray(bitarray):
         except IndexError:
             return False
 
+    def indexes(self):
+        indexes = []
+        i = 0
+        while True:
+            try:
+                i = self.index(True, i)
+                indexes.append(i)
+                i += 1
+            except ValueError:
+                break
+        return indexes
+
+    def colours(self):
+        return self.indexes()
+
 
 class BloomFilterMatrix:
 
@@ -72,15 +88,15 @@ class BloomFilterMatrix:
             yield self.hash(element, seed)
 
     def add(self, element, colour):
-        for result in self.hashes(element):
-            self._setbit(colour, result, 1)
+        for index in self.hashes(element):
+            self._setbit(index, colour, 1)
 
     def update(self, elements, colour):
         [self.add(element, colour) for element in elements]
 
     def contains(self, element, colour):
-        for result in self.hashes(element):
-            if self._getbit(colour, result) == 0:
+        for index in self.hashes(element):
+            if self._getbit(index, colour) == 0:
                 return False
         return True
 
@@ -94,19 +110,14 @@ class BloomFilterMatrix:
                 bitarray = bitarray & r
         return bitarray
 
-    def _setbit(self, colour, index, bit):
-        r = self.storage.get_row(index)
-        r.setbit(colour, bit)
-        self.storage.set_row(index, r)
+    def _setbit(self, index, colour, bit):
+        self.storage.setbit(index, colour, bit)
 
-    def _getbit(self, colour, index):
-        return self.storage.get_row(index).getbit(colour)
+    def _getbit(self, index, colour):
+        return self.storage.getbit(index, colour)
 
     def _get_row(self, index, num_elements=None):
         return self.storage.get_row(index, num_elements=num_elements)
-
-    def _set_row(self, index, row):
-        return self.storage.set_row(index, row)
 
 
 class BaseProbabilisticStorage(BaseStorage):
@@ -125,6 +136,14 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def lookup(self, kmer, num_elements=None):
         return self.bloomfilter.lookup(kmer, num_elements=num_elements)
+
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
+
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)
 
     def get_row(self, index, num_elements=None):
         b = BitArray()
@@ -149,7 +168,7 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
         self.name = 'probabilistic-inmemory'
 
 
-class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
+class ProbabilisticRedisStorage(BaseProbabilisticStorage, SimpleRedisStorage):
 
     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
         if not redis:

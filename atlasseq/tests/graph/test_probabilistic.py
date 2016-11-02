@@ -8,9 +8,9 @@ from hypothesis import example
 import hypothesis.strategies as st
 from atlasseq.bytearray import ByteArray
 
-
 POSSIBLE_STORAGES = [{'dict': None},
-                     {"redis": [('localhost', 6379, 2)]}]
+                     {"redis": {"conn": [('localhost', 6379, 2)]}},
+                     {'berkeleydb': {'filename': './db'}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 st_sample_colour = st.integers(min_value=0, max_value=10)
 st_sample_name = st.text(min_size=1)
@@ -23,11 +23,10 @@ KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 # Add test for insert, lookup.
 
 
-@given(binary_kmers=st_binary_kmers, primary_colour=st_sample_colour, kmers=st.lists(KMER, max_size=10))
-def test_get_bloomfilter(binary_kmers, primary_colour, kmers):
-    mc = Graph(
-        conn_config=conn_config, binary_kmers=binary_kmers, storage=probabilistic_redis_storage)
+@given(storage=st_storage, binary_kmers=st_binary_kmers, sample=st_sample_name, kmers=st.lists(KMER, max_size=10))
+def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
+    mc = Graph(binary_kmers=binary_kmers, storage=storage)
     mc.delete_all()
-    mc.insert_kmers(kmers, primary_colour)
-    bf = mc.get_bloom_filter(primary_colour)
+    mc.insert(kmers, sample)
+    bf = mc.get_bloom_filter(sample)
     assert len(bf) == mc.storage.array_size

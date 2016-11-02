@@ -53,7 +53,7 @@ class InMemoryStorage(BaseStorage):
 
     def incr(self, key):
         if self.get(key) is None:
-            self[key] = 1
+            self[key] = 0
         v = self.get(key)
         v += 1
         self[key] = v
@@ -130,6 +130,12 @@ class SimpleRedisStorage(BaseRedisStorage):
     def __getitem__(self, key):
         return self.storage.get(key)
 
+    def setbit(self, index, colour, bit):
+        self.storage.setbit(index, colour, bit)
+
+    def getbit(self, index, colour):
+        return self.storage.getbit(index, colour)
+
 
 class RedisStorage(BaseRedisStorage):
 
@@ -149,6 +155,14 @@ class RedisStorage(BaseRedisStorage):
     def __getitem__(self, key):
         name = self.get_name(key)
         return self.storage.hget(name, key, partition_arg=1)
+
+    def setbit(self, index, colour, bit):
+        name = self.get_name(index)
+        self.storage.setbit(name, colour, bit)
+
+    def getbit(self, index, colour):
+        name = self.get_name(index)
+        return self.storage.getbit(name, colour)
 
     def get_name(self, key):
         if isinstance(key, str):
@@ -174,7 +188,7 @@ class BerkeleyDBStorage(BaseStorage):
 
     def incr(self, key):
         if self.get(key) is None:
-            self[key] = 1
+            self[key] = 0
         v = int(self.get(key))
         v += 1
         self[key] = v

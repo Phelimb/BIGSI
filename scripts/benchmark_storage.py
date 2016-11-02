@@ -13,35 +13,32 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "../redis-py")))
-from atlasseq.mcdbg import McDBG
+from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
+
 
 keys = []
-N = 10000
+N = 1000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 
-for storage in [{'dict': None},  # {'berkeleydb': {'filename': './db'}},
-                {"redis": [('localhost', 6379), ('localhost', 6380)]},
-                {"probabilistic-inmemory":
-                 {"array_size": int(N*10), "num_hashes": 2}},
-                {"probabilistic-redis": {"conn": [('localhost', 6379), ('localhost', 6380)],
-                                         "array_size": int(N*10), "num_hashes": 2}}]:
+for storage in [{'dict': None}, {'berkeleydb': {'filename': './db'}},
+                {"redis": {
+                    "conn": [('localhost', 6379, 2)]}}
+                ]:
     sname = [k for k in storage.keys()][0]
-    mc = McDBG(conn_config=[('localhost', 6379)],
-               compress_kmers=True, storage=storage)
+    mc = Graph(storage=storage)
     mc.delete_all()
-    c = 2
+    c = 3
     start = time.time()
     for i in range(c):
-        mc.add_sample(i)
-        mc.insert_kmers(keys, c)
+        mc.insert(keys, str(i))
     end = time.time()
-    print("insert %s - %i " % (sname, N), mc.calculate_memory(), end-start)
+    print("insert %s - %i %i colours" % (sname, N, c), end-start)
     start = time.time()
-    vals = mc.get_kmers_raw(keys)
+    vals = mc.lookup(keys)
     end = time.time()
     print("get %s - %i" % (sname, N), end-start)
     start = time.time()
-    vals = mc.query_kmers(keys)
+    vals = mc.search(keys[0])
     end = time.time()
     print("query %s - %i" % (sname, N), end-start)
