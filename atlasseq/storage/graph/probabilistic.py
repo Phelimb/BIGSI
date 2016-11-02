@@ -6,12 +6,12 @@ from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq import hash_key
 from atlasseq.bytearray import ByteArray
+from atlasseq.bitarray import BitArray
 from redispartition import RedisCluster
 
 import hashlib
 # from bitstring import BitArray
 from redispartition import RedisCluster
-from bitarray import bitarray
 import math
 import os
 import json
@@ -30,45 +30,7 @@ try:
 except ImportError:
     leveldb = None
 
-from bitarray import bitarray
 import mmh3
-
-
-class BitArray(bitarray):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def setbit(self, i, bit):
-        if i < 0:
-            raise ValueError("Index must be >= 0")
-        try:
-            self[i] = bit
-            return self
-        except IndexError:
-            self.extend([False]*(1+i-self.length()))
-            return self.setbit(i, bit)
-
-    def getbit(self, i):
-        try:
-            return self[i]
-        except IndexError:
-            return False
-
-    def indexes(self):
-        indexes = []
-        i = 0
-        while True:
-            try:
-                i = self.index(True, i)
-                indexes.append(i)
-                i += 1
-            except ValueError:
-                break
-        return indexes
-
-    def colours(self):
-        return self.indexes()
 
 
 class BloomFilterMatrix:
@@ -92,7 +54,10 @@ class BloomFilterMatrix:
             self._setbit(index, colour, 1)
 
     def update(self, elements, colour):
-        [self.add(element, colour) for element in elements]
+        indexes = []
+        for element in elements:
+            indexes.extend(self.hashes(element))
+        self._setbits(indexes, colour, 1)
 
     def contains(self, element, colour):
         for index in self.hashes(element):
@@ -102,8 +67,8 @@ class BloomFilterMatrix:
 
     def lookup(self, element, num_elements=None):
         """returns the AND of row of a BloomFilterMatrix corresponding to element"""
-        rows = [self._get_row(index, num_elements=num_elements)
-                for index in self.hashes(element)]
+        indexes = self.hashes(element)
+        rows = self._get_rows(indexes, num_elements)
         bitarray = rows[0]
         if len(rows) > 1:
             for r in rows[:1]:
@@ -113,11 +78,17 @@ class BloomFilterMatrix:
     def _setbit(self, index, colour, bit):
         self.storage.setbit(index, colour, bit)
 
+    def _setbits(self, indexes, colour, bit):
+        self.storage.setbits(indexes, colour, bit)
+
     def _getbit(self, index, colour):
         return self.storage.getbit(index, colour)
 
     def _get_row(self, index, num_elements=None):
         return self.storage.get_row(index, num_elements=num_elements)
+
+    def _get_rows(self, indexes, num_elements=None):
+        return self.storage.get_rows(indexes, num_elements=num_elements)
 
 
 class BaseProbabilisticStorage(BaseStorage):
@@ -148,6 +119,9 @@ class BaseProbabilisticStorage(BaseStorage):
     def get_row(self, index, num_elements=None):
         b = BitArray()
         b.frombytes(self.get(index, b''))
+        return self._check_num_elements(b, num_elements)
+
+    def _check_num_elements(self, b, num_elements):
         if num_elements is None:
             return b[:num_elements]
         else:
@@ -156,6 +130,9 @@ class BaseProbabilisticStorage(BaseStorage):
                 b.extend([False]*(num_elements-b.length()))
             assert b.length() >= num_elements
             return b[:num_elements]
+
+    def get_rows(self, indexes, num_elements=None):
+        return [self.get_row(i, num_elements) for i in indexes]
 
     def set_row(self, index, b):
         self[index] = b.tobytes()
@@ -167,8 +144,12 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-inmemory'
 
+    def setbits(self, indexes, colour, bit):
+        for index in indexes:
+            self.setbit(index, colour, bit)
 
-class ProbabilisticRedisStorage(BaseProbabilisticStorage, SimpleRedisStorage):
+
+class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
 
     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
         if not redis:
@@ -176,9 +157,27 @@ class ProbabilisticRedisStorage(BaseProbabilisticStorage, SimpleRedisStorage):
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-redis'
 
+    def get_rows(self, indexes, num_elements=None):
+        indexes = [i for i in indexes]
+        bas = []
+        rows = self._get_raw_rows(indexes, num_elements)
+        for r in rows:
+            b = BitArray()
+            b.frombytes(r)
+            bas.append(self._check_num_elements(b, num_elements))
+        return bas
+
+    def _get_raw_rows(self, indexes, num_elements):
+        names = [self.get_name(i) for i in indexes]
+        return self.storage.hget(names, indexes, partition_arg=1)
+
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
 
     def __init__(self, config={'filename': './db'}, bloom_filter_size=1000000, num_hashes=3):
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-bsddb'
+
+    def setbits(self, indexes, colour, bit):
+        for index in indexes:
+            self.setbit(index, colour, bit)

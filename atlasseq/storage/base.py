@@ -3,7 +3,7 @@ import sys
 import os
 from redispartition import RedisCluster
 from atlasseq import hash_key
-
+from atlasseq.bitarray import BitArray
 try:
     import bsddb3 as bsddb
 except ImportError:
@@ -130,11 +130,11 @@ class SimpleRedisStorage(BaseRedisStorage):
     def __getitem__(self, key):
         return self.storage.get(key)
 
-    def setbit(self, index, colour, bit):
-        self.storage.setbit(index, colour, bit)
+    # def setbit(self, index, colour, bit):
+    #     self.storage.setbit(index, colour, bit)
 
-    def getbit(self, index, colour):
-        return self.storage.getbit(index, colour)
+    # def getbit(self, index, colour):
+    #     return self.storage.getbit(index, colour)
 
 
 class RedisStorage(BaseRedisStorage):
@@ -156,13 +156,24 @@ class RedisStorage(BaseRedisStorage):
         name = self.get_name(key)
         return self.storage.hget(name, key, partition_arg=1)
 
-    def setbit(self, index, colour, bit):
-        name = self.get_name(index)
-        self.storage.setbit(name, colour, bit)
+    def setbits(self, indexes, colour, bit):
+        hk = self._group_kmers_by_hashkey_and_connection(indexes)
+        for conn, names_hashes in hk.items():
+            names = [k for k in names_hashes.keys()]
+            hashes = [hs for hs in names_hashes.values()]
+            _batch_insert_prob_redis(
+                conn, names, hashes, colour)
 
-    def getbit(self, index, colour):
-        name = self.get_name(index)
-        return self.storage.getbit(name, colour)
+    def _group_kmers_by_hashkey_and_connection(self, all_hashes):
+        d = dict((el, {}) for el in self.storage.connections)
+        for k in all_hashes:
+            name = self.get_name(k)
+            conn = self.storage.get_connection(k)
+            try:
+                d[conn][name].append(k)
+            except KeyError:
+                d[conn][name] = [k]
+        return d
 
     def get_name(self, key):
         if isinstance(key, str):
@@ -171,6 +182,39 @@ class RedisStorage(BaseRedisStorage):
             hkey = (key).to_bytes(4, byteorder='big')
         name = hash_key(hkey)
         return name
+
+
+def get_vals(r, names, list_of_list_kmers):
+    pipe2 = r.pipeline()
+    [pipe2.hmget(name, kmers)
+     for name, kmers in zip(names, list_of_list_kmers)]
+    vals = pipe2.execute()
+    return vals
+
+
+def _batch_insert_prob_redis(conn, names, all_hashes, colour, count=0):
+    r = conn
+    with r.pipeline() as pipe:
+        try:
+            pipe.watch(names)
+            vals = get_vals(r, names, all_hashes)
+            pipe.multi()
+            for name, values, hs in zip(names, vals, all_hashes):
+                for val, h in zip(values, hs):
+                    ba = BitArray()
+                    if val is None:
+                        val = b''
+                    ba.frombytes(val)
+                    ba.setbit(colour, 1)
+                    pipe.hset(name, h, ba.tobytes())
+            pipe.execute()
+        except redis.WatchError:
+            logger.warning("Retrying %s %s " % (r, name))
+            if count < 5:
+                self._batch_insert(conn, hk, colour, count=count+1)
+            else:
+                logger.warning(
+                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
 
 
 class BerkeleyDBStorage(BaseStorage):
