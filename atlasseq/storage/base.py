@@ -82,38 +82,7 @@ class InMemoryStorage(BaseStorage):
         return size
 
 
-class RedisStorage(BaseStorage):
-
-    def __init__(self, config):
-        if not redis:
-            raise ImportError("redis-py is required to use Redis as storage.")
-        self.name = 'redis'
-        if len(config['conn']) == 1:
-            host, port, db = config['conn'][0]
-            self.storage = redis.StrictRedis(
-                host=host, port=port, db=int(db))
-            self.redis_cluster = False
-        else:
-            self.redis_cluster = True
-            self.storage = RedisCluster([redis.StrictRedis(
-                host=host, port=port, db=int(db)) for host, port, db in config['conn']])
-
-    def __setitem__(self, key, val):
-        if self.redis_cluster:
-            name = self.get_name(key)
-            self.storage.hset(name, key, val, partition_arg=1)
-        else:
-            self.storage.set(key, val)
-
-    def __getitem__(self, key):
-        if self.redis_cluster:
-            name = self.get_name(key)
-            return self.storage.hget(name, key, partition_arg=1)
-        else:
-            try:
-                return self.storage.get(key).decode("utf-8")
-            except AttributeError:
-                return self.storage.get(key)
+class BaseRedisStorage(BaseStorage):
 
     def incr(self, key):
         return self.storage.incr(key)
@@ -128,14 +97,6 @@ class RedisStorage(BaseStorage):
         except KeyError:
             return default
 
-    def get_name(self, key):
-        if isinstance(key, str):
-            hkey = str.encode(key)
-        elif isinstance(key, int):
-            hkey = (key).to_bytes(4, byteorder='big')
-        name = hash_key(hkey)
-        return name
-
     def keys(self, pattern="*"):
         return self.storage.keys(pattern)
 
@@ -147,6 +108,50 @@ class RedisStorage(BaseStorage):
 
     def getmemoryusage(self):
         return self.storage.calculate_memory()
+
+
+class SimpleRedisStorage(BaseStorage):
+
+    def __init__(self, config):
+        if not redis:
+            raise ImportError("redis-py is required to use Redis as storage.")
+        self.name = 'redis'
+        host, port, db = config['conn'][0]
+        self.storage = redis.StrictRedis(
+            host=host, port=port, db=int(db))
+
+    def __setitem__(self, key, val):
+        self.storage.set(key, val)
+
+    def __getitem__(self, key):
+        return self.storage.get(key)
+
+
+class RedisStorage(BaseStorage):
+
+    def __init__(self, config):
+        if not redis:
+            raise ImportError("redis-py is required to use Redis as storage.")
+        self.name = 'redis'
+        self.redis_cluster = True
+        self.storage = RedisCluster([redis.StrictRedis(
+            host=host, port=port, db=int(db)) for host, port, db in config['conn']])
+
+    def __setitem__(self, key, val):
+        name = self.get_name(key)
+        self.storage.hset(name, key, val, partition_arg=1)
+
+    def __getitem__(self, key):
+        name = self.get_name(key)
+        return self.storage.hget(name, key, partition_arg=1)
+
+    def get_name(self, key):
+        if isinstance(key, str):
+            hkey = str.encode(key)
+        elif isinstance(key, int):
+            hkey = (key).to_bytes(4, byteorder='big')
+        name = hash_key(hkey)
+        return name
 
 
 class BerkeleyDBStorage(BaseStorage):

@@ -33,6 +33,7 @@ from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 
 from atlasseq.storage import InMemoryStorage
 from atlasseq.storage import RedisStorage
+from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 
 import logging
@@ -95,7 +96,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.graph = ProbabilisticRedisStorage(storage_config['redis'],
                                                    bloom_filter_size=self.bloom_filter_size,
                                                    num_hashes=self.num_hashes)
-            self.metadata = RedisStorage(storage_config['redis'])
+            self.metadata = SimpleRedisStorage(storage_config['redis'])
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
                                                         bloom_filter_size=self.bloom_filter_size,
