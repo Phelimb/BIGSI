@@ -84,6 +84,9 @@ class InMemoryStorage(BaseStorage):
 
 class BaseRedisStorage(BaseStorage):
 
+    def __init__(self):
+        pass
+
     def incr(self, key):
         return self.storage.incr(key)
 
@@ -110,9 +113,10 @@ class BaseRedisStorage(BaseStorage):
         return self.storage.calculate_memory()
 
 
-class SimpleRedisStorage(BaseStorage):
+class SimpleRedisStorage(BaseRedisStorage):
 
     def __init__(self, config):
+        super().__init__()
         if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
         self.name = 'redis'
@@ -127,9 +131,10 @@ class SimpleRedisStorage(BaseStorage):
         return self.storage.get(key)
 
 
-class RedisStorage(BaseStorage):
+class RedisStorage(BaseRedisStorage):
 
     def __init__(self, config):
+        super().__init__()
         if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
         self.name = 'redis'
@@ -199,7 +204,7 @@ class BerkeleyDBStorage(BaseStorage):
             key = str.encode(key)
         elif isinstance(key, int):
             key = str.encode(str(key))
-        return self.storage[key].decode("utf-8")
+        return self.storage[key]
 
     def get(self, key, default=None):
         if isinstance(key, str):
