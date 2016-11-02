@@ -47,6 +47,7 @@ def test_insert_lookup_kmers(Graph, store, sample, kmers, binary_kmers):
     mc.insert(kmers, sample)
     for kmer in kmers:
         assert sample in mc.lookup(kmer)
+    print(mc.lookup(kmers))
     assert sample in mc.lookup(kmers)
 
 
