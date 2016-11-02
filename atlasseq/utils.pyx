@@ -17,17 +17,18 @@ def convert_query_kmers(kmers):
     return [convert_query_kmer(k) for k in kmers]
 
 def convert_query_kmer(str kmer):
-    return min_lexo(kmer)
+    return canonical(kmer)
+
+def canonical(str k):
+    l = [k,reverse_comp(k)]
+    l.sort()
+    return l[0]
 
 def min_lexo(str k):
-    k_hash=make_hash(k)
-    _rev_comp = reverse_comp(k)
-    _rev_comp_hash= make_hash(reverse_comp(k))
-    d={k_hash:k,_rev_comp_hash:_rev_comp}
-    l = [k_hash,_rev_comp_hash]
+    l = [k,reverse_comp(k)]
     l.sort()
-    return d[l[0]]
-
+    return l[0]
+    
 def seq_to_kmers(str seq, int kmer_size = 31):
     for i in range(len(seq)-kmer_size+1):
         yield seq[i:i+kmer_size]

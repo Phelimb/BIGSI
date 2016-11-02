@@ -10,7 +10,7 @@ from atlasseq.bytearray import ByteArray
 
 
 POSSIBLE_STORAGES = [{'dict': None},
-                     {"redis": [('localhost', 6379)]}]
+                     {"redis": [('localhost', 6379, 2)]}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 st_sample_colour = st.integers(min_value=0, max_value=10)
 st_sample_name = st.text(min_size=1)

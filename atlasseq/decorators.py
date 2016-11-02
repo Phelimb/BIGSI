@@ -35,3 +35,18 @@ def convert_kmers(func):
         kmers = kmers_or_bytes(self, kmers)
         return func(self, kmers, *args, **kwargs)
     return convert_kmers_inner
+
+
+def convert_kmers_to_canonical(func):
+    # Wrapper for functions of the form (self, kmers, colour, min_lexo=False)
+    # or (self, kmers, min_lexo=False) and returns only the min of the kmer
+    # and it's reverse complement
+    @wraps(func)
+    def convert_kmers_inner(self, kmers, *args, **kwargs):
+        convert_func = choose_convert_func(kmers)
+        # Are the kmers already converted
+        if not kwargs.get('canonical'):
+            # It is a list of kmers or a single kmer?
+            kmers = convert_func(kmers)
+        return func(self, kmers, *args, **kwargs)
+    return convert_kmers_inner

@@ -1,11 +1,11 @@
 from hypothesis import given
 import hypothesis.strategies as st
-from atlasseq.storage.probabilistic import ProbabilisticInMemoryStorage
-from atlasseq.storage.probabilistic import ProbabilisticRedisStorage
-from atlasseq.storage.probabilistic import ProbabilisticBerkeleyDBStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticRedisStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 st_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 
-REDIS_STORAGE = {"conn": [('localhost', 6379)]}
+REDIS_STORAGE = {"conn": [('localhost', 6379, 2)]}
 
 POSSIBLE_STORAGES = [
     ProbabilisticInMemoryStorage(), ProbabilisticRedisStorage(REDIS_STORAGE), ProbabilisticBerkeleyDBStorage({'filename': './db'})]
