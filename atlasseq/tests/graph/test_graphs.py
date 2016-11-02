@@ -31,7 +31,6 @@ def test_init(Graph, binary_kmers):
 
 @given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name)
 def test_add_sample_metadata(Graph, store, sample):
-    print("new test", Graph, store, sample)
     mc = Graph(storage=store)
     mc.delete_all()
     colour = mc.add_sample(sample)
@@ -46,9 +45,9 @@ def test_insert_lookup_kmers(Graph, store, sample, kmers, binary_kmers):
     mc.delete_all()
     mc.insert(kmers, sample)
     for kmer in kmers:
-        assert sample in mc.lookup(kmer)
-    print(mc.lookup(kmers))
-    assert sample in mc.lookup(kmers)
+        assert sample in mc.lookup(kmer)[kmer]
+        assert sample not in mc.lookup(kmer+"T")[kmer+"T"]
+    assert [sample] in mc.lookup(kmers).values()
 
 
 # @given(Graph=ST_GRAPH, store=st_storage, kmer=KMER, binary_kmers=st_binary_kmers)

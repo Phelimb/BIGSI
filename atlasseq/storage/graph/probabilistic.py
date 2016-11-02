@@ -92,7 +92,6 @@ class BloomFilterMatrix:
         if len(rows) > 1:
             for r in rows[:1]:
                 bitarray = bitarray & r
-        print(element, bitarray)
         return bitarray
 
     def _setbit(self, colour, index, bit):
@@ -124,23 +123,20 @@ class BaseProbabilisticStorage(BaseStorage):
         else:
             self.bloomfilter.add(kmers, colour)
 
-    def lookup(self, kmers, num_elements=None):
-        if isinstance(kmers, list):
-            return [self.bloomfilter.lookup(kmer, num_elements=num_elements) for kmer in kmers]
-        else:
-            return self.bloomfilter.lookup(kmers, num_elements=num_elements)
+    def lookup(self, kmer, num_elements=None):
+        return self.bloomfilter.lookup(kmer, num_elements=num_elements)
 
     def get_row(self, index, num_elements=None):
         b = BitArray()
         b.frombytes(self.get(index, b''))
         if num_elements is None:
-            return b
+            return b[:num_elements]
         else:
             # Ensure b is at least num_elements long
             if b.length() < num_elements:
-                b.extend([False]*num_elements-b.length())
+                b.extend([False]*(num_elements-b.length()))
             assert b.length() >= num_elements
-            return b
+            return b[:num_elements]
 
     def set_row(self, index, b):
         self[index] = b.tobytes()

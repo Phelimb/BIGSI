@@ -62,16 +62,29 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colour = self.add_sample(sample)
         self.graph.insert(kmers, colour)
 
-    @convert_kmers_to_canonical
-    def lookup(self, kmers, canonical=False):
+    def lookup(self, kmers):
         """Return sample names where this kmer is present"""
-        samples_present = []
+        out = {}
+        if isinstance(kmers, list):
+            for kmer in kmers:
+                out[kmer] = self._lookup(kmer)
+        else:
+            out[kmers] = self._lookup(kmers)
+        return out
+
+    @convert_kmers_to_canonical
+    def _lookup(self, kmer, canonical=False):
+        assert not isinstance(kmer, list)
+        num_colours = self.get_num_colours()
         colour_to_sample = self.colours_to_sample_dict()
         colour_presence_boolean_array = self.graph.lookup(
-            kmers, num_elements=self.get_num_colours())
+            kmer, num_elements=self.get_num_colours())
+        samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
             if present:
                 samples_present.append(colour_to_sample.get(i, "unknown"))
+            if i > num_colours:
+                break
         return samples_present
 
     def dump(self, *args, **kwargs):
