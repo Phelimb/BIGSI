@@ -109,6 +109,12 @@ class BloomFilterMatrix:
     def _get_rows(self, indexes, num_elements=None):
         return self.storage.get_rows(indexes, num_elements=num_elements)
 
+    def get_column(self, colour):
+        bf = BitArray()
+        for i in range(self.size):
+            bf.extend([self._getbit(i, colour)])
+        return bf
+
 
 class BaseProbabilisticStorage(BaseStorage):
 
@@ -126,6 +132,9 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def lookup(self, kmer, num_elements=None):
         return self.bloomfilter.lookup(kmer, num_elements=num_elements)
+
+    def get_bloom_filter(self, colour):
+        return self.bloomfilter.get_column(colour)
 
     def setbit(self, index, colour, bit):
         r = self.get_row(index)

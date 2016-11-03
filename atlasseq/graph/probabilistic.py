@@ -76,6 +76,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             out[kmers] = self._lookup(kmers)
         return out
 
+    def get_bloom_filter(self, sample):
+        colour = self.get_sample_colour(sample)
+        return self.graph.get_bloom_filter(colour)
+
     @convert_kmers_to_canonical
     def _insert(self, kmers, colour, canonical=False):
         self.graph.insert(kmers, colour)

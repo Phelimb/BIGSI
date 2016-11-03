@@ -25,8 +25,9 @@ KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 
 @given(storage=st_storage, binary_kmers=st_binary_kmers, sample=st_sample_name, kmers=st.lists(KMER, max_size=10))
 def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
-    mc = Graph(binary_kmers=binary_kmers, storage=storage)
+    mc = Graph(
+        binary_kmers=binary_kmers, storage=storage, bloom_filter_size=100)
     mc.delete_all()
     mc.insert(kmers, sample)
     bf = mc.get_bloom_filter(sample)
-    assert len(bf) == mc.storage.array_size
+    assert bf.length() == mc.graph.bloomfilter.size
