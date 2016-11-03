@@ -87,8 +87,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return {kmer: colour_presence_boolean_array.colours()}
 
     def _get_kmers_colours(self, kmers):
-        bas = [self.graph.lookup(
-            kmer, num_elements=self.get_num_colours()) for kmer in kmers]
+        bas = self.graph.lookup(
+            kmers, num_elements=self.get_num_colours())
         o = {}
         for kmer, bas in zip(kmers, bas):
             o[kmer] = bas.colours()

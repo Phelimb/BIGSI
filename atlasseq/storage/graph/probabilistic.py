@@ -67,8 +67,27 @@ class BloomFilterMatrix:
 
     def lookup(self, element, num_elements=None):
         """returns the AND of row of a BloomFilterMatrix corresponding to element"""
+        if isinstance(element, list):
+            return self._lookup_elements(element, num_elements)
+        else:
+            return self._lookup_element(element, num_elements)
+
+    def _lookup_elements(self, elements, num_elements=None):
+        indexes = []
+        for e in elements:
+            indexes.extend([h for h in self.hashes(e)])
+        rows = self._get_rows(indexes, num_elements)
+        bas = []
+        for i in range(0, len(rows), self.num_hashes):
+            bas.append(self._binary_and(rows[i:i + self.num_hashes]))
+        return bas
+
+    def _lookup_element(self, element, num_elements=None):
         indexes = self.hashes(element)
         rows = self._get_rows(indexes, num_elements)
+        return self._binary_and(rows)
+
+    def _binary_and(self, rows):
         bitarray = rows[0]
         if len(rows) > 1:
             for r in rows[:1]:
@@ -152,8 +171,6 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
 class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
 
     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
-        if not redis:
-            raise ImportError("redis-py is required to use Redis as storage.")
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-redis'
 
@@ -163,6 +180,8 @@ class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
         rows = self._get_raw_rows(indexes, num_elements)
         for r in rows:
             b = BitArray()
+            if r is None:
+                r = b''
             b.frombytes(r)
             bas.append(self._check_num_elements(b, num_elements))
         return bas

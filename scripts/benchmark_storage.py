@@ -17,11 +17,12 @@ from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 keys = []
-N = 1000
+N = 100000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 
-for storage in [{'dict': None}, {'berkeleydb': {'filename': './db'}},
+for storage in [{'dict': None},
+                {'berkeleydb': {'filename': './db'}},
                 {"redis": {
                     "conn": [('localhost', 6379, 2)]}}
                 ]:
@@ -35,9 +36,9 @@ for storage in [{'dict': None}, {'berkeleydb': {'filename': './db'}},
     end = time.time()
     print("insert %s - %i %i colours" % (sname, N, c), end-start)
     start = time.time()
-    vals = mc.lookup(keys)
+    vals = mc._search(keys[:10000])
     end = time.time()
-    print("get %s - %i" % (sname, N), end-start)
+    print("get 10000kmers %s - %i" % (sname, N), end-start)
     start = time.time()
     vals = mc.search(keys[0])
     end = time.time()
