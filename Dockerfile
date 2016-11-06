@@ -25,7 +25,7 @@ RUN BERKELEYDB=/usr/local/Cellar/berkeley-db4/4.8.30/ pip install --no-cache-dir
 # Install hug
 #WORKDIR /usr/src/app/hug
 #RUN python setup.py install
-pip install hug
+RUN pip install hug
 
 # install atlasseq
 WORKDIR /usr/src/app

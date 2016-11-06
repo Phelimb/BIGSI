@@ -2,15 +2,9 @@
 # Python dependencies. For more complex setups, you can use conda on Travis:
 # http://conda.pydata.org/docs/travis.html 
 
-language: python
-python:
-  - "3.5"
-  - "3.4"
-services:
-  - redis-server 
-  - docker
 sudo: required  
-# Install any dependencies for running the tests:
+services:
+  - docker
 before_install:
   - docker build -t phelimb/atlasseq .
   - sudo rm /usr/local/bin/docker-compose
