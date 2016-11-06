@@ -12,7 +12,10 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin  
   - sudo docker-compose up -d
-  - sudo docker exec atlasseq_main_1 redis-server
+  - sudo docker exec atlasseq_main_1 redis-server > /dev/null &
+  - sudo docker exec atlasseq_main_1 python setup.py build_ext --inplace
+  - sudo docker exec atlasseq_main_1 sh clean.sh
+
 
 
 #install: pip install -r requirements.txt && python setup.py build_ext  --inplace
