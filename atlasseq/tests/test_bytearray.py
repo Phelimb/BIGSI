@@ -2,6 +2,10 @@ from atlasseq.bytearray import ByteArray
 from hypothesis import given
 import hypothesis.strategies as st
 import redis
+import os
+
+REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
+REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 
 
 def test_sparse_dense_metadata():
@@ -19,7 +23,7 @@ POSSIBLE_COLOUR = st.integers(min_value=0, max_value=65536)
 
 @given(pos=POSSIBLE_COLOUR, bit=ST_BIT)
 def test_setbit_dense(pos, bit):
-    r = redis.StrictRedis()
+    r = redis.StrictRedis(REDIS_HOST, REDIS_PORT)
     r.flushall()
     r.setbit('tmp', pos, bit)
     a = ByteArray()
@@ -32,7 +36,7 @@ def test_setbit_dense(pos, bit):
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
 def test_setbit_dense_lists(poss, bits):
-    r = redis.StrictRedis()
+    r = redis.StrictRedis(REDIS_HOST, REDIS_PORT)
     r.flushall()
     a = ByteArray()
     for pos, bit in zip(poss, bits):
@@ -136,7 +140,7 @@ def test_choose_optimal_encoding2():
 
 @given(poss=st.lists(POSSIBLE_COLOUR, min_size=1), bits=st.lists(ST_BIT, min_size=1))
 def test_setbit_sparse_lists(poss, bits):
-    r = redis.StrictRedis()
+    r = redis.StrictRedis(REDIS_HOST, REDIS_PORT)
     r.flushall()
     a = ByteArray()
     a.to_sparse()

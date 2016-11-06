@@ -4,11 +4,15 @@ from hypothesis import example
 import hypothesis.strategies as st
 
 KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
+import os
+
+REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
+REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 
 
 @given(kmers=st.lists(KMER, min_size=20, max_size=20, unique=True))
 def test_jaccard_index(kmers):
-    mc = HyperLogLogJaccardIndex()
+    mc = HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT)
     mc.delete_all()
     mc.insert(kmers, '1234')
     mc.insert(kmers, '1235')
@@ -18,7 +22,7 @@ def test_jaccard_index(kmers):
 @given(kmers1=st.lists(KMER, min_size=10, max_size=10, unique=True),
        kmers2=st.lists(KMER, min_size=10, max_size=10, unique=True))
 def test_jaccard_index2(kmers1, kmers2):
-    mc = HyperLogLogJaccardIndex()
+    mc = HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT)
     mc.delete_all()
     mc.insert(kmers1, '1234')
     mc.insert(kmers2, '1235')

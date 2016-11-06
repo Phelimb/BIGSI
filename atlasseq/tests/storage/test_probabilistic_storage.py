@@ -3,9 +3,13 @@ import hypothesis.strategies as st
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticRedisStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+import os
+
+REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
+REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 st_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 
-REDIS_STORAGE = {"conn": [('localhost', 6379, 2)]}
+REDIS_STORAGE = {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}
 
 POSSIBLE_STORAGES = [
     ProbabilisticInMemoryStorage(), ProbabilisticRedisStorage(REDIS_STORAGE), ProbabilisticBerkeleyDBStorage({'filename': './db'})]

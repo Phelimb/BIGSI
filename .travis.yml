@@ -8,8 +8,7 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin  
   - sudo docker-compose up -d
-  - sudo docker exec atlasseq_main_1 redis-server > /dev/null 
-  - sudo docker exec atlasseq_main_1 python setup.py build_ext --inplace
+  - sudo docker exec atlasseq_main_1 redis-server > /dev/null &
   - sudo docker exec atlasseq_main_1 sh clean.sh
 script:
   - sudo docker exec atlasseq_main_1 py.test --cov=atlasseq --cov-config .coveragerc atlasseq/tests/*.py 

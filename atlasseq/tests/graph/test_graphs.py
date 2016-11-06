@@ -7,10 +7,12 @@ from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
 from atlasseq.bytearray import ByteArray
+import os
 
-
+REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
+REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 POSSIBLE_STORAGES = [{'dict': None},
-                     {"redis": {"conn": [('localhost', 6379, 2)]}},
+                     {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
                      {'berkeleydb': {'filename': './db'}}]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 st_sample_colour = st.integers(min_value=0, max_value=10)
