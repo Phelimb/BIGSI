@@ -1,4 +1,4 @@
-#from distutils.core import setup
+# from distutils.core import setup
 from setuptools import setup
 import os
 with open('requirements.txt') as f:
@@ -23,8 +23,8 @@ setup(
     author='Phelim Bradley',
     author_email='wave@phel.im',
     ext_modules=cythonize("atlasseq/utils.pyx"),
-    install_requires=required,
+    install_requires=required[1:],
     entry_points={
         'console_scripts': [
-            'atlasseq = atlasseq.main:main',
+            'atlasseq = atlasseq.__main__:main',
         ]})

@@ -113,5 +113,8 @@ class AtlasSeq(object):
         return shutdown(conn_config=CONN_CONFIG)
 
 
+def main():
+    API.cli()
+
 if __name__ == "__main__":
     API.cli()
