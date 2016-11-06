@@ -32,13 +32,5 @@ RUN  pip install --no-cache-dir -r requirements.txt
 WORKDIR /usr/src/app
 RUN python setup.py install
 
-# install redis (for testing)
-RUN wget http://download.redis.io/redis-stable.tar.gz
-RUN tar xvzf redis-stable.tar.gz
-WORKDIR /usr/src/app/redis-stable
-RUN make
-RUN cp /usr/src/app/redis-stable/src/redis-server /usr/bin/
-WORKDIR /usr/src/app
-
 
 CMD atlasseq --help
