@@ -16,6 +16,7 @@ from atlasseq.utils import kmer_to_bits
 from atlasseq.utils import bits_to_kmer
 from atlasseq.utils import kmer_to_bytes
 from atlasseq.utils import hash_key
+from atlasseq.version import __version__
 
 
 from atlasseq.decorators import convert_kmers_to_canonical
@@ -138,17 +139,28 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 break
         return samples_present
 
-    def dump(self, *args, **kwargs):
-        self.graph.dump(*args, **kwargs)
+    # def dump(self, *args, **kwargs):
+    #     self.graph.dump(*args, **kwargs)
 
-    def dumps(self, *args, **kwargs):
-        self.graph.dumps(*args, **kwargs)
+    def dumps(self):
+        d = {}
+        d['version'] = __version__
+        d['metadata'] = self.metadata.dumps()
+        d['graph'] = self.graph.dumps()
+        d['bloom_filter_size'] = self.graph.bloomfilter.size
+        d['num_hashes'] = self.graph.bloomfilter.num_hashes
+        return d
 
-    def load(self, *args, **kwargs):
-        self.graph.load(*args, **kwargs)
+    # def load(self, *args, **kwargs):
+    #     self.graph.load(*args, **kwargs)
 
-    def loads(self, *args, **kwargs):
-        self.graph.loads(*args, **kwargs)
+    def loads(self, dump):
+        self.metadata.loads(dump['metadata'])
+        self.graph.loads(dump['graph'])
+        self.bloom_filter_size = dump['bloom_filter_size']
+        self.num_hashes = dump['num_hashes']
+        self.graph.bloomfilter.size = self.bloom_filter_size
+        self.graph.bloomfilter.num_hashes = self.num_hashes
 
     def _choose_storage(self, storage_config):
         if 'dict' in storage_config:
@@ -160,7 +172,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.graph = ProbabilisticRedisStorage(storage_config['redis'],
                                                    bloom_filter_size=self.bloom_filter_size,
                                                    num_hashes=self.num_hashes)
-            self.metadata = SimpleRedisStorage(storage_config['redis'])
+            self.metadata = SimpleRedisStorage(
+                {'conn': [('localhost', 6379, 0)]})
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
                                                         bloom_filter_size=self.bloom_filter_size,

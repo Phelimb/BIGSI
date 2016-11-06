@@ -31,3 +31,20 @@ def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
     mc.insert(kmers, sample)
     bf = mc.get_bloom_filter(sample)
     assert bf.length() == mc.graph.bloomfilter.size
+
+
+@given(kmer=KMER, store1=st_storage, store2=st_storage,
+       bloom_filter_size=st.integers(min_value=100, max_value=1000), num_hashes=st.integers(min_value=1, max_value=5))
+def test_dump_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
+    mc = Graph(
+        storage=store1, bloom_filter_size=bloom_filter_size, num_hashes=num_hashes)
+    mc.delete_all()
+    mc.insert(kmer, '1234')
+    assert mc.lookup(kmer) == {kmer: ['1234']}
+    mc.insert(kmer, '1235')
+    assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
+    graph_dump = mc.dumps()
+
+    mc2 = Graph(storage=store2)
+    mc2.loads(graph_dump)
+    assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}

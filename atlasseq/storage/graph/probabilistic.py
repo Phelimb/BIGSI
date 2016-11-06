@@ -165,6 +165,10 @@ class BaseProbabilisticStorage(BaseStorage):
     def set_row(self, index, b):
         self[index] = b.tobytes()
 
+    def items(self):
+        for i in range(self.bloomfilter.size):
+            yield (i, self.get(i, b''))
+
 
 class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
 

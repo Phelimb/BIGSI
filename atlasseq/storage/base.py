@@ -36,6 +36,16 @@ class BaseStorage(object):
     def incr(self, key):
         raise NotImplementedError
 
+    def dumps(self):
+        d = {}
+        for k, v in self.items():
+            d[k] = v
+        return d
+
+    def loads(self, dump):
+        for k, v in dump.items():
+            self[k] = v
+
 
 class InMemoryStorage(BaseStorage):
 
@@ -130,6 +140,9 @@ class SimpleRedisStorage(BaseRedisStorage):
     def __getitem__(self, key):
         return self.storage.get(key)
 
+    def items(self):
+        for i in self.storage.scan_iter():
+            yield (i.decode('utf-8'), self[i].decode('utf-8'))
     # def setbit(self, index, colour, bit):
     #     self.storage.setbit(index, colour, bit)
 
@@ -242,6 +255,10 @@ class BerkeleyDBStorage(BaseStorage):
 
     def keys(self):
         return self.storage.keys()
+
+    def items(self):
+        for i in self.storage.keys():
+            yield (i.decode('utf-8'), self[i].decode('utf-8'))
 
     def count_keys(self):
         return len(self.keys())
