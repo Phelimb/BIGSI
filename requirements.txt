@@ -1,3 +1,4 @@
+git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 bsddb3
 mmh3
 HLL

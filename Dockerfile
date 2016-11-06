@@ -21,11 +21,12 @@ ENV BERKELEY_VERSION 4.8.30
 
 COPY . /usr/src/app
 #COPY requirements.txt /usr/src/app/
-RUN BERKELEYDB=/usr/local/Cellar/berkeley-db4/4.8.30/ pip install --no-cache-dir -r requirements.txt
+# BERKELEYDB_DIR=/usr/local/Cellar/berkeley-db4/4.8.30/
+RUN  pip install --no-cache-dir -r requirements.txt
 # Install hug
 #WORKDIR /usr/src/app/hug
 #RUN python setup.py install
-RUN pip install hug
+#RUN pip install git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 
 # install atlasseq
 WORKDIR /usr/src/app
