@@ -7,7 +7,8 @@ from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
 from atlasseq.bytearray import ByteArray
-
+import tempfile
+import os
 POSSIBLE_STORAGES = [{'dict': None},
                      {"redis": {"conn": [('localhost', 6379, 2)]}},
                      {'berkeleydb': {'filename': './db'}}]
@@ -35,7 +36,8 @@ def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
 
 @given(kmer=KMER, store1=st_storage, store2=st_storage,
        bloom_filter_size=st.integers(min_value=100, max_value=1000), num_hashes=st.integers(min_value=1, max_value=5))
-def test_dump_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
+def test_dumps_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
+    """test dumping and loading graphs from various backends"""
     mc = Graph(
         storage=store1, bloom_filter_size=bloom_filter_size, num_hashes=num_hashes)
     mc.delete_all()
@@ -48,3 +50,24 @@ def test_dump_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
     mc2 = Graph(storage=store2)
     mc2.loads(graph_dump)
     assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}
+
+
+@given(kmer=KMER, store1=st_storage, store2=st_storage,
+       bloom_filter_size=st.integers(min_value=100, max_value=1000), num_hashes=st.integers(min_value=1, max_value=5))
+def test_dump_load(kmer, store1, store2, bloom_filter_size, num_hashes):
+    """test dumping and loading graphs from various backends"""
+    mc = Graph(
+        storage=store1, bloom_filter_size=bloom_filter_size, num_hashes=num_hashes)
+    mc.delete_all()
+    mc.insert(kmer, '1234')
+    assert mc.lookup(kmer) == {kmer: ['1234']}
+    mc.insert(kmer, '1235')
+    assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
+    mc2 = Graph(storage=store2)
+    _, fp = tempfile.mkstemp()
+    with open(fp, 'wb') as outfile:
+        mc.dump(outfile)
+    with open(fp, 'rb') as infile:
+        mc2.load(infile)
+    assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}
+    os.remove(fp)

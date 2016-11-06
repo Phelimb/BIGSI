@@ -6,6 +6,7 @@ import time
 from collections import Counter
 import json
 import logging
+import pickle
 
 from atlasseq.graph.base import BaseGraph
 from atlasseq.utils import seq_to_kmers
@@ -139,8 +140,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 break
         return samples_present
 
-    # def dump(self, *args, **kwargs):
-    #     self.graph.dump(*args, **kwargs)
+    def dump(self, fp):
+        graph_dump = self.dumps()
+        pickle.dump(graph_dump, fp)
 
     def dumps(self):
         d = {}
@@ -151,8 +153,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         d['num_hashes'] = self.graph.bloomfilter.num_hashes
         return d
 
-    # def load(self, *args, **kwargs):
-    #     self.graph.load(*args, **kwargs)
+    def load(self, fp):
+        graph_dump = pickle.load(fp)
+        self.loads(graph_dump)
 
     def loads(self, dump):
         self.metadata.loads(dump['metadata'])
