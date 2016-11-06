@@ -1,3 +1,5 @@
+bsddb3
+mmh3
 HLL
 bitarray
 #mccortex

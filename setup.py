@@ -8,7 +8,10 @@ setup(
     version='0.0.1',
     packages=[
         'atlasseq',
-        'atlasseq.cmds'
+        'atlasseq.cmds',
+        'atlasseq.graph',
+        'atlasseq.sketch',
+        'atlasseq.storage'
     ],
     license='MIT',
     url='http://github.com/phelimb/atlasseq',

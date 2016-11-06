@@ -30,4 +30,10 @@ RUN python setup.py install
 WORKDIR /usr/src/app
 RUN python setup.py install
 
+# install redis (for testing)
+wget http://download.redis.io/redis-stable.tar.gz
+tar xvzf redis-stable.tar.gz
+cd redis-stable
+make
+
 CMD atlasseq --help

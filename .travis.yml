@@ -8,10 +8,27 @@ python:
   - "3.4"
 services:
   - redis-server 
+  - docker
+sudo: required  
 # Install any dependencies for running the tests:
-install: pip install -r requirements.txt && python setup.py build_ext  --inplace
+before_install:
+  - docker build -t phelimb/atlasseq .
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin  
+  - sudo docker-compose up -d
+  - sudo docker exec atlasseq_main_1 redis-server
+
+
+#install: pip install -r requirements.txt && python setup.py build_ext  --inplace
 # command to run tests
-script: py.test --cov=atlasseq --cov-config .coveragerc atlasseq/tests/*.py 
+script:
+  - sudo docker exec atlasseq_main_1 py.test --cov=atlasseq --cov-config .coveragerc atlasseq/tests/*.py 
+
 after_success:
-  codecov
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push USER/REPO;
+    fi
 
