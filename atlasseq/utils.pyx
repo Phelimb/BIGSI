@@ -1,4 +1,5 @@
 import hashlib
+import struct 
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS={'A':'00','G':'01','C':'10','T':'11'}
 BASES={'00':'A','01':'G','10':'C','11':'T'}
