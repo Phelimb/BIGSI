@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from atlasseq.mcdbg import McDBG
+from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 import os.path
 import logging
 import json
@@ -54,8 +54,8 @@ def insert(kmer_file, conn_config, force=False, sample_name=None, intersect_kmer
     else:
         intersect_kmers = None
 
-    mc = McDBG(conn_config=conn_config, storage={'probabilistic-redis': {"conn": conn_config,
-                                                                         "array_size": 25000000, "num_hashes": 2}})
+    mc = Graph(storage={'probabilistic-redis': {"conn": conn_config,
+                                                "array_size": 25000000, "num_hashes": 2}})
     try:
         colour = mc.add_sample(sample_name)
         insert_colour(

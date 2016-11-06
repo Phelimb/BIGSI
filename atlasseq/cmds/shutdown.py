@@ -1,5 +1,5 @@
 from __future__ import print_function
-from atlasseq.mcdbg import McDBG
+from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 def shutdown(conn_config):

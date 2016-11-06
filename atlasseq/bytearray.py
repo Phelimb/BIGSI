@@ -1,6 +1,6 @@
 from __future__ import print_function
 # from bitstring import BitArray
-from bitarray import bitarray
+from bitvector import BitArray
 import sys
 import math
 
@@ -32,8 +32,8 @@ def choose_int_encoding(ints):
 class ByteArray(object):
 
     def __init__(self, byte_array=None, meta=b'\x00', bitstring=b'\x00'):
-        self.meta = bitarray()
-        self.bitstring = bitarray()
+        self.meta = BitArray()
+        self.bitstring = BitArray()
         if byte_array is None:
             self.meta.frombytes(meta)
             self.bitstring.frombytes(bitstring)
@@ -88,7 +88,7 @@ class ByteArray(object):
             self._set_sparse_byte_length(bo)
             _bytes = b''.join([int(i).to_bytes(self.sparse_byte_length, byteorder='big')
                                for i in indexes])
-            self.bitstring = bitarray()
+            self.bitstring = BitArray()
             self.bitstring.frombytes(_bytes)
 
     def indexes(self):
@@ -106,7 +106,7 @@ class ByteArray(object):
 
     def to_dense(self):
         if self.is_sparse():
-            new_bitstring = bitarray()
+            new_bitstring = BitArray()
             new_bitstring.frombytes(b'\x00')
             for i in self._bit_1_indexes():
                 setbit(new_bitstring, i, 1)
@@ -147,7 +147,7 @@ class ByteArray(object):
                     _append_bytes = int(pos).to_bytes(
                         self.sparse_byte_length, byteorder='big')
                     b = b''.join([self.bitstring.tobytes(), _append_bytes])
-                    self.bitstring = bitarray()
+                    self.bitstring = BitArray()
                     self.bitstring.frombytes(b)
 
     def getbit(self, pos):

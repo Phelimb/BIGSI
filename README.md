@@ -7,18 +7,24 @@
 
 # Launch
 	
+# With docker
 
-Docker installation -  reccommended (install docker toolbox first). 
+Docker installation -  reccommended (install [docker toolbox](https://www.docker.com/products/docker-toolbox) first). 
 
 	docker-compose pull && docker-compose up -d
 
 # Insert sample
 
-	docker exec redismcdbg_main_1 remcdbg/main.py insert sample.txt
+	docker exec atlasseq_main_1 atlasseq insert sample.txt
 
 # Query for sequence
 
-	docker exec redismcdbg_main_1 remcdbg/main.py query /data/gn-amr-genes.fasta
+	docker exec atlasseq_main_1 atlasseq query /data/gn-amr-genes.fasta
+
+
+# Without docker
+
+	pip install atlasseq
 
 
 

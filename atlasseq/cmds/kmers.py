@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from atlasseq.mcdbg import McDBG
+from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 import argparse
 import json
 import pickle

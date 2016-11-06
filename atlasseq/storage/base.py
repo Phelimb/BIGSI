@@ -3,7 +3,7 @@ import sys
 import os
 from redispartition import RedisCluster
 from atlasseq import hash_key
-from atlasseq.bitarray import BitArray
+from atlasseq.bitvector import BitArray
 try:
     import bsddb3 as bsddb
 except ImportError:
