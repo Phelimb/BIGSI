@@ -2,7 +2,7 @@
 from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader('.'))
 redis_conf = []
-for i in range(20):
+for i in range(2):
     redis = {}
     redis['i'] = i+1
     redis['port'] = 6300+i+1
