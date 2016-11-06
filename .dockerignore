@@ -1,5 +1,5 @@
 kpc2-test
-scripts
+.scripts/
 venv*
 ./venv2
 atlasseq/utils.so
