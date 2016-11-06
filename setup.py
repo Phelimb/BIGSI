@@ -18,7 +18,8 @@ setup(
     ext_modules=cythonize("atlasseq/utils.pyx"),
     install_requires=[
             'redis',
-            'hiredis'],
+            'hiredis',
+    ],
     entry_points={
         'console_scripts': [
             'atlasseq = atlasseq.main:main',

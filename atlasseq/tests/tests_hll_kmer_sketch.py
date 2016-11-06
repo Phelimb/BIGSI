@@ -15,8 +15,8 @@ def test_jaccard_index(kmers):
     assert mc.jaccard_index('1234', '1235') == 1
 
 
-@given(kmers1=st.lists(KMER, min_size=20, max_size=20, unique=True),
-       kmers2=st.lists(KMER, min_size=20, max_size=20, unique=True))
+@given(kmers1=st.lists(KMER, min_size=10, max_size=10, unique=True),
+       kmers2=st.lists(KMER, min_size=10, max_size=10, unique=True))
 def test_jaccard_index2(kmers1, kmers2):
     mc = HyperLogLogJaccardIndex()
     mc.delete_all()
