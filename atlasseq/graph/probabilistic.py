@@ -10,11 +10,6 @@ import logging
 from atlasseq.graph.base import BaseGraph
 from atlasseq.utils import seq_to_kmers
 
-sys.path.append("../cortex-py")
-
-from mccortex.cortex import encode_kmer
-from mccortex.cortex import decode_kmer
-
 from atlasseq.utils import min_lexo
 from atlasseq.utils import bits
 from atlasseq.utils import kmer_to_bits

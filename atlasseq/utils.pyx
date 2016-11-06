@@ -3,6 +3,35 @@ COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS={'A':'00','G':'01','C':'10','T':'11'}
 BASES={'00':'A','01':'G','10':'C','11':'T'}
 
+def decode_kmer(bytes binary_kmer, int kmer_size):
+    """
+    Returns a string representation of the specified kmer.
+    """
+    # G and C are the wrong way around because we reverse the sequence.
+    # This really is a nasty way to do this!
+    assert kmer_size <= 31
+    binary_kmer_int = struct.unpack('Q', binary_kmer)[0]
+
+    b = "{0:064b}".format(binary_kmer_int)[::-1]
+    ret = []
+    for j in range(kmer_size):
+        nuc = BASES[b[j * 2: (j + 1) * 2]]
+        ret.append(nuc)
+    ret = "".join(ret)
+
+    return ret[::-1]
+
+def encode_kmer(str kmer):
+    """
+    Returns the encoded integer representation of the specified string kmer.
+    """
+    ret = 0
+    codes = {"A": 0, "C": 1, "G": 2, "T": 3}
+    for j, nuc in enumerate(reversed(kmer)):
+        v = codes[nuc]
+        ret |= v << (2 * j)
+    return struct.pack('Q', ret)
+
 def make_hash(str s):
     return hashlib.sha256(s.encode("ascii", errors="ignore")).hexdigest()
 
