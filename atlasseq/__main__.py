@@ -117,4 +117,4 @@ def main():
     API.cli()
 
 if __name__ == "__main__":
-    API.cli()
+    main()
