@@ -2,6 +2,10 @@ FROM python:3.5.2
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
+## Install pylevel
+RUN apt-get install -y build-essential libleveldb1 libleveldb-dev
+RUN pip install plyvel
+
 ENV BERKELEY_VERSION 4.8.30
 
 # Download, configure and install BerkeleyDB
@@ -12,7 +16,8 @@ ENV BERKELEY_VERSION 4.8.30
 #    ../dist/configure && make && make install
 
 # Upgrade your gcc to version at least 4.7 to get C++11 support. gflags snappy zlib bzip2
-#RUN apt-get install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev
+#RUN apt-get install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev 
+
 
 # Clone rocksdb
 # RUN cd /tmp && git clone https://github.com/facebook/rocksdb.git && cd rocksdb && make clean && make

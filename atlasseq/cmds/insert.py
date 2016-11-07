@@ -23,60 +23,50 @@ def load_all_kmers(f):
             read = line.strip()
             for kmer in seq_to_kmers(read):
                 kmers.append(kmer)
-    return kmers
+    return set(kmers)
 
 
-def insert_colour(mc, kmer_file, colour, sample_name, count_only, intersect_kmers=None):
-    kmers = []
-    with open(kmer_file, 'r') as inf:
-        for i, line in enumerate(inf):
-            read = line.strip()
-            for kmer in seq_to_kmers(read):
-                kmers.append(kmer)
-                if i % 100000 == 0 and i > 1:
-                    if intersect_kmers is not None:
-                        kmers = list(set(kmers) & intersect_kmers)
-                    insert_kmers(
-                        mc, kmers, colour, sample_name, count_only=count_only)
-                    kmers = []
-    if intersect_kmers is not None:
-        kmers = list(set(kmers) & intersect_kmers)
-    insert_kmers(mc, kmers, colour, sample_name, count_only=count_only)
-
+# def extract_kmers(kmer_file):
+#     kmers = set()
+#     with open(kmer_file, 'r') as inf:
+#         for i, line in enumerate(inf):
+#             read = line.strip()
+#             for kmer in seq_to_kmers(read):
+#                 kmers.add(kmer)
+#     if intersect_kmers is not None:
+#         kmers = list(set(kmers) & intersect_kmers)
+#     return kmers
 
 def insert(kmer_file, conn_config, force=False, sample_name=None, intersect_kmers_file=None, count_only=False):
     if sample_name is None:
         sample_name = os.path.basename(kmer_file).split('.')[0]
-    logger.info("Inserting kmers from {0} to {1} into database at {2} ".format(
-        kmer_file, sample_name, conn_config))
+
     if intersect_kmers_file is not None:
         intersect_kmers = set(load_all_kmers(intersect_kmers_file))
     else:
         intersect_kmers = None
 
-    mc = Graph(storage={'probabilistic-redis': {"conn": conn_config,
-                                                "array_size": 25000000, "num_hashes": 2}})
+    logger.info("Inserting kmers from {0} to {1} into database at {2} ".format(
+        kmer_file, sample_name, conn_config))
+    mc = Graph(storage={'redis': {"conn": conn_config,
+                                  "array_size": 25000000,
+                                  "num_hashes": 2}})
+    kmers = list(load_all_kmers(kmer_file))
+    logger.debug("Loaded %i kmers" % len(kmers))
     try:
-        colour = mc.add_sample(sample_name)
-        insert_colour(
-            mc, kmer_file, colour, sample_name, count_only, intersect_kmers)
+        mc.insert(kmers, sample_name)
         print(json.dumps({"result": "success",
-                          "colour": colour,
-                          "total-kmers": mc.count_kmers(),
-                          "kmers-added": mc.count_kmers(sample_name),
-                          "memory": mc.calculate_memory()}))
+                          "colour": mc.get_sample_colour(sample_name),
+                          #                          "total-kmers": mc.count_kmers(),
+                          #                          "kmers-added": mc.count_kmers(sample_name),
+                          #                          "memory": mc.calculate_memory()
+                          }))
     except ValueError as e:
         if not force:
             print(json.dumps({"result": "failed", "message": str(e),
-                              "total-kmers": mc.count_kmers(),
-                              "kmers-added": mc.count_kmers(sample_name),
-                              "memory": mc.calculate_memory()}))
+                              # "total-kmers": mc.count_kmers(),
+                              # "kmers-added": mc.count_kmers(sample_name),
+                              # "memory": mc.calculate_memory()
+                              }))
         else:
-            colour = mc.get_sample_colour(sample_name)
-            insert_colour(
-                mc, kmer_file, colour, sample_name, count_only, intersect_kmers)
-            print(json.dumps({"result": "success",
-                              "colour": colour,
-                              "total-kmers": mc.count_kmers(),
-                              "kmers-added": mc.count_kmers(sample_name),
-                              "memory": mc.calculate_memory()}))
+            raise NotImplemented("Force not implemented yet")

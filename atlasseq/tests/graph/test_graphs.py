@@ -8,13 +8,23 @@ from hypothesis import example
 import hypothesis.strategies as st
 from atlasseq.bytearray import ByteArray
 import os
+import pytest
 
 REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
 REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 POSSIBLE_STORAGES = [{'dict': None},
                      {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-                     {'berkeleydb': {'filename': './db'}}]
+                     {'berkeleydb': {'filename': './db'}},
+                     # {'leveldb': {'filename': './db2'}}
+                     ]
+
+PERSISTANT_STORAGES = [
+    {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    # {'berkeleydb': {'filename': './db'}},
+    # {'leveldb': {'filename': './db2'}}
+]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
+st_persistant_storage = st.sampled_from(PERSISTANT_STORAGES)
 st_sample_colour = st.integers(min_value=0, max_value=10)
 st_sample_name = st.text(min_size=1)
 
@@ -38,6 +48,29 @@ def test_add_sample_metadata(Graph, store, sample):
     colour = mc._add_sample(sample)
     assert mc.get_sample_colour(sample) == colour
     assert mc.colours_to_sample_dict().get(colour) == sample
+
+
+@given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name,
+       kmers=st.lists(KMER, min_size=1, max_size=100))
+def test_unique_sample_names(Graph, store, sample, kmers):
+    mc = Graph(storage=store)
+    mc.delete_all()
+    mc.insert(kmers, sample)
+    with pytest.raises(ValueError):
+        mc.insert(kmers, sample)
+
+
+@given(Graph=ST_GRAPH, store=st_persistant_storage, sample=st_sample_name,
+       kmers=st.lists(KMER, min_size=1, max_size=100))
+def test_unique_sample_names2(Graph, store, sample, kmers):
+    # Persistant stores should be able to create a new instance but retain
+    # metadata
+    mc = Graph(storage=store)
+    mc.delete_all()
+    mc.insert(kmers, sample)
+    mc2 = Graph(storage=store)
+    with pytest.raises(ValueError):
+        mc2.insert(kmers, sample)
 
 
 @given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name,

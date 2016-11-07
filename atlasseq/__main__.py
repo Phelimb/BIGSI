@@ -22,23 +22,20 @@ import hug
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
-    CONN_CONFIG = [('localhost', 6379)]
+    CONN_CONFIG = [('localhost', 6379, 2)]
 else:
     for i in range(int(len(redis_envs)/2)):
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
-        CONN_CONFIG.append((hostname, port))
+        CONN_CONFIG.append((hostname, port, 2))
 
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.query import query
 from atlasseq.cmds.stats import stats
 from atlasseq.cmds.samples import samples
 from atlasseq.cmds.dump import dump
-from atlasseq.cmds.compress import compress
-from atlasseq.cmds.uncompress import uncompress
-from atlasseq.cmds.shutdown import shutdown
-from atlasseq.cmds.bitcount import bitcount
-from atlasseq.cmds.jaccard_index import jaccard_index
+#from atlasseq.cmds.bitcount import bitcount
+#from atlasseq.cmds.jaccard_index import jaccard_index
 
 
 class ArgumentParserWithDefaults(argparse.ArgumentParser):
@@ -61,7 +58,8 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert')
-    def insert(self, kmer_file, force: hug.types.smart_boolean=False, sample_name=None, intersect_kmers_file=None, count_only: hug.types.smart_boolean = False):
+    def insert(self, kmer_file, sample_name=None, force: hug.types.smart_boolean=False,
+               intersect_kmers_file=None, count_only: hug.types.smart_boolean = False):
         logger.info("insert")
         return insert(
             kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample_name,
@@ -69,9 +67,9 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/search')
-    def search(self, fasta_file, threshold: hug.types.float_number=1.0):
-        return query(
-            fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
+    def search(self, seq=None, fasta_file=None, threshold: hug.types.float_number=1.0):
+        return query(seq=seq,
+                     fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/stats')
@@ -79,38 +77,25 @@ class AtlasSeq(object):
         return stats(conn_config=CONN_CONFIG)
 
     @hug.object.cli
-    @hug.object.get('/js')
-    def distance(self, s1=None, s2=None):
-        return json.dumps(jaccard_index(s1, s2, conn_config=CONN_CONFIG), indent=1)
-
-    @hug.object.cli
     @hug.object.get('/samples')
     def samples(self):
         return samples(conn_config=CONN_CONFIG)
-
-    @hug.object.cli
-    @hug.object.get('/compress')
-    def compress(self):
-        return compress(conn_config=CONN_CONFIG)
-
-    @hug.object.cli
-    @hug.object.get('/uncompress')
-    def uncompress(self):
-        return uncompress(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/dump')
     def dump(self):
         return dump(conn_config=CONN_CONFIG)
 
-    @hug.object.cli
-    @hug.object.get('/bitcount')
-    def bitcount(self):
-        return bitcount(conn_config=CONN_CONFIG)
+    # @hug.object.cli
+    # @hug.object.get('/bitcount')
+    # def bitcount(self):
+    #     return bitcount(conn_config=CONN_CONFIG)
 
-    @hug.object.cli
-    def shutdown(self):
-        return shutdown(conn_config=CONN_CONFIG)
+    # @hug.object.cli
+    # @hug.object.get('/js')
+    # def distance(self, s1=None, s2=None):
+    # return json.dumps(jaccard_index(s1, s2, conn_config=CONN_CONFIG),
+    # indent=1)
 
 
 def main():

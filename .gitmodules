@@ -1,0 +1,3 @@
+[submodule "leveldb-py"]
+	path = leveldb-py
+	url = https://github.com/jtolds/leveldb-py.git

@@ -28,11 +28,13 @@ from atlasseq.bytearray import ByteArray
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticRedisStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 
 from atlasseq.storage import InMemoryStorage
 from atlasseq.storage import RedisStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
+from atlasseq.storage import LevelDBStorage
 
 import logging
 logging.basicConfig()
@@ -61,7 +63,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def search(self, seq, threshold=1):
         kmers = [k for k in seq_to_kmers(seq)]
-        self._search(kmers, threshold=threshold)
+        return self._search(kmers, threshold=threshold)
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
@@ -185,6 +187,11 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                                                         bloom_filter_size=self.bloom_filter_size,
                                                         num_hashes=self.num_hashes)
             self.metadata = BerkeleyDBStorage(storage_config['berkeleydb'])
+        elif 'leveldb' in storage_config:
+            self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'],
+                                                     bloom_filter_size=self.bloom_filter_size,
+                                                     num_hashes=self.num_hashes)
+            self.metadata = LevelDBStorage(storage_config['leveldb'])
 
         else:
             raise ValueError(

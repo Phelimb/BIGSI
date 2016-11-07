@@ -4,6 +4,7 @@ from atlasseq.storage import InMemoryStorage
 from atlasseq.storage import RedisStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
+from atlasseq.storage import LevelDBStorage
 from atlasseq import hash_key
 from atlasseq.bytearray import ByteArray
 from atlasseq.bitvector import BitArray
@@ -24,11 +25,6 @@ try:
 except ImportError:
     redis = None
 
-
-try:
-    import leveldb
-except ImportError:
-    leveldb = None
 
 import mmh3
 
@@ -125,10 +121,10 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def insert(self, kmers, colour):
         """Insert kmer/s into a colour"""
-        if isinstance(kmers, list):
-            self.bloomfilter.update(kmers, colour)
-        else:
+        if isinstance(kmers, str):
             self.bloomfilter.add(kmers, colour)
+        else:
+            self.bloomfilter.update(kmers, colour)
 
     def lookup(self, kmer, num_elements=None):
         return self.bloomfilter.lookup(kmer, num_elements=num_elements)
@@ -209,6 +205,17 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
     def __init__(self, config={'filename': './db'}, bloom_filter_size=1000000, num_hashes=3):
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-bsddb'
+
+    def setbits(self, indexes, colour, bit):
+        for index in indexes:
+            self.setbit(index, colour, bit)
+
+
+class ProbabilisticLevelDBStorage(BaseProbabilisticStorage, LevelDBStorage):
+
+    def __init__(self, config={'filename': './db'}, bloom_filter_size=1000000, num_hashes=3):
+        super().__init__(config, bloom_filter_size, num_hashes)
+        self.name = 'probabilistic-leveldb'
 
     def setbits(self, indexes, colour, bit):
         for index in indexes:

@@ -28,3 +28,4 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 
 
+pip install --global-option=build_ext --global-option="-I/usr/local/Cellar/leveldb/1.19/include/" --global-option="-L/usr/local/Cellar/leveldb/1.19/lib"  plyvel
