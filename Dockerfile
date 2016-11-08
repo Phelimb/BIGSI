@@ -2,9 +2,7 @@ FROM python:3.5.2
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
-## Install pylevel
-RUN apt-get install -y build-essential libleveldb1 libleveldb-dev
-RUN pip install plyvel
+
 
 ENV BERKELEY_VERSION 4.8.30
 
