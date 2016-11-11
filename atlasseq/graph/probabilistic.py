@@ -181,7 +181,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                                                    bloom_filter_size=self.bloom_filter_size,
                                                    num_hashes=self.num_hashes)
             self.metadata = SimpleRedisStorage(
-                {'conn': [('localhost', 6379, 0)]})
+                {'conn': [(storage_config['redis']['conn'][0][0], storage_config['redis']['conn'][0][1], 0)]})
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
                                                         bloom_filter_size=self.bloom_filter_size,
