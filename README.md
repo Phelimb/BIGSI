@@ -35,4 +35,4 @@ sample.txt should be a text file of kmers. You can use tools like [mccortex](htt
 
 # Query for sequence
 
-	docker exec atlasseq_main_1 atlasseq search /data/gn-amr-genes.fasta
+	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA	docker exec atlasseq_main_1 atlasseq search -f seq.fasta

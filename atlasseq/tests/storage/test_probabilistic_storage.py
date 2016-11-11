@@ -16,7 +16,8 @@ POSSIBLE_STORAGES = [
     ProbabilisticInMemoryStorage(),
     ProbabilisticRedisStorage(REDIS_STORAGE),
     ProbabilisticBerkeleyDBStorage({'filename': './db'}),
-    ProbabilisticLevelDBStorage({'filename': './db2'})]
+    # ProbabilisticLevelDBStorage({'filename': './db2'})
+]
 
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 st_colour = st.integers(min_value=0, max_value=1000)
