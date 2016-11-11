@@ -6,9 +6,8 @@ import json
 import pickle
 
 
-def samples(conn_config):
+def dumps(conn_config):
     mc = Graph(storage={'redis': {"conn": conn_config,
                                   "array_size": 25000000,
                                   "num_hashes": 2}})
-    out = mc.colours_to_sample_dict()
-    print(json.dumps(out, indent=4))
+    return mc.dumps()

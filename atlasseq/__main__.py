@@ -30,10 +30,10 @@ else:
         CONN_CONFIG.append((hostname, port, 2))
 
 from atlasseq.cmds.insert import insert
-from atlasseq.cmds.query import query
+from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
 from atlasseq.cmds.samples import samples
-from atlasseq.cmds.dump import dump
+from atlasseq.cmds.dumps import dumps
 #from atlasseq.cmds.bitcount import bitcount
 #from atlasseq.cmds.jaccard_index import jaccard_index
 
@@ -60,21 +60,29 @@ class AtlasSeq(object):
     @hug.object.post('/insert')
     def insert(self, kmer_file, sample_name=None, force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, count_only: hug.types.smart_boolean = False):
-        logger.info("insert")
+        """Inserts kmers from a list of kmers into the graph
+
+        e.g. atlasseq insert ERR1010211.txt
+
+        """
         return insert(
             kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample_name,
             intersect_kmers_file=intersect_kmers_file, count_only=count_only)
 
     @hug.object.cli
-    @hug.object.get('/search')
-    def search(self, seq=None, fasta_file=None, threshold: hug.types.float_number=1.0):
-        return query(seq=seq,
-                     fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
+    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA")
+    def search(self, seq: hug.types.text=None, fasta_file: hug.types.text=None, threshold: hug.types.float_number=1.0):
+        """Returns samples that contain the searched sequence. 
+        Use -f to search for sequence from fasta"""
+        if not seq or fasta_file:
+            return "-s or -f must be provided"
+        return search(seq=seq,
+                      fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
 
-    @hug.object.cli
-    @hug.object.get('/stats')
-    def stats(self):
-        return stats(conn_config=CONN_CONFIG)
+    # @hug.object.cli
+    # @hug.object.get('/stats')
+    # def stats(self):
+    #     return stats(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/samples')
@@ -82,9 +90,9 @@ class AtlasSeq(object):
         return samples(conn_config=CONN_CONFIG)
 
     @hug.object.cli
-    @hug.object.get('/dump')
-    def dump(self):
-        return dump(conn_config=CONN_CONFIG)
+    @hug.object.get('/dumps')
+    def dumps(self):
+        return dumps(conn_config=CONN_CONFIG)
 
     # @hug.object.cli
     # @hug.object.get('/bitcount')

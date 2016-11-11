@@ -8,6 +8,10 @@ import os.path
 import time
 from Bio import SeqIO
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def per(i):
@@ -22,7 +26,7 @@ def parse_input(infile):
     return gene_to_kmers
 
 
-def query(seq, fasta_file, threshold, conn_config):
+def search(seq, fasta_file, threshold, conn_config):
     mc = Graph(storage={'redis': {"conn": conn_config,
                                   "array_size": 25000000,
                                   "num_hashes": 2}})
@@ -38,6 +42,8 @@ def query(seq, fasta_file, threshold, conn_config):
             diff = time.time() - start
             found[gene]['time'] = diff
     else:
+        logger.debug("Searching %i samples for %s" %
+                     (mc.get_num_colours(), seq))
         found = {"seq": mc.search(seq)}
 
     print(json.dumps(found, indent=4))
