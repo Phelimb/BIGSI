@@ -74,7 +74,7 @@ class AtlasSeq(object):
     def search(self, seq: hug.types.text=None, fasta_file: hug.types.text=None, threshold: hug.types.float_number=1.0):
         """Returns samples that contain the searched sequence. 
         Use -f to search for sequence from fasta"""
-        if not seq or fasta_file:
+        if not seq or not fasta_file:
             return "-s or -f must be provided"
         return search(seq=seq,
                       fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
