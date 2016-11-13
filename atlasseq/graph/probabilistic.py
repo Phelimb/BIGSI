@@ -26,12 +26,12 @@ from atlasseq.bytearray import ByteArray
 
 
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
-from atlasseq.storage.graph.probabilistic import ProbabilisticRedisStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticRedisHashStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 
 from atlasseq.storage import InMemoryStorage
-from atlasseq.storage import RedisStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
@@ -177,11 +177,17 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                                                       num_hashes=self.num_hashes)
             self.metadata = InMemoryStorage(storage_config['dict'])
         elif 'redis' in storage_config:
-            self.graph = ProbabilisticRedisStorage(storage_config['redis'],
-                                                   bloom_filter_size=self.bloom_filter_size,
-                                                   num_hashes=self.num_hashes)
+            self.graph = ProbabilisticRedisHashStorage(storage_config['redis'],
+                                                       bloom_filter_size=self.bloom_filter_size,
+                                                       num_hashes=self.num_hashes)
             self.metadata = SimpleRedisStorage(
                 {'conn': [(storage_config['redis']['conn'][0][0], storage_config['redis']['conn'][0][1], 0)]})
+        elif 'redis-cluster' in storage_config:
+            self.graph = ProbabilisticRedisBitArrayStorage(storage_config['redis-cluster'],
+                                                           bloom_filter_size=self.bloom_filter_size,
+                                                           num_hashes=self.num_hashes)
+            self.metadata = SimpleRedisStorage(
+                {'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 0)]})
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
                                                         bloom_filter_size=self.bloom_filter_size,

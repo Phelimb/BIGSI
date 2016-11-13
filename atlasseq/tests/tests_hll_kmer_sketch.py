@@ -7,7 +7,7 @@ KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 import os
 
 REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
-REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
+REDIS_PORT = '6379'  # os.environ.get("REDIS_PORT_1", '6379')
 
 
 @given(kmers=st.lists(KMER, min_size=20, max_size=20, unique=True))

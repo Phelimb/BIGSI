@@ -1,18 +1,17 @@
 from atlasseq.storage.base import BaseStorage
 from atlasseq.storage.graph.base import BaseGraphStorage
 from atlasseq.storage import InMemoryStorage
-from atlasseq.storage import RedisStorage
+from atlasseq.storage import RedisHashStorage
+from atlasseq.storage import RedisBitArrayStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
 from atlasseq import hash_key
 from atlasseq.bytearray import ByteArray
 from atlasseq.bitvector import BitArray
-from redispartition import RedisCluster
 
 import hashlib
 # from bitstring import BitArray
-from redispartition import RedisCluster
 import math
 import os
 import json
@@ -132,14 +131,6 @@ class BaseProbabilisticStorage(BaseStorage):
     def get_bloom_filter(self, colour):
         return self.bloomfilter.get_column(colour)
 
-    def setbit(self, index, colour, bit):
-        r = self.get_row(index)
-        r.setbit(colour, bit)
-        self.set_row(index, r)
-
-    def getbit(self, index, colour):
-        return self.get_row(index).getbit(colour)
-
     def get_row(self, index, num_elements=None):
         b = BitArray()
         b.frombytes(self.get(index, b''))
@@ -176,8 +167,16 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
         for index in indexes:
             self.setbit(index, colour, bit)
 
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
 
-class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)
+
+
+class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisHashStorage):
 
     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
         super().__init__(config, bloom_filter_size, num_hashes)
@@ -199,6 +198,39 @@ class ProbabilisticRedisStorage(BaseProbabilisticStorage, RedisStorage):
         names = [self.get_name(i) for i in indexes]
         return self.storage.hget(names, indexes, partition_arg=1)
 
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
+
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)
+
+
+class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
+
+    def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
+        super().__init__(config, bloom_filter_size, num_hashes)
+        self.name = 'probabilistic-redis'
+
+    def get_rows(self, indexes, num_elements=None):
+        indexes = [i for i in indexes]
+        bas = []
+        rows = self._get_raw_rows(indexes, num_elements)
+        for r in rows:
+            b = BitArray()
+            if r is None:
+                r = b''
+            b.frombytes(r)
+            bas.append(self._check_num_elements(b, num_elements))
+        return bas
+
+    def _get_raw_rows(self, indexes, num_elements):
+        pipe = self.storage.pipeline()
+        for i in indexes:
+            pipe.get(i)
+        return pipe.execute()
+
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
 
@@ -210,6 +242,14 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
         for index in indexes:
             self.setbit(index, colour, bit)
 
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
+
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)
+
 
 class ProbabilisticLevelDBStorage(BaseProbabilisticStorage, LevelDBStorage):
 
@@ -220,3 +260,11 @@ class ProbabilisticLevelDBStorage(BaseProbabilisticStorage, LevelDBStorage):
     def setbits(self, indexes, colour, bit):
         for index in indexes:
             self.setbit(index, colour, bit)
+
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
+
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)

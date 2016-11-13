@@ -22,7 +22,7 @@ import hug
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
-    CONN_CONFIG = [('localhost', 6379, 2)]
+    CONN_CONFIG = [('localhost', 7000, 2)]
 else:
     for i in range(int(len(redis_envs)/2)):
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
@@ -71,13 +71,13 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA")
-    def search(self, seq: hug.types.text=None, fasta_file: hug.types.text=None, threshold: hug.types.float_number=1.0):
+    def search(self, seq: hug.types.text=None, fasta: hug.types.text=None, threshold: hug.types.float_number=1.0):
         """Returns samples that contain the searched sequence. 
         Use -f to search for sequence from fasta"""
-        if not seq or not fasta_file:
+        if not seq and not fasta:
             return "-s or -f must be provided"
         return search(seq=seq,
-                      fasta_file=fasta_file, threshold=threshold, conn_config=CONN_CONFIG)
+                      fasta_file=fasta, threshold=threshold, conn_config=CONN_CONFIG)
 
     # @hug.object.cli
     # @hug.object.get('/stats')
