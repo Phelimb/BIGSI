@@ -3,4 +3,5 @@ kpc2-test
 venv*
 ./venv2
 atlasseq/utils.so
-./venv
+venv
+*.rdb

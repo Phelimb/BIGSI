@@ -2,6 +2,7 @@ import redis
 import sys
 import os
 from redispartition import RedisCluster
+from rediscluster import StrictRedisCluster
 from atlasseq import hash_key
 from atlasseq.bitvector import BitArray
 import shutil
@@ -154,14 +155,48 @@ class SimpleRedisStorage(BaseRedisStorage):
     def items(self):
         for i in self.storage.scan_iter():
             yield (i.decode('utf-8'), self[i].decode('utf-8'))
-    # def setbit(self, index, colour, bit):
-    #     self.storage.setbit(index, colour, bit)
-
-    # def getbit(self, index, colour):
-    #     return self.storage.getbit(index, colour)
 
 
-class RedisStorage(BaseRedisStorage):
+class RedisBitArrayStorage(BaseRedisStorage):
+
+    def __init__(self, config):
+        super().__init__()
+        if not redis:
+            raise ImportError("redis-py is required to use Redis as storage.")
+        self.name = 'redis'
+        self.redis_cluster = True
+        startup_nodes = []
+        for host, port, db in config['conn']:
+            startup_nodes.append({"host": host, "port": port})
+        self.storage = StrictRedisCluster(
+            startup_nodes=startup_nodes)
+
+    def __setitem__(self, key, val):
+        self.storage.set(key, val)
+
+    def __getitem__(self, key):
+        return self.storage.get(key)
+
+    def setbit(self, index, colour, bit):
+        self.storage.setbit(index, colour, bit)
+
+    def getbit(self, index, colour):
+        return self.storage.getbit(index, colour)
+
+    def setbits(self, indexes, colour, bit):
+        pipe = self.storage.pipeline()
+        for i in indexes:
+            pipe.setbit(i, colour, bit)
+        return pipe.execute()
+
+    def getbits(self, indexes, colour):
+        pipe = self.storage.pipeline()
+        for i in indexes:
+            pipe.getbit(i, colour)
+        return pipe.execute()
+
+
+class RedisHashStorage(BaseRedisStorage):
 
     def __init__(self, config):
         super().__init__()

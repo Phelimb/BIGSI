@@ -1,7 +1,8 @@
 from hypothesis import given
 import hypothesis.strategies as st
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
-from atlasseq.storage.graph.probabilistic import ProbabilisticRedisStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticRedisHashStorage
+from atlasseq.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 import os
@@ -11,12 +12,13 @@ REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 st_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 
 REDIS_STORAGE = {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}
+REDIS_CLUSTER_STORAGE = {"conn": [(REDIS_HOST, REDIS_PORT, 0)]}
 
 POSSIBLE_STORAGES = [
-    ProbabilisticInMemoryStorage(),
-    ProbabilisticRedisStorage(REDIS_STORAGE),
-    ProbabilisticBerkeleyDBStorage({'filename': './db'}),
-    # ProbabilisticLevelDBStorage({'filename': './db2'})
+    # ProbabilisticInMemoryStorage(),
+    # ProbabilisticRedisHashStorage(REDIS_STORAGE),
+    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE),
+    # ProbabilisticBerkeleyDBStorage({'filename': './db'}),
 ]
 
 st_storage = st.sampled_from(POSSIBLE_STORAGES)

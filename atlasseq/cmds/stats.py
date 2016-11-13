@@ -11,9 +11,9 @@ _stats = {}
 
 
 def stats(conn_config):
-    mc = Graph(storage={'redis': {"conn": conn_config,
-                                  "array_size": 25000000,
-                                  "num_hashes": 2}})
+    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
+                                          "array_size": 25000000,
+                                          "num_hashes": 2}})
     _stats["memory (bytes)"] = mc.calculate_memory()
     _stats["keys"] = mc.count_keys()
     _stats["kmers"] = mc.count_kmers()

@@ -48,9 +48,9 @@ def insert(kmer_file, conn_config, force=False, sample_name=None, intersect_kmer
 
     logger.info("Inserting kmers from {0} to {1} into database at {2} ".format(
         kmer_file, sample_name, conn_config))
-    mc = Graph(storage={'redis': {"conn": conn_config,
-                                  "array_size": 25000000,
-                                  "num_hashes": 2}})
+    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
+                                          "array_size": 25000000,
+                                          "num_hashes": 2}})
     kmers = list(load_all_kmers(kmer_file))
     logger.debug("Loaded %i kmers" % len(kmers))
     try:

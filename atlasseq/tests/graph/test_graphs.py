@@ -12,14 +12,18 @@ import pytest
 
 REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
 REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
-POSSIBLE_STORAGES = [{'dict': None},
-                     {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-                     {'berkeleydb': {'filename': './db'}},
-                     # {'leveldb': {'filename': './db2'}}
-                     ]
+POSSIBLE_STORAGES = [
+    # {'dict': None},
+    # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    {"redis-cluster": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    # {'berkeleydb': {'filename': './db'}},
+    # {'leveldb': {'filename': './db2'}}
+]
 
 PERSISTANT_STORAGES = [
-    {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    {"redis-cluster": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+
     # {'berkeleydb': {'filename': './db'}},
     # {'leveldb': {'filename': './db2'}}
 ]

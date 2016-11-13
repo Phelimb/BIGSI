@@ -12,11 +12,13 @@ import os
 
 REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
 REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
-POSSIBLE_STORAGES = [{'dict': None},
-                     {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-                     {'berkeleydb': {'filename': './db'}},
-                     # {'leveldb': {'filename': './db2'}}
-                     ]
+POSSIBLE_STORAGES = [
+    # {'dict': None},
+    # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    {"redis-cluster": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
+    # {'berkeleydb': {'filename': './db'}},
+    # {'leveldb': {'filename': './db2'}}
+]
 st_storage = st.sampled_from(POSSIBLE_STORAGES)
 st_sample_colour = st.integers(min_value=0, max_value=10)
 st_sample_name = st.text(min_size=1)

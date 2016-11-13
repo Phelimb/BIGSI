@@ -5,51 +5,48 @@ services:
     image: phelimb/atlasseq
     ports:
       - "5000:5000"      
-    links:
-      {% for redis in redis_conf %}
-        - {{redis['host']}}:{{redis['host']}}
-      {% endfor %}
     environment:
-      {% for redis in redis_conf %}
-        - REDIS_IP_{{redis['i']}}={{redis['host']}}
-        - REDIS_PORT_{{redis['i']}}={{redis['port']}}
-      {% endfor %}          
+        - REDIS_IP_1=127.0.0.1
+        - REDIS_PORT_1=6301          
     volumes:
         - "$DATA_DIR:/data"                   
     command: tail -f /etc/hosts
-  worker:  
-    image: phelimb/atlasseq
-    command: sh run_celery.sh   
-    depends_on:
-        - redisbroker            
-    links:
-      {% for redis in redis_conf %}
-        - {{redis['host']}}:{{redis['host']}}
-      {% endfor %}
+    network_mode: "host"  
+
+  strictredis:
+    image: redis
     environment:
-        - C_FORCE_ROOT="yes" 
-      {% for redis in redis_conf %}
-        - REDIS_IP_{{redis['i']}}={{redis['host']}}
-        - REDIS_PORT_{{redis['i']}}={{redis['port']}}
-      {% endfor %}
+        - PORT=6379    
     volumes:
-        - "$DATA_DIR:/data"      
+      - "$DATA_DIR:/datastrict"
+    ports:
+      - 6379  
+    network_mode: "host"      
   {% for redis in redis_conf %}
   {{redis['host']}}:
     image: phelimb/redis-mcdbg
     environment:
         - PORT={{redis['port']}}    
     volumes:
-      - "$DATA_DIR:/data"
+      - "$DATA_DIR:/data{{redis['host']}}"
     ports:
       - {{redis['port']}}  
+    network_mode: "host"  
+
   {% endfor %}
 
   redisbroker:  
     image: redis
     command: redis-server --appendonly yes    
     volumes:
-      - redis-data:/data       
+      - redis-data:/data   
+
+  redismanager:
+    image: phelimb/redis-trib                   
+    volumes:
+        - "$DATA_DIR:/data"                   
+    command: tail -f /etc/hosts
+    network_mode: "host"           
 
 volumes:
   redis-data:

@@ -3,9 +3,11 @@
 
 	git clone https://github.com/Phelimb/atlas-seq.git
 
-
-
 # Launch
+
+First, clone the repository. 
+
+	git clone --recursive https://github.com/Phelimb/atlas-seq.git
 	
 ## With docker
 
@@ -16,7 +18,6 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 ## Without docker
 
-	git clone --recursive https://github.com/Phelimb/atlas-seq.git
 
 	cd atlas-seq
 
@@ -35,4 +36,5 @@ sample.txt should be a text file of kmers. You can use tools like [mccortex](htt
 
 # Query for sequence
 
-	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA	docker exec atlasseq_main_1 atlasseq search -f seq.fasta
+	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
+	docker exec atlasseq_main_1 atlasseq search -f seq.fasta

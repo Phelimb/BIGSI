@@ -27,9 +27,9 @@ def parse_input(infile):
 
 
 def search(seq, fasta_file, threshold, conn_config):
-    mc = Graph(storage={'redis': {"conn": conn_config,
-                                  "array_size": 25000000,
-                                  "num_hashes": 2}})
+    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
+                                          "array_size": 25000000,
+                                          "num_hashes": 2}})
     if fasta_file is not None:
         gene_to_seq = parse_input(fasta_file)
         colours_to_samples = mc.colours_to_sample_dict()

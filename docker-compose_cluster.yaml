@@ -5,14 +5,18 @@ services:
     image: phelimb/atlasseq
     ports:
       - "5000:5000"      
+
+      
     environment:
+      
         - REDIS_IP_1=127.0.0.1
-        - REDIS_PORT_1=6301          
+        - REDIS_PORT_1=6301    
+                
     volumes:
         - "$DATA_DIR:/data"                   
     command: tail -f /etc/hosts
     network_mode: "host"  
-
+    
   strictredis:
     image: redis
     environment:
@@ -21,58 +25,65 @@ services:
       - "$DATA_DIR:/datastrict"
     ports:
       - 6379  
-    network_mode: "host"      
-  
+    network_mode: "host"  
+
   redis1:
     image: phelimb/redis-mcdbg
     environment:
         - PORT=6301    
     volumes:
-      - "$DATA_DIR:/dataredis1"
+      - "$DATA_DIR:/data1"
     ports:
       - 6301  
     network_mode: "host"  
-
   
   redis2:
     image: phelimb/redis-mcdbg
     environment:
         - PORT=6302    
     volumes:
-      - "$DATA_DIR:/dataredis2"
+      - "$DATA_DIR:/data2"
     ports:
       - 6302  
     network_mode: "host"  
 
-  
   redis3:
     image: phelimb/redis-mcdbg
     environment:
         - PORT=6303    
     volumes:
-      - "$DATA_DIR:/dataredis3"
+      - "$DATA_DIR:/data3"
     ports:
-      - 6303  
+      - 6302        
     network_mode: "host"  
-
   
 
   redisbroker:  
     image: redis
     command: redis-server --appendonly yes    
     volumes:
-      - redis-data:/data   
+      - redis-data:/data       
 
   redismanager:
-    image: phelimb/redis-trib                   
+    image: phelimb/redis-trib   
+    environment:
+      
+        - REDIS_IP_1=redis1
+        - REDIS_PORT_1=6301
+      
+        - REDIS_IP_2=redis2
+        - REDIS_PORT_2=6302
+
+        - REDIS_IP_3=redis3
+        - REDIS_PORT_3=6303        
+                
     volumes:
         - "$DATA_DIR:/data"                   
     command: tail -f /etc/hosts
-    network_mode: "host"           
+    network_mode: "host"  
+
 
 volumes:
   redis-data:
     driver: local
-
-  
 

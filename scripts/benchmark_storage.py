@@ -23,8 +23,10 @@ with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
 
 for storage in [{'dict': None},
                 {'berkeleydb': {'filename': './db'}},
-                {"redis": {
-                    "conn": [('localhost', 6379, 2)]}}
+                # {"redis": {
+                #     "conn": [('localhost', 6379, 2)]}},
+                {"redis-cluster": {
+                    "conn": [('localhost', 7000, 0)]}}
                 ]:
     sname = [k for k in storage.keys()][0]
     mc = Graph(storage=storage)
@@ -32,14 +34,14 @@ for storage in [{'dict': None},
     c = 3
     start = time.time()
     for i in range(c):
-        mc.insert(keys, str(i))
+        mc.insert(keys, str(i+1000))
     end = time.time()
     print("insert %s - %i %i colours" % (sname, N, c), end-start)
     start = time.time()
     vals = mc._search(keys[:10000])
     end = time.time()
     print("get 10000kmers %s - %i" % (sname, N), end-start)
-    start = time.time()
-    vals = mc.search(keys[0])
-    end = time.time()
-    print("query %s - %i" % (sname, N), end-start)
+    # start = time.time()
+    # vals = mc.search(keys[0])
+    # end = time.time()
+    # print("query %s - %i" % (sname, N), end-start)
