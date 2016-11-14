@@ -1,14 +1,25 @@
 import redis
 
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 class HyperLogLogJaccardIndex(object):
 
     def __init__(self, host='localhost', port='6379', db=0, prefix="hll_"):
         self.storage = redis.StrictRedis(host=host, port=port, db=int(db))
         self.prefix = prefix
+        self.max_N_pfadd = 100000
 
     def insert(self, kmers, sample):
-        self.storage.pfadd(self._storage_key(sample), *kmers)
+        return self._massive_insert(kmers, sample)
+
+    def _massive_insert(self, kmers, sample):
+        for _kmers in chunks(kmers, self.max_N_pfadd):
+            self.storage.pfadd(self._storage_key(sample), *_kmers)
 
     def union(self, sample1, sample2):
         samples = [self._storage_key(sample1), self._storage_key(sample2)]
