@@ -54,7 +54,7 @@ def test_samples_cmd(store, samples, kmers):
     for sample, sample_dict in response.data.items():
         assert sample_dict.get("name") in samples
         assert sample_dict.get("colour") in range(len(samples))
-        assert abs(sample_dict.get("kmer_count") - len(kmers)) < 3
+        assert abs(sample_dict.get("kmer_count") - len(kmers)) <= 4
     _name = random.choice(samples)
     response = hug.test.get(
         atlasseq.__main__, 'samples', {"name": _name})
@@ -89,4 +89,4 @@ def test_graph_stats_cmd(store, samples, kmers):
     response = hug.test.get(
         atlasseq.__main__, 'graph', {})
     assert response.data.get("num_samples") == len(samples)
-    assert abs(response.data.get("kmer_count") - len(set(kmers))) < 5
+    assert abs(response.data.get("kmer_count") - len(set(kmers))) <= 5

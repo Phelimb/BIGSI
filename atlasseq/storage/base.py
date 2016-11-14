@@ -154,7 +154,7 @@ class SimpleRedisStorage(BaseRedisStorage):
 
     def items(self):
         for i in self.storage.scan_iter():
-            yield (i.decode('utf-8'), self[i].decode('utf-8'))
+            yield (i, self[i])
 
 
 class RedisBitArrayStorage(BaseRedisStorage):
