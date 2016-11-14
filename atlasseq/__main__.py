@@ -34,6 +34,7 @@ from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
 from atlasseq.cmds.samples import samples
 from atlasseq.cmds.dumps import dumps
+from atlasseq.cmds.delete import delete
 #from atlasseq.cmds.bitcount import bitcount
 #from atlasseq.cmds.jaccard_index import jaccard_index
 
@@ -58,16 +59,18 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert')
-    def insert(self, kmer_file, sample_name=None, force: hug.types.smart_boolean=False,
+    def insert(self, kmers=None, kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, count_only: hug.types.smart_boolean = False):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
 
         """
-        return insert(
-            kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample_name,
-            intersect_kmers_file=intersect_kmers_file, count_only=count_only)
+        if not kmers and not kmer_file:
+            return "--kmers or --kmer_file must be provided"
+        return insert(kmers=kmers,
+                      kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample,
+                      intersect_kmers_file=intersect_kmers_file, count_only=count_only)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA")
@@ -79,15 +82,20 @@ class AtlasSeq(object):
         return search(seq=seq,
                       fasta_file=fasta, threshold=threshold, conn_config=CONN_CONFIG)
 
-    # @hug.object.cli
-    # @hug.object.get('/stats')
-    # def stats(self):
-    #     return stats(conn_config=CONN_CONFIG)
+    @hug.object.cli
+    @hug.object.delete('/')
+    def delete(self):
+        return delete(conn_config=CONN_CONFIG)
+
+    @hug.object.cli
+    @hug.object.get('/graph')
+    def stats(self):
+        return stats(conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/samples')
-    def samples(self):
-        return samples(conn_config=CONN_CONFIG)
+    def samples(self, name=None):
+        return samples(name, conn_config=CONN_CONFIG)
 
     @hug.object.cli
     @hug.object.get('/dumps')

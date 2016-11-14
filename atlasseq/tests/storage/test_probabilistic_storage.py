@@ -1,3 +1,9 @@
+from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import ST_SAMPLE_NAME
+from atlasseq.tests.base import ST_GRAPH
+from atlasseq.tests.base import ST_BINARY_KMERS
+from atlasseq.tests.base import ST_SAMPLE_COLOUR
+from atlasseq.tests.base import REDIS_CLUSTER_STORAGE
 from hypothesis import given
 import hypothesis.strategies as st
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
@@ -7,25 +13,16 @@ from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 import os
 
-REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
-REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
-st_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
-
-REDIS_STORAGE = {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}
-REDIS_CLUSTER_STORAGE = {"conn": [(REDIS_HOST, REDIS_PORT, 0)]}
-
 POSSIBLE_STORAGES = [
     # ProbabilisticInMemoryStorage(),
     # ProbabilisticRedisHashStorage(REDIS_STORAGE),
     ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE),
     # ProbabilisticBerkeleyDBStorage({'filename': './db'}),
 ]
-
-st_storage = st.sampled_from(POSSIBLE_STORAGES)
-st_colour = st.integers(min_value=0, max_value=1000)
+ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)
 
 
-@given(storage=st_storage, colour=st_colour, element=st_KMER,
+@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, element=ST_KMER,
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 def test_add_contains(storage, colour, element, bloom_filter_size,  num_hashes):
@@ -38,7 +35,7 @@ def test_add_contains(storage, colour, element, bloom_filter_size,  num_hashes):
     assert not storage.bloomfilter.contains(element + "a", colour)
 
 
-@given(storage=st_storage, colour=st_colour, elements=st.lists(st_KMER),
+@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, elements=st.lists(ST_KMER),
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hashes):
@@ -51,8 +48,8 @@ def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hash
         assert storage.bloomfilter.contains(k, colour)
 
 
-@given(storage=st_storage, colour1=st_colour, colour2=st_colour,
-       element=st_KMER,
+@given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
+       element=ST_KMER,
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_hashes):
@@ -73,8 +70,8 @@ def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_
         assert storage.bloomfilter.lookup(element).getbit(colour2) == True
 
 
-@given(storage=st_storage, colour1=st_colour, colour2=st_colour,
-       elements=st.lists(st_KMER, min_size=1),
+@given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
+       elements=st.lists(ST_KMER, min_size=1),
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,  num_hashes):

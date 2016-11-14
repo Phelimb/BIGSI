@@ -37,7 +37,7 @@ def load_all_kmers(f):
 #         kmers = list(set(kmers) & intersect_kmers)
 #     return kmers
 
-def insert(kmer_file, conn_config, force=False, sample_name=None, intersect_kmers_file=None, count_only=False):
+def insert(kmers, kmer_file, conn_config, force=False, sample_name=None, intersect_kmers_file=None, count_only=False):
     if sample_name is None:
         sample_name = os.path.basename(kmer_file).split('.')[0]
 
@@ -46,27 +46,29 @@ def insert(kmer_file, conn_config, force=False, sample_name=None, intersect_kmer
     else:
         intersect_kmers = None
 
-    logger.info("Inserting kmers from {0} to {1} into database at {2} ".format(
+    logger.info("Inserting kmers from {1} into database at {2} ".format(
         kmer_file, sample_name, conn_config))
     mc = Graph(storage={'redis-cluster': {"conn": conn_config,
                                           "array_size": 25000000,
                                           "num_hashes": 2}})
-    kmers = list(load_all_kmers(kmer_file))
+    if kmer_file is not None:
+        kmers = list(load_all_kmers(kmer_file))
+
     logger.debug("Loaded %i kmers" % len(kmers))
     try:
         mc.insert(kmers, sample_name)
-        print(json.dumps({"result": "success",
-                          "colour": mc.get_sample_colour(sample_name),
-                          #                          "total-kmers": mc.count_kmers(),
-                          #                          "kmers-added": mc.count_kmers(sample_name),
-                          #                          "memory": mc.calculate_memory()
-                          }))
+        return json.dumps({"result": "success",
+                           "colour": mc.get_sample_colour(sample_name),
+                           #                          "total-kmers": mc.count_kmers(),
+                           #                          "kmers-added": mc.count_kmers(sample_name),
+                           #                          "memory": mc.calculate_memory()
+                           })
     except ValueError as e:
         if not force:
-            print(json.dumps({"result": "failed", "message": str(e),
-                              # "total-kmers": mc.count_kmers(),
-                              # "kmers-added": mc.count_kmers(sample_name),
-                              # "memory": mc.calculate_memory()
-                              }))
+            return json.dumps({"result": "failed", "message": str(e),
+                               # "total-kmers": mc.count_kmers(),
+                               # "kmers-added": mc.count_kmers(sample_name),
+                               # "memory": mc.calculate_memory()
+                               })
         else:
             raise NotImplemented("Force not implemented yet")

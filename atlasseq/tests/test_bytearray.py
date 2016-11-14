@@ -1,11 +1,11 @@
+from atlasseq.tests.base import REDIS_PORT
+from atlasseq.tests.base import REDIS_HOST
+
 from atlasseq.bytearray import ByteArray
 from hypothesis import given
 import hypothesis.strategies as st
 import redis
 import os
-
-REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
-REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
 
 
 def test_sparse_dense_metadata():

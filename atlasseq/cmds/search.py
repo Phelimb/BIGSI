@@ -46,4 +46,4 @@ def search(seq, fasta_file, threshold, conn_config):
                      (mc.get_num_colours(), seq))
         found = {"seq": mc.search(seq)}
 
-    print(json.dumps(found, indent=4))
+    return json.dumps(found, indent=4)

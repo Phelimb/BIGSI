@@ -1,6 +1,11 @@
 """Tests that are common to graphs"""
-from atlasseq import ProbabilisticMultiColourDeBruijnGraph
 import random
+from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import ST_SAMPLE_NAME
+from atlasseq.tests.base import ST_GRAPH
+from atlasseq.tests.base import ST_STORAGE
+from atlasseq.tests.base import ST_BINARY_KMERS
+from atlasseq.tests.base import ST_PERSISTANT_STORAGE
 from atlasseq.utils import make_hash
 from atlasseq.utils import reverse_comp
 from hypothesis import given
@@ -10,42 +15,15 @@ from atlasseq.bytearray import ByteArray
 import os
 import pytest
 
-REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
-REDIS_PORT = os.environ.get("REDIS_PORT_1", '6379')
-POSSIBLE_STORAGES = [
-    # {'dict': None},
-    # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-    {"redis-cluster": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-    # {'berkeleydb': {'filename': './db'}},
-    # {'leveldb': {'filename': './db2'}}
-]
 
-PERSISTANT_STORAGES = [
-    # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-    {"redis-cluster": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-
-    # {'berkeleydb': {'filename': './db'}},
-    # {'leveldb': {'filename': './db2'}}
-]
-st_storage = st.sampled_from(POSSIBLE_STORAGES)
-st_persistant_storage = st.sampled_from(PERSISTANT_STORAGES)
-st_sample_colour = st.integers(min_value=0, max_value=10)
-st_sample_name = st.text(min_size=1)
-
-BINARY_KMERS_OR_NOT = [True, False]
-st_binary_kmers = st.sampled_from(BINARY_KMERS_OR_NOT)
-KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
-ST_GRAPH = st.sampled_from([ProbabilisticMultiColourDeBruijnGraph])
-
-
-@given(Graph=ST_GRAPH, binary_kmers=st_binary_kmers)
+@given(Graph=ST_GRAPH, binary_kmers=ST_BINARY_KMERS)
 def test_init(Graph, binary_kmers):
     mc = Graph(binary_kmers=binary_kmers)
     assert mc.binary_kmers == binary_kmers
     assert mc.num_hashes > 0
 
 
-@given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name)
+@given(Graph=ST_GRAPH, store=ST_STORAGE, sample=ST_SAMPLE_NAME)
 def test_add_sample_metadata(Graph, store, sample):
     mc = Graph(storage=store)
     mc.delete_all()
@@ -54,8 +32,8 @@ def test_add_sample_metadata(Graph, store, sample):
     assert mc.colours_to_sample_dict().get(colour) == sample
 
 
-@given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name,
-       kmers=st.lists(KMER, min_size=1, max_size=100))
+@given(Graph=ST_GRAPH, store=ST_STORAGE, sample=ST_SAMPLE_NAME,
+       kmers=st.lists(ST_KMER, min_size=1, max_size=100))
 def test_unique_sample_names(Graph, store, sample, kmers):
     mc = Graph(storage=store)
     mc.delete_all()
@@ -64,8 +42,8 @@ def test_unique_sample_names(Graph, store, sample, kmers):
         mc.insert(kmers, sample)
 
 
-@given(Graph=ST_GRAPH, store=st_persistant_storage, sample=st_sample_name,
-       kmers=st.lists(KMER, min_size=1, max_size=100))
+@given(Graph=ST_GRAPH, store=ST_PERSISTANT_STORAGE, sample=ST_SAMPLE_NAME,
+       kmers=st.lists(ST_KMER, min_size=1, max_size=100))
 def test_unique_sample_names2(Graph, store, sample, kmers):
     # Persistant stores should be able to create a new instance but retain
     # metadata
@@ -77,8 +55,8 @@ def test_unique_sample_names2(Graph, store, sample, kmers):
         mc2.insert(kmers, sample)
 
 
-@given(Graph=ST_GRAPH, store=st_storage, sample=st_sample_name,
-       kmers=st.lists(KMER, min_size=1, max_size=100), binary_kmers=st_binary_kmers)
+@given(Graph=ST_GRAPH, store=ST_STORAGE, sample=ST_SAMPLE_NAME,
+       kmers=st.lists(ST_KMER, min_size=1, max_size=100), binary_kmers=ST_BINARY_KMERS)
 def test_insert_lookup_kmers(Graph, store, sample, kmers, binary_kmers):
     mc = Graph(binary_kmers=binary_kmers, storage=store)
     mc.delete_all()
@@ -89,7 +67,7 @@ def test_insert_lookup_kmers(Graph, store, sample, kmers, binary_kmers):
     assert [sample] in mc.lookup(kmers).values()
 
 
-@given(Graph=ST_GRAPH, store=st_storage, kmer=KMER, binary_kmers=st_binary_kmers)
+@given(Graph=ST_GRAPH, store=ST_STORAGE, kmer=ST_KMER, binary_kmers=ST_BINARY_KMERS)
 def test_insert_get_kmer(Graph, store, kmer, binary_kmers):
     mc = Graph(binary_kmers=binary_kmers, storage=store)
     mc.delete_all()
@@ -99,7 +77,7 @@ def test_insert_get_kmer(Graph, store, kmer, binary_kmers):
     assert [v for v in mc._get_kmer_colours(kmer).values()] == [[0, 1]]
 
 
-@given(Graph=ST_GRAPH, kmer=KMER, store=st_storage, binary_kmers=st_binary_kmers)
+@given(Graph=ST_GRAPH, kmer=ST_KMER, store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
 def test_query_kmer(Graph, kmer, store, binary_kmers):
     mc = Graph(binary_kmers=binary_kmers, storage=store)
     mc.delete_all()
@@ -109,8 +87,8 @@ def test_query_kmer(Graph, kmer, store, binary_kmers):
     assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
 
 
-@given(Graph=ST_GRAPH, x=st.lists(KMER, min_size=5, max_size=5, unique=True),
-       store=st_storage, binary_kmers=st_binary_kmers)
+@given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
+       store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
 def test_query_kmers(Graph, x, store, binary_kmers):
     # print("new test ====== ")
     k1, k2, k3, k4, k5 = x
@@ -130,8 +108,8 @@ def test_query_kmers(Graph, x, store, binary_kmers):
         '1234': 0.5, '1235': 1, '1236': 0.5}
 
 
-# @given(Graph=ST_GRAPH, kmers=st.lists(KMER, min_size=10, max_size=10, unique=True),
-#        binary_kmers=st_binary_kmers, store=st_storage)
+# @given(Graph=ST_GRAPH, kmers=st.lists(ST_KMER, min_size=10, max_size=10, unique=True),
+#        binary_kmers=ST_BINARY_KMERS, store=ST_STORAGE)
 # def test_count_kmers(Graph, kmers, binary_kmers, store):
 #     mc = Graph(binary_kmers=binary_kmers, storage=store)
 #     mc.delete_all()

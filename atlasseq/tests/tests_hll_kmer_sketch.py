@@ -3,14 +3,14 @@ from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
 
-KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
 import os
 
-REDIS_HOST = os.environ.get("REDIS_IP_1", 'localhost')
-REDIS_PORT = '6379'  # os.environ.get("REDIS_PORT_1", '6379')
+from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import REDIS_HOST
+from atlasseq.tests.base import REDIS_PORT
 
 
-@given(kmers=st.lists(KMER, min_size=20, max_size=20, unique=True))
+@given(kmers=st.lists(ST_KMER, min_size=20, max_size=20, unique=True))
 def test_jaccard_index(kmers):
     mc = HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT)
     mc.delete_all()
@@ -19,8 +19,8 @@ def test_jaccard_index(kmers):
     assert mc.jaccard_index('1234', '1235') == 1
 
 
-@given(kmers1=st.lists(KMER, min_size=10, max_size=10, unique=True),
-       kmers2=st.lists(KMER, min_size=10, max_size=10, unique=True))
+@given(kmers1=st.lists(ST_KMER, min_size=10, max_size=10, unique=True),
+       kmers2=st.lists(ST_KMER, min_size=10, max_size=10, unique=True))
 def test_jaccard_index2(kmers1, kmers2):
     mc = HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT)
     mc.delete_all()

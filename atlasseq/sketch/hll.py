@@ -15,8 +15,11 @@ class HyperLogLogJaccardIndex(object):
         self.storage.pfcount(*samples)
         return self.storage.pfcount(*samples)
 
-    def count(self, sample):
-        return self.storage.pfcount(self._storage_key(sample))
+    def count(self, *args):
+        if not args:
+            return 0
+        samples = [self._storage_key(s) for s in args]
+        return self.storage.pfcount(*samples)
 
     def _storage_key(self, sample):
         return '%s%s' % (self.prefix, sample)

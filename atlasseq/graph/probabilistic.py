@@ -35,6 +35,7 @@ from atlasseq.storage import InMemoryStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
+from atlasseq.sketch import HyperLogLogJaccardIndex
 
 import logging
 logging.basicConfig()
@@ -52,6 +53,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self.num_hashes = num_hashes
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
+        self.hll_sketch = HyperLogLogJaccardIndex()
 
     def insert(self, kmers, sample):
         """
@@ -60,6 +62,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         """
         colour = self._add_sample(sample)
         self._insert(kmers, colour)
+        if self.hll_sketch:
+            self.hll_sketch.insert(kmers, sample)
 
     def search(self, seq, threshold=1):
         kmers = [k for k in seq_to_kmers(seq)]
@@ -78,6 +82,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def get_bloom_filter(self, sample):
         colour = self.get_sample_colour(sample)
         return self.graph.get_bloom_filter(colour)
+
+    def count_kmers(self, *samples):
+        return self.hll_sketch.count(*samples)
 
     def dump(self, fp):
         graph_dump = self.dumps()
