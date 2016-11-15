@@ -6,7 +6,7 @@ from atlasseq.storage import RedisBitArrayStorage
 from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
-from atlasseq import hash_key
+from atlasseq.utils import hash_key
 from atlasseq.bytearray import ByteArray
 from atlasseq.bitvector import BitArray
 

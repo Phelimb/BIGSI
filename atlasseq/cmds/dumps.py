@@ -6,8 +6,5 @@ import json
 import pickle
 
 
-def dumps(conn_config):
-    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
-                                          "array_size": 25000000,
-                                          "num_hashes": 2}})
-    return mc.dumps()
+def dumps(graph):
+    return graph.dumps()

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 import hug
+from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
@@ -28,7 +29,9 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-
+GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+                                         "array_size": 500000000,
+                                         "num_hashes": 3}})
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
@@ -50,10 +53,10 @@ class ArgumentParserWithDefaults(argparse.ArgumentParser):
             action="store_true",
             dest="quiet")
 
-API = hug.API('seq')
+API = hug.API('atlas')
 
 
-@hug.object(name='seq', version='0.0.1', api=API)
+@hug.object(name='atlas', version='0.0.1', api=API)
 @hug.object.urls('/', requires=())
 class AtlasSeq(object):
 
@@ -69,7 +72,7 @@ class AtlasSeq(object):
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
         return insert(kmers=kmers,
-                      kmer_file=kmer_file, conn_config=CONN_CONFIG, force=force, sample_name=sample,
+                      kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
                       intersect_kmers_file=intersect_kmers_file, count_only=count_only)
 
     @hug.object.cli
@@ -80,37 +83,37 @@ class AtlasSeq(object):
         if not seq and not fasta:
             return "-s or -f must be provided"
         return search(seq=seq,
-                      fasta_file=fasta, threshold=threshold, conn_config=CONN_CONFIG)
+                      fasta_file=fasta, threshold=threshold, graph=GRAPH)
 
     @hug.object.cli
     @hug.object.delete('/')
     def delete(self):
-        return delete(conn_config=CONN_CONFIG)
+        return delete(graph=GRAPH)
 
     @hug.object.cli
     @hug.object.get('/graph')
     def stats(self):
-        return stats(conn_config=CONN_CONFIG)
+        return stats(graph=GRAPH)
 
     @hug.object.cli
     @hug.object.get('/samples')
     def samples(self, name=None):
-        return samples(name, conn_config=CONN_CONFIG)
+        return samples(name, graph=GRAPH)
 
     @hug.object.cli
     @hug.object.get('/dumps')
     def dumps(self):
-        return dumps(conn_config=CONN_CONFIG)
+        return dumps(graph=GRAPH)
 
     # @hug.object.cli
     # @hug.object.get('/bitcount')
     # def bitcount(self):
-    #     return bitcount(conn_config=CONN_CONFIG)
+    #     return bitcount(graph=GRAPH)
 
     # @hug.object.cli
     # @hug.object.get('/js')
     # def distance(self, s1=None, s2=None):
-    # return json.dumps(jaccard_index(s1, s2, conn_config=CONN_CONFIG),
+    # return json.dumps(jaccard_index(s1, s2, graph=GRAPH),
     # indent=1)
 
 

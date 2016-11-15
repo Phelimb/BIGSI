@@ -26,24 +26,21 @@ def parse_input(infile):
     return gene_to_kmers
 
 
-def search(seq, fasta_file, threshold, conn_config):
-    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
-                                          "array_size": 25000000,
-                                          "num_hashes": 2}})
+def search(seq, fasta_file, threshold, graph):
     if fasta_file is not None:
         gene_to_seq = parse_input(fasta_file)
-        colours_to_samples = mc.colours_to_sample_dict()
+        colours_to_samples = graph.colours_to_sample_dict()
         results = {}
         found = {}
         for gene, seq in gene_to_seq.items():
             found[gene] = {}
             start = time.time()
-            found[gene]['results'] = mc.search(seq, threshold=threshold)
+            found[gene]['results'] = graph.search(seq, threshold=threshold)
             diff = time.time() - start
             found[gene]['time'] = diff
     else:
         logger.debug("Searching %i samples for %s" %
-                     (mc.get_num_colours(), seq))
-        found = {"seq": mc.search(seq)}
+                     (graph.get_num_colours(), seq))
+        found = {"seq": graph.search(seq)}
 
     return json.dumps(found, indent=4)

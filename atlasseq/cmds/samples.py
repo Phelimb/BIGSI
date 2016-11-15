@@ -6,22 +6,19 @@ import json
 import pickle
 
 
-def samples(sample_name, conn_config):
-    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
-                                          "array_size": 25000000,
-                                          "num_hashes": 2}})
+def samples(sample_name, graph):
     if sample_name is None:
         out = {}
-        for colour, sample_name in mc.colours_to_sample_dict().items():
+        for colour, sample_name in graph.colours_to_sample_dict().items():
             if not sample_name in out:
                 out[sample_name] = {}
             out[sample_name]["colour"] = colour
             out[sample_name]["name"] = sample_name
-            out[sample_name]["kmer_count"] = mc.count_kmers(sample_name)
+            out[sample_name]["kmer_count"] = graph.count_kmers(sample_name)
     else:
         out = {sample_name: {}}
-        out[sample_name]["colour"] = mc.get_sample_colour(sample_name)
+        out[sample_name]["colour"] = graph.get_sample_colour(sample_name)
         out[sample_name]["name"] = sample_name
-        out[sample_name]["kmer_count"] = mc.count_kmers(sample_name)
+        out[sample_name]["kmer_count"] = graph.count_kmers(sample_name)
 
     return out

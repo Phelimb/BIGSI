@@ -1,4 +1,5 @@
 git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0 ## This must be the first in the list (see setup.py)
+uwsgi
 redis-py-cluster
 bsddb3
 mmh3

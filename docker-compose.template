@@ -5,6 +5,7 @@ services:
     image: phelimb/atlasseq
     ports:
       - "5000:5000"      
+      - "8000:8000"      
     environment:
         - REDIS_IP_1=127.0.0.1
         - REDIS_PORT_1=7001          

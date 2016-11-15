@@ -33,6 +33,8 @@ RUN  pip install --no-cache-dir -r requirements.txt
 # install atlasseq
 WORKDIR /usr/src/app
 RUN python setup.py install
+RUN sh clean.sh
+RUN python setup.py build_ext --inplace
 
-
-CMD atlasseq --help
+EXPOSE 8000
+CMD uwsgi --processes 4 --http 0.0.0.0:8000 --wsgi-file /usr/src/app/atlasseq/__main__.py --callable __hug_wsgi__

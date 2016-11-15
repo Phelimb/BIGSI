@@ -10,14 +10,12 @@ import collections
 _stats = {}
 
 
-def stats(conn_config):
-    mc = Graph(storage={'redis-cluster': {"conn": conn_config,
-                                          "array_size": 25000000,
-                                          "num_hashes": 2}})
-    # _stats["memory (bytes)"] = mc.calculate_memory()
-    # _stats["keys"] = mc.count_keys()
-    samples = list(mc.colours_to_sample_dict().values())
-    _stats["kmer_count"] = mc.count_kmers(*samples)
-    _stats["num_samples"] = mc.get_num_colours()
+def stats(graph):
+
+    # _stats["memory (bytes)"] = graph.calculate_memory()
+    # _stats["keys"] = graph.count_keys()
+    samples = list(graph.colours_to_sample_dict().values())
+    _stats["kmer_count"] = graph.count_kmers(*samples)
+    _stats["num_samples"] = graph.get_num_colours()
 
     return _stats
