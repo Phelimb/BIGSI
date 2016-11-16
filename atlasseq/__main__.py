@@ -29,9 +29,8 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                         "array_size": 500000000,
-                                         "num_hashes": 3}})
+GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG}},
+              bloom_filter_size=20000000, num_hashes=3)
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats

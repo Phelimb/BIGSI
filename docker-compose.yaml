@@ -8,7 +8,7 @@ services:
       - "8000:8000"      
     environment:
         - REDIS_IP_1=127.0.0.1
-        - REDIS_PORT_1=6301          
+        - REDIS_PORT_1=7001          
     volumes:
         - "$DATA_DIR:/data"                   
     network_mode: "host"  
@@ -26,33 +26,33 @@ services:
   redis1:
     image: phelimb/redis-mcdbg
     environment:
-        - PORT=6301    
+        - PORT=7001    
     volumes:
       - "$DATA_DIR:/dataredis1"
     ports:
-      - 6301  
+      - 7001  
     network_mode: "host"  
 
   
   redis2:
     image: phelimb/redis-mcdbg
     environment:
-        - PORT=6302    
+        - PORT=7002    
     volumes:
       - "$DATA_DIR:/dataredis2"
     ports:
-      - 6302  
+      - 7002  
     network_mode: "host"  
 
   
   redis3:
     image: phelimb/redis-mcdbg
     environment:
-        - PORT=6303    
+        - PORT=7003    
     volumes:
       - "$DATA_DIR:/dataredis3"
     ports:
-      - 6303  
+      - 7003  
     network_mode: "host"  
 
   

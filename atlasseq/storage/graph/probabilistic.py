@@ -128,6 +128,9 @@ class BaseProbabilisticStorage(BaseStorage):
     def lookup(self, kmer, num_elements=None):
         return self.bloomfilter.lookup(kmer, num_elements=num_elements)
 
+    def lookup_all_present(self, kmers, num_elements=None):
+        return self.lookup(kmers, num_elements=num_elements)
+
     def get_bloom_filter(self, colour):
         return self.bloomfilter.get_column(colour)
 
@@ -214,7 +217,7 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
         self.name = 'probabilistic-redis'
 
     def get_rows(self, indexes, num_elements=None):
-        indexes = [i for i in indexes]
+        indexes = list(indexes)
         bas = []
         rows = self._get_raw_rows(indexes, num_elements)
         for r in rows:
@@ -230,6 +233,13 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
         for i in indexes:
             pipe.get(i)
         return pipe.execute()
+
+    def lookup_all_present(self, elements, num_elements=None):
+        indexes = []
+        for e in elements:
+            indexes.extend([h for h in self.bloomfilter.hashes(e)])
+        rows = self.get_rows(indexes)
+        return self.bloomfilter._binary_and(rows)
 
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):

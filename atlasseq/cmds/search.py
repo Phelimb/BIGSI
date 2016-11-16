@@ -43,4 +43,4 @@ def search(seq, fasta_file, threshold, graph):
                      (graph.get_num_colours(), seq))
         found = {"seq": graph.search(seq)}
 
-    return json.dumps(found, indent=4)
+    return found

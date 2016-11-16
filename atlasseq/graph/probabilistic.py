@@ -150,6 +150,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     @convert_kmers_to_canonical
     def _search_kmers(self, kmers, threshold=1):
+        if threshold == 1:
+            return self._search_kmers_threshold_1(kmers).to01()[:self.get_num_colours()]
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         for kmer, colours in self._get_kmers_colours(kmers).items():
@@ -161,6 +163,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if res >= threshold:
                 out[colours_to_sample_dict.get(k, k)] = res
         return out
+
+    def _search_kmers_threshold_1(self, kmers):
+        """Special case where the threshold is 1 (can accelerate queries with AND)"""
+        return self.graph.lookup_all_present(kmers)
 
     @convert_kmers_to_canonical
     def _lookup(self, kmer, canonical=False):
