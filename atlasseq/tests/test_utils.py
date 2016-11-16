@@ -1,6 +1,6 @@
-from atlasseq import kmer_to_bits
-from atlasseq import bits_to_kmer
-from atlasseq import bits
+from atlasseq.utils import kmer_to_bits
+from atlasseq.utils import bits_to_kmer
+from atlasseq.utils import bits
 
 
 def test_kmer_to_bits():

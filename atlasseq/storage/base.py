@@ -137,7 +137,7 @@ class BaseRedisStorage(BaseStorage):
 
 class SimpleRedisStorage(BaseRedisStorage):
 
-    def __init__(self, config):
+    def __init__(self, config, key=None):
         super().__init__()
         if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
@@ -145,16 +145,34 @@ class SimpleRedisStorage(BaseRedisStorage):
         host, port, db = config['conn'][0]
         self.storage = redis.StrictRedis(
             host=host, port=port, db=int(db))
+        self.hash_key = key
+
+    def keys(self, pattern="*"):
+        if self.hash_key:
+            for key in self.storage.hkeys(self.hash_key):
+                yield key.decode('utf-8')
+        else:
+            return self.storage.keys(pattern)
 
     def __setitem__(self, key, val):
-        self.storage.set(key, val)
+        if self.hash_key:
+            self.storage.hset(self.hash_key, key, val)
+        else:
+            self.storage.set(key, val)
 
     def __getitem__(self, key):
-        return self.storage.get(key)
+        if self.hash_key:
+            v = self.storage.hget(self.hash_key, key)
+            if isinstance(v, bytes):
+                return v.decode('utf-8')
+            else:
+                return v
+        else:
+            return self.storage.get(key)
 
     def items(self):
-        for i in self.storage.scan_iter():
-            yield (i, self[i])
+        for i, j in self.storage.hgetall(self.hash_key).items():
+            yield (i.decode('utf-8'), j.decode('utf-8'))
 
 
 class RedisBitArrayStorage(BaseRedisStorage):

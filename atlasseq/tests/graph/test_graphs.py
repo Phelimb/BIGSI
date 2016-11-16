@@ -28,7 +28,8 @@ def test_add_sample_metadata(Graph, store, sample):
     mc = Graph(storage=store)
     mc.delete_all()
     colour = mc._add_sample(sample)
-    assert mc.get_sample_colour(sample) == colour
+    assert mc.get_colour_from_sample(sample) == colour
+    assert mc.get_sample_from_colour(colour) == sample
     assert mc.colours_to_sample_dict().get(colour) == sample
 
 
@@ -90,7 +91,6 @@ def test_query_kmer(Graph, kmer, store, binary_kmers):
 @given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
        store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
 def test_query_kmers(Graph, x, store, binary_kmers):
-    # print("new test ====== ")
     k1, k2, k3, k4, k5 = x
     mc = Graph(binary_kmers=binary_kmers, storage=store)
     mc.delete_all()

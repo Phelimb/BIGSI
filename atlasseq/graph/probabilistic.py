@@ -63,7 +63,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colour = self._add_sample(sample)
         self._insert(kmers, colour)
         if self.hll_sketch:
-            self.hll_sketch.insert(kmers, sample)
+            self.hll_sketch.insert(kmers, str(sample))
 
     def search(self, seq, threshold=1):
         kmers = [k for k in seq_to_kmers(seq)]
@@ -80,7 +80,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return out
 
     def get_bloom_filter(self, sample):
-        colour = self.get_sample_colour(sample)
+        colour = self.get_colour_from_sample(sample)
         return self.graph.get_bloom_filter(colour)
 
     def count_kmers(self, *samples):
@@ -150,13 +150,16 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     @convert_kmers_to_canonical
     def _search_kmers(self, kmers, threshold=1):
-        if threshold == 1:
-            return self._search_kmers_threshold_1(kmers).to01()[:self.get_num_colours()]
+        # if threshold == 1:
+        #     return self._search_kmers_threshold_1(kmers)
+        # else:
+        return self._search_kmers_threshold_not_1(kmers, threshold=threshold)
+
+    def _search_kmers_threshold_not_1(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         for kmer, colours in self._get_kmers_colours(kmers).items():
             tmp.update(colours)
-
         out = {}
         for k, f in tmp.items():
             res = f/len(kmers)
@@ -195,12 +198,20 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                                                        num_hashes=self.num_hashes)
             self.metadata = SimpleRedisStorage(
                 {'conn': [(storage_config['redis']['conn'][0][0], storage_config['redis']['conn'][0][1], 0)]})
+            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 1)]})
+            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
         elif 'redis-cluster' in storage_config:
             self.graph = ProbabilisticRedisBitArrayStorage(storage_config['redis-cluster'],
                                                            bloom_filter_size=self.bloom_filter_size,
                                                            num_hashes=self.num_hashes)
             self.metadata = SimpleRedisStorage(
                 {'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 0)]})
+            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 1)]})
+            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
                                                         bloom_filter_size=self.bloom_filter_size,
@@ -217,25 +228,29 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 "Only in-memory dictionary, berkeleydb and redis are supported.")
 
     def _add_sample(self, sample_name):
-        existing_index = self.get_sample_colour(sample_name)
+        existing_index = self.get_colour_from_sample(sample_name)
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
         else:
-            num_colours = self.get_num_colours()
-            if num_colours is None:
-                num_colours = 0
+            colour = self.get_num_colours()
+            if colour is None:
+                colour = 0
             else:
-                num_colours = int(num_colours)
-            self.metadata['s%s' % sample_name] = num_colours
+                colour = int(colour)
+            self.sample_to_colour_lookup[sample_name] = colour
+            self.colour_to_sample_lookup[colour] = sample_name
             self.metadata.incr('num_colours')
-            return num_colours
+            return colour
 
-    def get_sample_colour(self, sample_name):
-        c = self.metadata.get('s%s' % sample_name)
+    def get_colour_from_sample(self, sample_name):
+        c = self.sample_to_colour_lookup.get(sample_name)
         if c is not None:
             return int(c)
         else:
             return c
+
+    def get_sample_from_colour(self, colour):
+        return self.colour_to_sample_lookup.get(int(colour))
 
     def get_num_colours(self):
         try:
@@ -244,10 +259,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             return 0
 
     def colours_to_sample_dict(self):
-        o = {}
-        for s in self.metadata.keys():
-            if isinstance(s, bytes):
-                s = s.decode("utf-8")
-            if s[0] == 's':
-                o[int(self.metadata.get(s))] = s[1:]
-        return o
+        return self.colour_to_sample_lookup
+        """To do, fix this. Should be implemented as a hash colours -> 
+        sample names"""
+        # o = {}
+        # for s in self.metadata.keys():
+        #     if isinstance(s, bytes):
+        #         s = s.decode("utf-8")
+        #     if s[0] == 's':
+        #         o[int(self.metadata.get(s))] = s[1:]
+        # return o

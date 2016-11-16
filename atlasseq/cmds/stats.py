@@ -14,7 +14,7 @@ def stats(graph):
 
     # _stats["memory (bytes)"] = graph.calculate_memory()
     # _stats["keys"] = graph.count_keys()
-    samples = list(graph.colours_to_sample_dict().values())
+    samples = list(graph.sample_to_colour_lookup.keys())
     _stats["kmer_count"] = graph.count_kmers(*samples)
     _stats["num_samples"] = graph.get_num_colours()
 

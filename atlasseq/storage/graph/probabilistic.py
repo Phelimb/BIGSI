@@ -239,6 +239,7 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
         rows = self.get_rows(indexes)
+        # .to01()[:self.get_num_colours()]
         return self.bloomfilter._binary_and(rows)
 
 

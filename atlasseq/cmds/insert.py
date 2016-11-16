@@ -52,18 +52,18 @@ def insert(kmers, kmer_file, graph, force=False, sample_name=None, intersect_kme
     logger.debug("Loaded %i kmers" % len(kmers))
     try:
         graph.insert(kmers, sample_name)
-        return json.dumps({"result": "success",
-                           "colour": graph.get_sample_colour(sample_name),
-                           #                          "total-kmers": graph.count_kmers(),
-                           #                          "kmers-added": graph.count_kmers(sample_name),
-                           #                          "memory": graph.calculate_memory()
-                           })
+        return {"result": "success",
+                "colour": graph.get_colour_from_sample(sample_name),
+                #                          "total-kmers": graph.count_kmers(),
+                #                          "kmers-added": graph.count_kmers(sample_name),
+                #                          "memory": graph.calculate_memory()
+                }
     except ValueError as e:
         if not force:
-            return json.dumps({"result": "failed", "message": str(e),
-                               # "total-kmers": graph.count_kmers(),
-                               # "kmers-added": graph.count_kmers(sample_name),
-                               # "memory": graph.calculate_memory()
-                               })
+            return {"result": "failed", "message": str(e),
+                    # "total-kmers": graph.count_kmers(),
+                    # "kmers-added": graph.count_kmers(sample_name),
+                    # "memory": graph.calculate_memory()
+                    }
         else:
             raise NotImplemented("Force not implemented yet")

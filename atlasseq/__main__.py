@@ -70,9 +70,9 @@ class AtlasSeq(object):
         """
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
-        return insert(kmers=kmers,
-                      kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
-                      intersect_kmers_file=intersect_kmers_file, count_only=count_only)
+        return json.dumps(insert(kmers=kmers,
+                                 kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
+                                 intersect_kmers_file=intersect_kmers_file, count_only=count_only), indent=4)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA")
@@ -81,28 +81,28 @@ class AtlasSeq(object):
         Use -f to search for sequence from fasta"""
         if not seq and not fasta:
             return "-s or -f must be provided"
-        return search(seq=seq,
-                      fasta_file=fasta, threshold=threshold, graph=GRAPH)
+        return json.dumps(search(seq=seq,
+                                 fasta_file=fasta, threshold=threshold, graph=GRAPH), indent=4)
 
     @hug.object.cli
     @hug.object.delete('/')
     def delete(self):
-        return delete(graph=GRAPH)
+        return json.dumps(delete(graph=GRAPH), indent=4)
 
     @hug.object.cli
     @hug.object.get('/graph')
     def stats(self):
-        return stats(graph=GRAPH)
+        return json.dumps(stats(graph=GRAPH), indent=4)
 
     @hug.object.cli
     @hug.object.get('/samples')
     def samples(self, name=None):
-        return samples(name, graph=GRAPH)
+        return json.dumps(samples(name, graph=GRAPH), indent=4)
 
     @hug.object.cli
     @hug.object.get('/dumps')
     def dumps(self):
-        return dumps(graph=GRAPH)
+        return json.dumps(dumps(graph=GRAPH), indent=4)
 
     # @hug.object.cli
     # @hug.object.get('/bitcount')

@@ -51,14 +51,14 @@ def test_samples_cmd(store, samples, kmers):
         assert json.loads(response.data).get('result') == 'success'
     response = hug.test.get(
         atlasseq.__main__, 'samples', {})
-    for sample, sample_dict in response.data.items():
+    for sample, sample_dict in json.loads(response.data).items():
         assert sample_dict.get("name") in samples
         assert sample_dict.get("colour") in range(len(samples))
         assert abs(sample_dict.get("kmer_count") - len(kmers)) <= 4
     _name = random.choice(samples)
     response = hug.test.get(
         atlasseq.__main__, 'samples', {"name": _name})
-    assert response.data.get(_name).get("name") == _name
+    assert json.loads(response.data).get(_name).get("name") == _name
 
 
 def chunks(l, n):
@@ -80,13 +80,14 @@ def test_graph_stats_cmd(store, samples, kmers):
         atlasseq.__main__, '', {})
     response = hug.test.get(
         atlasseq.__main__, 'graph', {})
-    assert response.data.get("kmer_count") == 0
-    assert not '404' in response.data
+    assert json.loads(response.data).get("kmer_count") == 0
+    assert not '404' in json.loads(response.data)
     for i, sample in enumerate(samples):
         response = hug.test.post(
             atlasseq.__main__, 'insert', {'sample': sample, 'kmers': kmersl[i]})
         assert json.loads(response.data).get('result') == 'success'
     response = hug.test.get(
         atlasseq.__main__, 'graph', {})
-    assert response.data.get("num_samples") == len(samples)
-    assert abs(response.data.get("kmer_count") - len(set(kmers))) <= 5
+    assert json.loads(response.data).get("num_samples") == len(samples)
+    assert abs(json.loads(response.data).get(
+        "kmer_count") - len(set(kmers))) <= 5
