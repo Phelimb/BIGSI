@@ -49,20 +49,20 @@ def insert(kmers, kmer_file, graph, force=False, sample_name=None, intersect_kme
     if kmer_file is not None:
         kmers = list(load_all_kmers(kmer_file))
 
-    logger.debug("Loaded %i kmers" % len(kmers))
+    # logger.debug("Loaded %i kmers" % len(kmers))
     try:
         graph.insert(kmers, sample_name)
         return {"result": "success",
                 "colour": graph.get_colour_from_sample(sample_name),
-                #                          "total-kmers": graph.count_kmers(),
-                #                          "kmers-added": graph.count_kmers(sample_name),
+                "total-kmers": graph.count_kmers(),
+                "kmers-added": graph.count_kmers(sample_name),
                 #                          "memory": graph.calculate_memory()
                 }
     except ValueError as e:
         if not force:
             return {"result": "failed", "message": str(e),
-                    # "total-kmers": graph.count_kmers(),
-                    # "kmers-added": graph.count_kmers(sample_name),
+                    "total-kmers": graph.count_kmers(),
+                    "kmers-added": graph.count_kmers(sample_name),
                     # "memory": graph.calculate_memory()
                     }
         else:

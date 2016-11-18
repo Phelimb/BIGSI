@@ -82,7 +82,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return self.graph.get_bloom_filter(colour)
 
     def count_kmers(self, *samples):
-        return self.hll_sketch.count(*samples)
+        colours = [self.get_colour_from_sample(s) for s in samples]
+        return self.hll_sketch.count(*colours)
 
     def dump(self, fp):
         graph_dump = self.dumps()

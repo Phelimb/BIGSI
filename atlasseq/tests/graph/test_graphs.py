@@ -44,7 +44,7 @@ def test_unique_sample_names(Graph, store, sample, kmers):
 
 
 @given(Graph=ST_GRAPH, store=ST_PERSISTANT_STORAGE, sample=ST_SAMPLE_NAME,
-       kmers=st.lists(ST_KMER, min_size=1, max_size=100))
+       kmers=st.lists(ST_KMER, min_size=5, max_size=50))
 def test_unique_sample_names2(Graph, store, sample, kmers):
     # Persistant stores should be able to create a new instance but retain
     # metadata

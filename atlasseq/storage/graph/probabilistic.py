@@ -220,7 +220,7 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
     def get_rows(self, indexes, array_length):
         indexes = list(indexes)
         bas = []
-        rows = self._get_raw_rows(indexes, array_length)
+        rows = self._get_raw_rows(indexes)
         for r in rows:
             b = BitArray()
             if r is None:
@@ -230,7 +230,7 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
             bas.append(self._check_array_length(b, array_length))
         return bas
 
-    def _get_raw_rows(self, indexes, array_length):
+    def _get_raw_rows(self, indexes):
         pipe = self.storage.pipeline()
         for i in indexes:
             pipe.get(i)
@@ -242,6 +242,12 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
         rows = self.get_rows(indexes, array_length)
         return self.bloomfilter._binary_and(rows)
+
+    def items(self):
+        for i, r in enumerate(self._get_raw_rows(range(self.bloomfilter.size))):
+            if r is None:
+                r = b''
+            yield (i, r)
 
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):

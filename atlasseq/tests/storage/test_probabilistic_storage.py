@@ -56,18 +56,23 @@ def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
     storage.delete_all()
+    array_size = max([colour1, colour2])+1
+
     if not colour1 == colour2:
         storage.bloomfilter.add(element, colour1)
         assert storage.bloomfilter.contains(element, colour1)
         assert not storage.bloomfilter.contains(element, colour2)
-        assert storage.bloomfilter.lookup(element).getbit(colour1) == True
-        assert storage.bloomfilter.lookup(element).getbit(colour2) == False
-
+        assert storage.bloomfilter.lookup(
+            element, array_size).getbit(colour1) == True
+        assert storage.bloomfilter.lookup(
+            element, array_size).getbit(colour2) == False
         storage.bloomfilter.add(element, colour2)
         assert storage.bloomfilter.contains(element, colour1)
         assert storage.bloomfilter.contains(element, colour2)
-        assert storage.bloomfilter.lookup(element).getbit(colour1) == True
-        assert storage.bloomfilter.lookup(element).getbit(colour2) == True
+        assert storage.bloomfilter.lookup(
+            element, array_size).getbit(colour1) == True
+        assert storage.bloomfilter.lookup(
+            element, array_size).getbit(colour2) == True
 
 
 @given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
@@ -84,9 +89,10 @@ def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,
                     for element in elements])
         assert all([not storage.bloomfilter.contains(element, colour2)
                     for element in elements])
-        assert all([storage.bloomfilter.lookup(elements)[i].getbit(colour1)
+        array_size = max(colour1, colour2)+1
+        assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(colour1)
                     for i in range(len(elements))]) == True
-        assert all([storage.bloomfilter.lookup(elements)[i].getbit(colour2) == False
+        assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(colour2) == False
                     for i in range(len(elements))])
 
         storage.bloomfilter.update(elements, colour2)
@@ -94,7 +100,7 @@ def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,
                     for element in elements])
         assert all([storage.bloomfilter.contains(element, colour2)
                     for element in elements])
-        assert all([storage.bloomfilter.lookup(elements)[i].getbit(
+        assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(
             colour1) == True for i in range(len(elements))])
-        assert all([storage.bloomfilter.lookup(elements)[i].getbit(
+        assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(
             colour2) == True for i in range(len(elements))])

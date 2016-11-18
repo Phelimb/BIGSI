@@ -2,7 +2,6 @@ version: '2'
 
 services:
   main:
-    container_name: atlas
     image: phelimb/atlasseq
     ports:
       - "5000:5000"      
@@ -18,10 +17,10 @@ services:
     image: redis
     environment:
         - PORT=6379    
-    volumes:
-      - "$DATA_DIR:/datastrict"
     ports:
       - 6379  
+    volumes_from:
+      - "redisbroker"      
     network_mode: "host"      
   {% for redis in redis_conf %}
   {{redis['host']}}:
@@ -40,12 +39,12 @@ services:
     image: redis
     command: redis-server --appendonly yes    
     volumes:
-      - redis-data:/data   
+      - "$DATA_DIR:/data"
 
   redismanager:
     image: phelimb/redis-trib                   
-    volumes:
-        - "$DATA_DIR:/data"                   
+    volumes_from:
+      - "redisbroker"                
     command: tail -f /etc/hosts
     network_mode: "host"           
 
