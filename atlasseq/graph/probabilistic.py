@@ -62,8 +62,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         """
         colour = self._add_sample(sample)
         self._insert(kmers, colour)
-        if self.hll_sketch:
-            self.hll_sketch.insert(kmers, str(sample))
 
     def search(self, seq, threshold=1):
         kmers = [k for k in seq_to_kmers(seq)]
@@ -117,16 +115,21 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     @convert_kmers_to_canonical
     def _insert(self, kmers, colour, canonical=False):
         self.graph.insert(kmers, colour)
+        self._insert_count(kmers, colour)
+
+    def _insert_count(self, kmers, sample):
+        if self.hll_sketch:
+            self.hll_sketch.insert(kmers, str(sample))
 
     @convert_kmers_to_canonical
     def _get_kmer_colours(self, kmer, canonical=False):
         colour_presence_boolean_array = self.graph.lookup(
-            kmer, num_elements=self.get_num_colours())
+            kmer, array_length=self.get_num_colours())
         return {kmer: colour_presence_boolean_array.colours()}
 
     def _get_kmers_colours(self, kmers):
         bas = self.graph.lookup(
-            kmers, num_elements=self.get_num_colours())
+            kmers, array_length=self.get_num_colours())
         o = {}
         for kmer, bas in zip(kmers, bas):
             o[kmer] = bas.colours()
@@ -150,10 +153,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     @convert_kmers_to_canonical
     def _search_kmers(self, kmers, threshold=1):
-        # if threshold == 1:
-        #     return self._search_kmers_threshold_1(kmers)
-        # else:
-        return self._search_kmers_threshold_not_1(kmers, threshold=threshold)
+        if threshold == 1:
+            return self._search_kmers_threshold_1(kmers)
+        else:
+            return self._search_kmers_threshold_not_1(kmers, threshold=threshold)
 
     def _search_kmers_threshold_not_1(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
@@ -169,7 +172,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _search_kmers_threshold_1(self, kmers):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
-        return self.graph.lookup_all_present(kmers)
+        ba = self.graph.lookup_all_present(
+            kmers, array_length=self.get_num_colours())
+        out = {}
+        for c in ba.colours():
+            sample = self.get_sample_from_colour(c)
+            out[sample] = 1.0
+        return out
 
     @convert_kmers_to_canonical
     def _lookup(self, kmer, canonical=False):
@@ -177,7 +186,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         num_colours = self.get_num_colours()
         colour_to_sample = self.colours_to_sample_dict()
         colour_presence_boolean_array = self.graph.lookup(
-            kmer, num_elements=self.get_num_colours())
+            kmer, array_length=self.get_num_colours())
         samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
             if present:

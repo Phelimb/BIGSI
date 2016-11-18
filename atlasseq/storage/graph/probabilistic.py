@@ -60,32 +60,33 @@ class BloomFilterMatrix:
                 return False
         return True
 
-    def lookup(self, element, num_elements=None):
+    def lookup(self, element, array_length):
         """returns the AND of row of a BloomFilterMatrix corresponding to element"""
         if isinstance(element, list):
-            return self._lookup_elements(element, num_elements)
+            return self._lookup_elements(element, array_length)
         else:
-            return self._lookup_element(element, num_elements)
+            return self._lookup_element(element, array_length)
 
-    def _lookup_elements(self, elements, num_elements=None):
+    def _lookup_elements(self, elements, array_length):
         indexes = []
         for e in elements:
             indexes.extend([h for h in self.hashes(e)])
-        rows = self._get_rows(indexes, num_elements)
+        rows = self._get_rows(indexes, array_length)
         bas = []
         for i in range(0, len(rows), self.num_hashes):
             bas.append(self._binary_and(rows[i:i + self.num_hashes]))
         return bas
 
-    def _lookup_element(self, element, num_elements=None):
+    def _lookup_element(self, element, array_length):
         indexes = self.hashes(element)
-        rows = self._get_rows(indexes, num_elements)
+        rows = self._get_rows(indexes, array_length)
         return self._binary_and(rows)
 
     def _binary_and(self, rows):
+        assert len(rows) > 0
         bitarray = rows[0]
         if len(rows) > 1:
-            for r in rows[:1]:
+            for r in rows[1:]:
                 bitarray = bitarray & r
         return bitarray
 
@@ -98,11 +99,11 @@ class BloomFilterMatrix:
     def _getbit(self, index, colour):
         return self.storage.getbit(index, colour)
 
-    def _get_row(self, index, num_elements=None):
-        return self.storage.get_row(index, num_elements=num_elements)
+    def _get_row(self, index, array_length):
+        return self.storage.get_row(index, array_length=array_length)
 
-    def _get_rows(self, indexes, num_elements=None):
-        return self.storage.get_rows(indexes, num_elements=num_elements)
+    def _get_rows(self, indexes, array_length):
+        return self.storage.get_rows(indexes, array_length=array_length)
 
     def get_column(self, colour):
         bf = BitArray()
@@ -125,32 +126,32 @@ class BaseProbabilisticStorage(BaseStorage):
         else:
             self.bloomfilter.update(kmers, colour)
 
-    def lookup(self, kmer, num_elements=None):
-        return self.bloomfilter.lookup(kmer, num_elements=num_elements)
+    def lookup(self, kmer, array_length):
+        return self.bloomfilter.lookup(kmer, array_length=array_length)
 
-    def lookup_all_present(self, kmers, num_elements=None):
-        return self.lookup(kmers, num_elements=num_elements)
+    def lookup_all_present(self, kmers, array_length):
+        return self.lookup(kmers, array_length=array_length)
 
     def get_bloom_filter(self, colour):
         return self.bloomfilter.get_column(colour)
 
-    def get_row(self, index, num_elements=None):
+    def get_row(self, index, array_length):
         b = BitArray()
         b.frombytes(self.get(index, b''))
-        return self._check_num_elements(b, num_elements)
+        return self._check_array_length(b, array_length)
 
-    def _check_num_elements(self, b, num_elements):
-        if num_elements is None:
-            return b[:num_elements]
+    def _check_array_length(self, b, array_length):
+        if array_length is None:
+            return b[:array_length]
         else:
-            # Ensure b is at least num_elements long
-            if b.length() < num_elements:
-                b.extend([False]*(num_elements-b.length()))
-            assert b.length() >= num_elements
-            return b[:num_elements]
+            # Ensure b is at least array_length long
+            if b.length() < array_length:
+                b.extend([False]*(array_length-b.length()))
+            assert b.length() >= array_length
+            return b[:array_length]
 
-    def get_rows(self, indexes, num_elements=None):
-        return [self.get_row(i, num_elements) for i in indexes]
+    def get_rows(self, indexes, array_length):
+        return [self.get_row(i, array_length) for i in indexes]
 
     def set_row(self, index, b):
         self[index] = b.tobytes()
@@ -185,19 +186,19 @@ class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisHashStorage):
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-redis'
 
-    def get_rows(self, indexes, num_elements=None):
+    def get_rows(self, indexes, array_length):
         indexes = [i for i in indexes]
         bas = []
-        rows = self._get_raw_rows(indexes, num_elements)
+        rows = self._get_raw_rows(indexes, array_length)
         for r in rows:
             b = BitArray()
             if r is None:
                 r = b''
             b.frombytes(r)
-            bas.append(self._check_num_elements(b, num_elements))
+            bas.append(self._check_array_length(b, array_length))
         return bas
 
-    def _get_raw_rows(self, indexes, num_elements):
+    def _get_raw_rows(self, indexes, array_length):
         names = [self.get_name(i) for i in indexes]
         return self.storage.hget(names, indexes, partition_arg=1)
 
@@ -216,30 +217,30 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
         super().__init__(config, bloom_filter_size, num_hashes)
         self.name = 'probabilistic-redis'
 
-    def get_rows(self, indexes, num_elements=None):
+    def get_rows(self, indexes, array_length):
         indexes = list(indexes)
         bas = []
-        rows = self._get_raw_rows(indexes, num_elements)
+        rows = self._get_raw_rows(indexes, array_length)
         for r in rows:
             b = BitArray()
             if r is None:
-                r = b''
-            b.frombytes(r)
-            bas.append(self._check_num_elements(b, num_elements))
+                b.append(False)
+            else:
+                b.frombytes(r)
+            bas.append(self._check_array_length(b, array_length))
         return bas
 
-    def _get_raw_rows(self, indexes, num_elements):
+    def _get_raw_rows(self, indexes, array_length):
         pipe = self.storage.pipeline()
         for i in indexes:
             pipe.get(i)
         return pipe.execute()
 
-    def lookup_all_present(self, elements, num_elements=None):
+    def lookup_all_present(self, elements, array_length):
         indexes = []
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
-        rows = self.get_rows(indexes)
-        # .to01()[:self.get_num_colours()]
+        rows = self.get_rows(indexes, array_length)
         return self.bloomfilter._binary_and(rows)
 
 

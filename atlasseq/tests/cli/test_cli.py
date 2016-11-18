@@ -18,9 +18,10 @@ def test_insert_search_cmd():
     response = hug.test.post(
         atlasseq.__main__, 'insert', {'kmer_file': 'atlasseq/tests/data/test_kmers.txt'})
     assert json.loads(response.data).get('result') == 'success'
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
     response = hug.test.get(
         atlasseq.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
-    assert json.loads(response.data).get('seq').get('test_kmers') == 1.0
+    assert json.loads(response.data).get(seq).get('test_kmers') == 1.0
 
 
 @given(store=ST_STORAGE, sample=ST_SAMPLE_NAME,
@@ -33,9 +34,10 @@ def test_insert_search_cmd_2(store, sample, kmers):
     response = hug.test.post(
         atlasseq.__main__, 'insert', {'sample': sample, 'kmers': kmers})
     assert json.loads(response.data).get('result') == 'success'
+    seq = random.choice(kmers)
     response = hug.test.get(
-        atlasseq.__main__, 'search', {'seq': random.choice(kmers)})
-    assert json.loads(response.data).get('seq').get(sample) == 1.0
+        atlasseq.__main__, 'search', {'seq': seq})
+    assert json.loads(response.data).get(seq).get('results').get(sample) == 1.0
 
 
 @given(store=ST_STORAGE, samples=st.lists(ST_SAMPLE_NAME, min_size=1, max_size=5),

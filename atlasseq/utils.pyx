@@ -4,6 +4,11 @@ COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS={'A':'00','G':'01','C':'10','T':'11'}
 BASES={'00':'A','01':'G','10':'C','11':'T'}
 
+def chunks(list l, int n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
 def decode_kmer(bytes binary_kmer, int kmer_size):
     """
     Returns a string representation of the specified kmer.

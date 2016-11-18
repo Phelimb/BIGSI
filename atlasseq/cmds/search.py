@@ -26,21 +26,24 @@ def parse_input(infile):
     return gene_to_kmers
 
 
+def _search(gene_name, seq, results, threshold, graph):
+    results[gene_name] = {}
+    start = time.time()
+    results[gene_name]['results'] = graph.search(seq, threshold=threshold)
+    diff = time.time() - start
+    results[gene_name]['time'] = diff
+    return results
+
+
 def search(seq, fasta_file, threshold, graph):
+    results = {}
     if fasta_file is not None:
         gene_to_seq = parse_input(fasta_file)
-        colours_to_samples = graph.colours_to_sample_dict()
-        results = {}
-        found = {}
         for gene, seq in gene_to_seq.items():
-            found[gene] = {}
-            start = time.time()
-            found[gene]['results'] = graph.search(seq, threshold=threshold)
-            diff = time.time() - start
-            found[gene]['time'] = diff
+            results = _search(
+                gene_name=gene, seq=seq, results=results, threshold=threshold, graph=graph)
     else:
-        logger.debug("Searching %i samples for %s" %
-                     (graph.get_num_colours(), seq))
-        found = {"seq": graph.search(seq)}
+        results = _search(
+            gene_name=seq, seq=seq, results=results, threshold=threshold, graph=graph)
 
-    return found
+    return results

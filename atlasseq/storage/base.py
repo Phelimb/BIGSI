@@ -4,6 +4,7 @@ import os
 from redispartition import RedisCluster
 from rediscluster import StrictRedisCluster
 from atlasseq.utils import hash_key
+from atlasseq.utils import chunks
 from atlasseq.bitvector import BitArray
 import shutil
 
@@ -188,6 +189,7 @@ class RedisBitArrayStorage(BaseRedisStorage):
             startup_nodes.append({"host": host, "port": port})
         self.storage = StrictRedisCluster(
             startup_nodes=startup_nodes)
+        self.max_bitset = 100000
 
     def __setitem__(self, key, val):
         self.storage.set(key, val)
@@ -202,9 +204,15 @@ class RedisBitArrayStorage(BaseRedisStorage):
         return self.storage.getbit(index, colour)
 
     def setbits(self, indexes, colour, bit):
+        return self._massive_setbits(indexes, colour, bit)
+
+    def _massive_setbits(self, indexes, colour, bit):
+        for _indexes in chunks(indexes, self.max_bitset):
+            self._setbits(_indexes, colour, bit)
+
+    def _setbits(self, indexes, colour, bit):
         pipe = self.storage.pipeline()
-        for i in indexes:
-            pipe.setbit(i, colour, bit)
+        [pipe.setbit(i, colour, bit) for i in indexes]
         return pipe.execute()
 
     def getbits(self, indexes, colour):

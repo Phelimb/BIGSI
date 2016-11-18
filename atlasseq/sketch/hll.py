@@ -1,10 +1,5 @@
 import redis
-
-
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+from atlasseq.utils import chunks
 
 
 class HyperLogLogJaccardIndex(object):
@@ -15,7 +10,10 @@ class HyperLogLogJaccardIndex(object):
         self.max_N_pfadd = 100000
 
     def insert(self, kmers, sample):
-        return self._massive_insert(kmers, sample)
+        if isinstance(kmers, str):
+            return self._massive_insert([kmers], sample)
+        else:
+            return self._massive_insert(kmers, sample)
 
     def _massive_insert(self, kmers, sample):
         for _kmers in chunks(kmers, self.max_N_pfadd):

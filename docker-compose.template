@@ -2,6 +2,7 @@ version: '2'
 
 services:
   main:
+    container_name: atlas
     image: phelimb/atlasseq
     ports:
       - "5000:5000"      
@@ -27,15 +28,15 @@ services:
     image: phelimb/redis-mcdbg
     environment:
         - PORT={{redis['port']}}    
-    volumes:
-      - "$DATA_DIR:/data{{redis['host']}}"
+    volumes_from:
+      - "redisbroker"
     ports:
       - {{redis['port']}}  
     network_mode: "host"  
 
   {% endfor %}
 
-  redisbroker:  
+  redisbroker: 
     image: redis
     command: redis-server --appendonly yes    
     volumes:

@@ -108,6 +108,23 @@ def test_query_kmers(Graph, x, store, binary_kmers):
         '1234': 0.5, '1235': 1, '1236': 0.5}
 
 
+@given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
+       store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
+def test_query_kmers2(Graph, x, store, binary_kmers):
+    k1, k2, k3, k4, k5 = x
+    mc = Graph(binary_kmers=binary_kmers, storage=store)
+    mc.delete_all()
+
+    mc.insert([k1, k2], '1234')
+    mc.insert([k1, k3], '1235')
+    mc.insert([k4, k3], '1236')
+    assert mc.get_num_colours() == 3
+    mc.num_colours = mc.get_num_colours()
+    assert mc._search_kmers_threshold_1(
+        [k1, k2]) == mc._search_kmers_threshold_not_1([k1, k2], threshold=1)
+    assert mc._search_kmers_threshold_1(
+        [k1, k3]) == mc._search_kmers_threshold_not_1([k1, k3], threshold=1)
+
 # @given(Graph=ST_GRAPH, kmers=st.lists(ST_KMER, min_size=10, max_size=10, unique=True),
 #        binary_kmers=ST_BINARY_KMERS, store=ST_STORAGE)
 # def test_count_kmers(Graph, kmers, binary_kmers, store):
