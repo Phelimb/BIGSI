@@ -93,6 +93,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         d = {}
         d['version'] = __version__
         d['metadata'] = self.metadata.dumps()
+        print(self.get_num_colours())
+        print(d['metadata'])
         d['graph'] = self.graph.dumps()
         d['bloom_filter_size'] = self.graph.bloomfilter.size
         d['num_hashes'] = self.graph.bloomfilter.num_hashes

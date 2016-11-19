@@ -234,9 +234,13 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
         pipe = self.storage.pipeline()
         for i in indexes:
             pipe.get(i)
-        return pipe.execute()
+        raw_rows = pipe.execute()
+        return raw_rows
 
     def lookup_all_present(self, elements, array_length):
+        if not elements:
+            raise ValueError(
+                "You're trying to lookup a null element is your sequence search shorter than the kmer size?")
         indexes = []
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])

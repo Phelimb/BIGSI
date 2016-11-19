@@ -172,8 +172,12 @@ class SimpleRedisStorage(BaseRedisStorage):
             return self.storage.get(key)
 
     def items(self):
-        for i, j in self.storage.hgetall(self.hash_key).items():
-            yield (i.decode('utf-8'), j.decode('utf-8'))
+        if self.hash_key:
+            for i, j in self.storage.hgetall(self.hash_key).items():
+                yield (i.decode('utf-8'), j.decode('utf-8'))
+        else:
+            for i in self.storage.keys():
+                yield (i, self[i])
 
 
 class RedisBitArrayStorage(BaseRedisStorage):
