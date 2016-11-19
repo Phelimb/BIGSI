@@ -185,10 +185,11 @@ class RedisBitArrayStorage(BaseRedisStorage):
         self.name = 'redis'
         self.redis_cluster = True
         startup_nodes = []
+        self.max_connections = 1000
         for host, port, db in config['conn']:
             startup_nodes.append({"host": host, "port": port})
         self.storage = StrictRedisCluster(
-            startup_nodes=startup_nodes)
+            startup_nodes=startup_nodes, max_connections=self.max_connections)
         self.max_bitset = 100000
 
     def __setitem__(self, key, val):
