@@ -14,39 +14,34 @@ services:
     network_mode: "host"  
 
   strictredis:
-    image: redis
+    image: phelimb/redis-mcdbg
     environment:
         - PORT=6379    
     ports:
       - 6379  
     volumes_from:
-      - "redisbroker"      
+      - "redismanager"      
     network_mode: "host"      
   {% for redis in redis_conf %}
   {{redis['host']}}:
-    image: phelimb/redis-mcdbg
+    image: phelimb/redis-cluster
     environment:
         - PORT={{redis['port']}}    
     volumes_from:
-      - "redisbroker"
+      - "redismanager"
     ports:
       - {{redis['port']}}  
     network_mode: "host"  
 
   {% endfor %}
 
-  redisbroker: 
-    image: redis
-    command: redis-server --appendonly yes    
-    volumes:
-      - "$DATA_DIR:/data"
 
   redismanager:
     image: phelimb/redis-trib                   
-    volumes_from:
-      - "redisbroker"                
+    volumes:
+      - "$DATA_DIR:/data"               
     command: tail -f /etc/hosts
-    network_mode: "host"           
+    network_mode: "host"   
 
 volumes:
   redis-data:
