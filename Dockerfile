@@ -22,7 +22,6 @@ ENV BERKELEY_VERSION 4.8.30
 
 
 COPY . /usr/src/app
-#COPY requirements.txt /usr/src/app/
 # BERKELEYDB_DIR=/usr/local/Cellar/berkeley-db4/4.8.30/
 RUN  pip install --no-cache-dir -r requirements.txt
 # Install hug
