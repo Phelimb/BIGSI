@@ -258,29 +258,30 @@ class RedisBitArrayStorage(BaseRedisStorage):
         return self._massive_setbits(indexes, colour, bit)
 
     def _massive_setbits(self, indexes, colour, bit):
-        indexes = list(set(indexes))
-        logger.debug("Setting %i bits" % len(indexes))
-        logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
+        if indexes:
+            indexes = list(set(indexes))
+            logger.debug("Setting %i bits" % len(indexes))
+            logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
 
-        if self.bulk_commands_directory:
-            self.bulk_command_files = self._init_outfiles(colour)
-            for i in indexes:
-                port = self._get_key_connection(i)[1]
-                file = self.bulk_command_files[port]
-                file.write(" ".join(
-                    [" SETBIT", str(i), str(colour), str(bit), '\n']))
-            for f in self.bulk_command_files.values():
-                f.write("\n")
-                f.close()
-        else:
-            start = time.time()
-            for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
-                self._setbits(_indexes, colour, bit)
-                logger.debug("%i processed in %i seconds" %
-                             ((i+1)*self.max_bitset, time.time()-start))
-            end = time.time()
-            logger.debug("finished setting %i bits in %i seconds" %
-                         (len(indexes), end-start))
+            if self.bulk_commands_directory:
+                self.bulk_command_files = self._init_outfiles(colour)
+                for i in indexes:
+                    port = self._get_key_connection(i)[1]
+                    file = self.bulk_command_files[port]
+                    file.write(" ".join(
+                        [" SETBIT", str(i), str(colour), str(bit), '\n']))
+                for f in self.bulk_command_files.values():
+                    f.write("\n")
+                    f.close()
+            else:
+                start = time.time()
+                for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
+                    self._setbits(_indexes, colour, bit)
+                    logger.debug("%i processed in %i seconds" %
+                                 ((i+1)*self.max_bitset, time.time()-start))
+                end = time.time()
+                logger.debug("finished setting %i bits in %i seconds" %
+                             (len(indexes), end-start))
 
     def _setbits(self, indexes, colour, bit):
         pipe = self.storage.pipeline()

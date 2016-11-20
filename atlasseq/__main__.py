@@ -22,6 +22,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
+BULK_CMD_OUTDIR = os.environ.get("BULK_CMD_OUTDIR")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
@@ -31,7 +32,7 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG}},
+GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG, "bulk_commands_directory": BULK_CMD_OUTDIR}},
               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.search import search
@@ -43,17 +44,6 @@ from atlasseq.cmds.delete import delete
 #from atlasseq.cmds.bitcount import bitcount
 #from atlasseq.cmds.jaccard_index import jaccard_index
 
-
-class ArgumentParserWithDefaults(argparse.ArgumentParser):
-
-    def __init__(self, *args, **kwargs):
-        super(ArgumentParserWithDefaults, self).__init__(*args, **kwargs)
-        self.add_argument(
-            "-q",
-            "--quiet",
-            help="do not output warnings to stderr",
-            action="store_true",
-            dest="quiet")
 
 API = hug.API('atlas')
 
