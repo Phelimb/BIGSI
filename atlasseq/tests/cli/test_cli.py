@@ -1,4 +1,7 @@
 import hug
+import redis
+r = redis.StrictRedis()
+r.flushall()
 import atlasseq.__main__
 import json
 from atlasseq.tests.base import ST_KMER

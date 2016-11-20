@@ -23,6 +23,9 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 BULK_CMD_OUTDIR = os.environ.get("BULK_CMD_OUTDIR")
+if BULK_CMD_OUTDIR:
+    logger.warning(
+        "You're running with BULK_CMD_OUTDIR env variable set! Only do this if you know what you're doing!")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
@@ -32,8 +35,7 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG, "bulk_commands_directory": BULK_CMD_OUTDIR}},
-              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
@@ -46,6 +48,10 @@ from atlasseq.cmds.delete import delete
 
 
 API = hug.API('atlas')
+
+GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+                                         "bulk_commands_directory": BULK_CMD_OUTDIR}},
+              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
 @hug.object(name='atlas', version='0.0.1', api=API)

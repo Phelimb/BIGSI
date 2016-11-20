@@ -58,8 +58,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 self.bloom_filter_size.decode('utf-8'))
             self.num_hashes = int(self.num_hashes.decode('utf-8'))
             logger.debug("BF_SIZE %i " % self.bloom_filter_size)
-
-            if bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes:
+            print(self.get_num_colours())
+            if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
                 raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i. 
                                         You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
                                  (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
@@ -131,8 +131,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self.graph.loads(dump['graph'])
         self.bloom_filter_size = dump['bloom_filter_size']
         self.num_hashes = dump['num_hashes']
-        self.graph.bloomfilter.size = self.bloom_filter_size
-        self.graph.bloomfilter.num_hashes = self.num_hashes
+        self.graph.set_bloom_filter_size(self.bloom_filter_size)
+        self.graph.set_num_hashes(self.num_hashes)
 
     @convert_kmers_to_canonical
     def _insert(self, kmers, colour, canonical=False):
@@ -251,6 +251,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 "Only in-memory dictionary, berkeleydb and redis are supported.")
 
     def _add_sample(self, sample_name):
+        logger.debug("Adding %s" % sample_name)
         existing_index = self.get_colour_from_sample(sample_name)
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
