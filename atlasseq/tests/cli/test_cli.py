@@ -59,6 +59,7 @@ def test_dump_load_cmd():
     response = hug.test.post(
         atlasseq.__main__, 'dump', {'filepath': fp})
     assert response.data.get('result') == 'success'
+
     # Delete data
     response = hug.test.delete(
         atlasseq.__main__, '', {})
@@ -66,8 +67,7 @@ def test_dump_load_cmd():
     response = hug.test.post(
         atlasseq.__main__, 'load', {'filepath': fp})
     assert response.data.get('result') == 'success'
-    print(hug.test.get(
-        atlasseq.__main__, 'graph').data)
+
     # test get
     seq = random.choice(kmers)
     response = hug.test.get(
