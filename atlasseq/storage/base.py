@@ -1,7 +1,6 @@
 import redis
 import sys
 import os
-from redispartition import RedisCluster
 from rediscluster import StrictRedisCluster
 from atlasseq.utils import hash_key
 from atlasseq.utils import chunks

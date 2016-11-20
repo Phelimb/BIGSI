@@ -152,20 +152,27 @@ class BaseProbabilisticStorage(BaseStorage):
     def lookup(self, kmer, array_length):
         return self.bloomfilter.lookup(kmer, array_length=array_length)
 
-    def lookup_all_present(self, kmers, array_length):
-        return self.lookup(kmers, array_length=array_length)
+    def lookup_all_present(self, elements, array_length):
+        if not elements:
+            raise ValueError(
+                "You're trying to lookup a null element is your sequence search shorter than the kmer size?")
+        indexes = []
+        for e in elements:
+            indexes.extend([h for h in self.bloomfilter.hashes(e)])
+        rows = self.get_rows(indexes, array_length)
+        return self.bloomfilter._binary_and(rows)
 
     def get_bloom_filter(self, colour):
         return self.bloomfilter.get_column(colour)
 
-    def get_row(self, index, array_length):
+    def get_row(self, index, array_length=None):
         b = BitArray()
         b.frombytes(self.get(index, b''))
         return self._check_array_length(b, array_length)
 
-    def _check_array_length(self, b, array_length):
+    def _check_array_length(self, b, array_length=None):
         if array_length is None:
-            return b[:array_length]
+            return b
         else:
             # Ensure b is at least array_length long
             if b.length() < array_length:
@@ -259,16 +266,6 @@ class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayS
             pipe.get(i)
         raw_rows = pipe.execute()
         return raw_rows
-
-    def lookup_all_present(self, elements, array_length):
-        if not elements:
-            raise ValueError(
-                "You're trying to lookup a null element is your sequence search shorter than the kmer size?")
-        indexes = []
-        for e in elements:
-            indexes.extend([h for h in self.bloomfilter.hashes(e)])
-        rows = self.get_rows(indexes, array_length)
-        return self.bloomfilter._binary_and(rows)
 
     def items(self):
         for i, r in enumerate(self._get_raw_rows(range(self.bloomfilter.size))):

@@ -6,11 +6,11 @@ RUN pip install --upgrade pip
 ENV BERKELEY_VERSION 4.8.30
 
 # Download, configure and install BerkeleyDB
-#RUN wget -P /tmp http://download.oracle.com/berkeley-db/db-"${BERKELEY_VERSION}".tar.gz && \
-#    tar -xf /tmp/db-"${BERKELEY_VERSION}".tar.gz -C /tmp && \
-#    rm -f /tmp/db-"${BERKELEY_VERSION}".tar.gz
-#RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
-#    ../dist/configure && make && make install
+RUN wget -P /tmp http://download.oracle.com/berkeley-db/db-"${BERKELEY_VERSION}".tar.gz && \
+    tar -xf /tmp/db-"${BERKELEY_VERSION}".tar.gz -C /tmp && \
+    rm -f /tmp/db-"${BERKELEY_VERSION}".tar.gz
+RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
+    ../dist/configure && make && make install
 
 # Upgrade your gcc to version at least 4.7 to get C++11 support. gflags snappy zlib bzip2
 #RUN apt-get install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev 
@@ -22,12 +22,7 @@ ENV BERKELEY_VERSION 4.8.30
 
 
 COPY . /usr/src/app
-# BERKELEYDB_DIR=/usr/local/Cellar/berkeley-db4/4.8.30/
 RUN  pip install --no-cache-dir -r requirements.txt
-# Install hug
-#WORKDIR /usr/src/app/hug
-#RUN python setup.py install
-#RUN pip install git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 
 # install atlasseq
 WORKDIR /usr/src/app

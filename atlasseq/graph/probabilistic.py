@@ -61,7 +61,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.num_hashes = int(self.num_hashes.decode('utf-8'))
             logger.debug("BF_SIZE %i " % self.bloom_filter_size)
             if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
-                raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i. 
+                raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i.
                                         You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
                                  (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
         else:
@@ -219,33 +219,27 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return samples_present
 
     def _choose_storage(self, storage_config):
+        self.metadata = SimpleRedisStorage(
+            {'conn': [('127.0.0.1', 6379, 0)]})
+        self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                          config={'conn': [('127.0.0.1', 6379, 1)]})
+        self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                          config={'conn': [('127.0.0.1', 6379, 2)]})
+
         if 'dict' in storage_config:
             self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
             self.metadata = InMemoryStorage(storage_config['dict'])
         elif 'redis' in storage_config:
             self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
-            self.metadata = SimpleRedisStorage(
-                {'conn': [(storage_config['redis']['conn'][0][0], storage_config['redis']['conn'][0][1], 0)]})
-            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 1)]})
-            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
         elif 'redis-cluster' in storage_config:
             self.graph = ProbabilisticRedisBitArrayStorage(
                 storage_config['redis-cluster'])
-            self.metadata = SimpleRedisStorage(
-                {'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 0)]})
-            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 1)]})
-            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-                                                              config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
+
         elif 'berkeleydb' in storage_config:
             self.graph = ProbabilisticBerkeleyDBStorage(
                 storage_config['berkeleydb'])
-            self.metadata = BerkeleyDBStorage(storage_config['berkeleydb'])
         elif 'leveldb' in storage_config:
             self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'])
-            self.metadata = LevelDBStorage(storage_config['leveldb'])
 
         else:
             raise ValueError(

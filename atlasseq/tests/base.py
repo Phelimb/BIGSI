@@ -15,7 +15,7 @@ POSSIBLE_STORAGES = [
     # {'dict': None},
     # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
     {"redis-cluster": REDIS_CLUSTER_STORAGE},
-    # {'berkeleydb': {'filename': './db'}},
+    {'berkeleydb': {'filename': './db'}},
     # {'leveldb': {'filename': './db2'}}
 ]
 

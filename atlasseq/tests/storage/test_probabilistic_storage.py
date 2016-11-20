@@ -17,7 +17,7 @@ POSSIBLE_STORAGES = [
     # ProbabilisticInMemoryStorage(),
     # ProbabilisticRedisHashStorage(REDIS_STORAGE),
     ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE),
-    # ProbabilisticBerkeleyDBStorage({'filename': './db'}),
+    ProbabilisticBerkeleyDBStorage({'filename': './db'}),
 ]
 ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)
 
@@ -106,7 +106,8 @@ def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,
             colour2) == True for i in range(len(elements))])
 
 
-@given(storage=ST_STORAGE, key=st.integers(min_value=0))
-def test_cluster_keyslot(storage, key):
+@given(key=st.integers(min_value=0))
+def test_cluster_keyslot(key):
+    storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE)
     assert storage._get_key_slot(
         key, 'python') == storage._get_key_slot(key, 'redis')

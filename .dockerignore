@@ -2,7 +2,6 @@ kpc2-test
 scripts/*
 venv*
 ./venv2
-atlasseq/utils.so
 venv
 *.rdb
 *nodes.conf

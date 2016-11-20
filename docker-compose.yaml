@@ -11,6 +11,8 @@ services:
         - REDIS_PORT_1=7000         
         - "BFSIZE=$BFSIZE"
         - "NUM_HASHES=$NUM_HASHES"
+        - "BULK_CMD_OUTDIR=$BULK_CMD_OUTDIR"
+        
     volumes:
         - "$DATA_DIR:/data"                   
     network_mode: "host"  
