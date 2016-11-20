@@ -46,7 +46,6 @@ from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
-
 class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def __init__(self, kmer_size=31, binary_kmers=True, storage={'dict': None},
@@ -61,7 +60,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 self.bloom_filter_size.decode('utf-8'))
             self.num_hashes = int(self.num_hashes.decode('utf-8'))
             logger.debug("BF_SIZE %i " % self.bloom_filter_size)
-            print(self.get_num_colours())
             if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
                 raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i. 
                                         You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
