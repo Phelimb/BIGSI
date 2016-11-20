@@ -10,9 +10,7 @@ from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
-
 def dump(graph, file):
     logger.debug("Dumping graph tp %s" % file)
-    with open(file, 'wb') as outfile:
-        graph.dump(outfile)
+    graph.dump(file)
     return {'result': 'success'}

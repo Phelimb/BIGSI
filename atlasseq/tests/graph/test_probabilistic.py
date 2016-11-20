@@ -28,24 +28,24 @@ def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
     assert bf.length() == mc.graph.bloomfilter.size
 
 
-@given(kmer=ST_KMER, store1=ST_STORAGE, store2=ST_STORAGE,
-       bloom_filter_size=st.integers(min_value=100, max_value=1000), num_hashes=st.integers(min_value=1, max_value=5))
-def test_dumps_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
-    """test dumping and loading graphs from various backends"""
-    mc = Graph(
-        storage=store1, bloom_filter_size=bloom_filter_size, num_hashes=num_hashes)
-    mc.delete_all()
-    mc.insert(kmer, '1234')
-    assert mc.lookup(kmer) == {kmer: ['1234']}
-    mc.insert(kmer, '1235')
-    assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
-    graph_dump = mc.dumps()
-    mc.delete_all()
+# @given(kmer=ST_KMER, store1=ST_STORAGE, store2=ST_STORAGE,
+#        bloom_filter_size=st.integers(min_value=100, max_value=1000), num_hashes=st.integers(min_value=1, max_value=5))
+# def test_dumps_loads(kmer, store1, store2, bloom_filter_size, num_hashes):
+#     """test dumping and loading graphs from various backends"""
+#     mc = Graph(
+#         storage=store1, bloom_filter_size=bloom_filter_size, num_hashes=num_hashes)
+#     mc.delete_all()
+#     mc.insert(kmer, '1234')
+#     assert mc.lookup(kmer) == {kmer: ['1234']}
+#     mc.insert(kmer, '1235')
+#     assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
+#     graph_dump = mc.dumps()
+#     mc.delete_all()
 
-    mc2 = Graph(storage=store2)
-    mc2.delete_all()
-    mc2.loads(graph_dump)
-    assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}
+#     mc2 = Graph(storage=store2)
+#     mc2.delete_all()
+#     mc2.loads(graph_dump)
+#     assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}
 
 
 @given(kmer=ST_KMER, store1=ST_STORAGE, store2=ST_STORAGE,
@@ -62,13 +62,11 @@ def test_dump_load(kmer, store1, store2, bloom_filter_size, num_hashes):
     mc.insert(kmer, '1235')
     assert mc.lookup(kmer) == {kmer: ['1234', '1235']}
     _, fp = tempfile.mkstemp()
-    with open(fp, 'wb') as outfile:
-        mc.dump(outfile)
+    mc.dump(fp)
     mc.delete_all()
 
     mc2 = Graph(storage=store2)
 
-    with open(fp, 'rb') as infile:
-        mc2.load(infile)
+    mc2.load(fp)
     assert mc2.lookup(kmer) == {kmer: ['1234', '1235']}
     os.remove(fp)

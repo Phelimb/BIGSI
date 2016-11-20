@@ -190,6 +190,16 @@ class BaseProbabilisticStorage(BaseStorage):
         for i in range(self.bloomfilter.size):
             yield (i, self.get(i, b''))
 
+    def dump(self, outfile, num_colours):
+        for i in range(self.bloomfilter.size):
+            v = self.get_row(i, array_length=num_colours)
+            outfile.write(v.tobytes())
+
+    def load(self, infile, num_colours):
+        record_size = math.ceil(num_colours / 8)
+        for i in range(self.bloomfilter.size):
+            self[i] = infile.read(record_size)
+
 
 class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
 

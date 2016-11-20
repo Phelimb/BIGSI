@@ -43,6 +43,7 @@ from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
 from atlasseq.cmds.samples import samples
 from atlasseq.cmds.dump import dump
+from atlasseq.cmds.dumps import dumps
 from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
 #from atlasseq.cmds.bitcount import bitcount
@@ -111,6 +112,12 @@ class AtlasSeq(object):
     @hug.object.post('/dump', output_format=hug.output_format.json)
     def dump(self, filepath):
         r = dump(graph=GRAPH, file=filepath)
+        return r
+
+    @hug.object.cli
+    @hug.object.get('/dumps', output_format=hug.output_format.json)
+    def dumps(self):
+        r = dumps(graph=GRAPH)
         return r
 
     @hug.object.cli
