@@ -49,7 +49,7 @@ def insert(kmers, kmer_file, graph, force=False, sample_name=None, intersect_kme
     if kmer_file is not None:
         kmers = list(load_all_kmers(kmer_file))
 
-    # logger.debug("Loaded %i kmers" % len(kmers))
+    logger.debug("Loaded %i kmers. Starting insert. " % len(kmers))
     try:
         graph.insert(kmers, sample_name)
         return {"result": "success",

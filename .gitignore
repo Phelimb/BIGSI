@@ -34,3 +34,13 @@ remcdbg.egg-info/
 remcdbg/
 scripts/probablistic.py
 
+*#
+atlasseq/demo.sh
+atlasseq/utils/*.c
+atlasseq/utils/*.so
+db2/
+redis-cluster/redis_tmp.conf
+scripts/benchmark_dumps.py
+test_dump.pk
+venvtmp/
+

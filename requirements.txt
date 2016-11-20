@@ -7,7 +7,6 @@ HLL
 bitarray
 #mccortex
 bitstring
-redispartition
 redis
 hiredis
 cython

@@ -9,6 +9,7 @@ from atlasseq.bitvector import BitArray
 import shutil
 import logging
 import time
+import crc16
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
@@ -199,7 +200,47 @@ class RedisBitArrayStorage(BaseRedisStorage):
             startup_nodes.append({"host": host, "port": port})
         self.storage = StrictRedisCluster(
             startup_nodes=startup_nodes, max_connections=self.max_connections)
-        self.max_bitset = 100000
+        self.max_bitset = 1000000
+        self.cluster_info = self.get_cluster_info()
+        self.cluster_slots = self.get_cluster_slots()
+        self.bulk_commands_directory = config.get('bulk_commands_directory')
+
+    def _init_outfiles(self, colour):
+        outdir = os.path.join(self.bulk_commands_directory, str(colour))
+        files = {}
+        try:
+            os.makedirs(outdir)
+        except FileExistsError:
+            pass
+
+        for i, j in self.cluster_slots.items():
+            port = j.get('master')[1]
+            files[port] = open(
+                os.path.join(outdir, str(port)+".txt"), 'w')
+
+        return files
+
+    def _get_key_slot(self, key, method="python"):
+        if method == "python":
+            return crc16.crc16xmodem(str.encode(str(key))) % 16384
+        else:
+            return self.storage.cluster_keyslot(key)
+
+    def _get_key_connection(self, key):
+        slot = self._get_key_slot(key)
+        connection = self._get_connection_of_slot(slot)
+        return connection
+
+    def _get_connection_of_slot(self, slot):
+        for i, j in self.cluster_slots.items():
+            if i[0] <= slot <= i[1]:
+                return j.get('master')
+
+    def get_cluster_info(self):
+        return self.storage.cluster_info()
+
+    def get_cluster_slots(self):
+        return self.storage.cluster_slots()
 
     def __setitem__(self, key, val):
         self.storage.set(key, val)
@@ -220,14 +261,26 @@ class RedisBitArrayStorage(BaseRedisStorage):
         indexes = list(set(indexes))
         logger.debug("Setting %i bits" % len(indexes))
         logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
-        start = time.time()
-        for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
-            self._setbits(_indexes, colour, bit)
-            logger.debug("%i processed in %i seconds" %
-                         ((i+1)*self.max_bitset, time.time()-start))
-        end = time.time()
-        logger.debug("finished setting %i bits in %i seconds" %
-                     (len(indexes), end-start))
+
+        if self.bulk_commands_directory:
+            self.bulk_command_files = self._init_outfiles(colour)
+            for i in indexes:
+                port = self._get_key_connection(i)[1]
+                file = self.bulk_command_files[port]
+                file.write(" ".join(
+                    [" SETBIT", str(i), str(colour), str(bit), '\n']))
+            for f in self.bulk_command_files.values():
+                f.write("\n")
+                f.close()
+        else:
+            start = time.time()
+            for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
+                self._setbits(_indexes, colour, bit)
+                logger.debug("%i processed in %i seconds" %
+                             ((i+1)*self.max_bitset, time.time()-start))
+            end = time.time()
+            logger.debug("finished setting %i bits in %i seconds" %
+                         (len(indexes), end-start))
 
     def _setbits(self, indexes, colour, bit):
         pipe = self.storage.pipeline()

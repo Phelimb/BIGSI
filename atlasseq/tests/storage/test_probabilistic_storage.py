@@ -104,3 +104,9 @@ def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,
             colour1) == True for i in range(len(elements))])
         assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(
             colour2) == True for i in range(len(elements))])
+
+
+@given(storage=ST_STORAGE, key=st.integers(min_value=0))
+def test_cluster_keyslot(storage, key):
+    assert storage._get_key_slot(
+        key, 'python') == storage._get_key_slot(key, 'redis')

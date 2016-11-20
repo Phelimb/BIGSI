@@ -11,7 +11,7 @@ def main(N):
     for i in range(N):
         redis = {}
         redis['i'] = i+1
-        redis['port'] = 7000+i+1
+        redis['port'] = 7000+i
         redis['host'] = 'redis%i' % (i+1)
         redis_conf.append(redis)
     template = env.get_template('docker-compose.template')

@@ -11,6 +11,7 @@ setup(
     packages=[
         'atlasseq',
         'atlasseq.cmds',
+        'atlasseq.utils',
         'atlasseq.graph',
         'atlasseq.sketch',
         'atlasseq.storage',
@@ -21,7 +22,7 @@ setup(
     description='.',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-    ext_modules=cythonize("atlasseq/utils.pyx"),
+    ext_modules=cythonize("atlasseq/utils/fncts.pyx"),
     install_requires=required[1:],
     entry_points={
         'console_scripts': [
