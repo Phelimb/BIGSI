@@ -36,12 +36,15 @@ from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
 from atlasseq.sketch import HyperLogLogJaccardIndex
+from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 
 import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from atlasseq.utils import DEFAULT_LOGGING_LEVEL
+logger.setLevel(DEFAULT_LOGGING_LEVEL)
+
 
 
 class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):

@@ -5,7 +5,9 @@ import os.path
 import logging
 import json
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from atlasseq.utils import DEFAULT_LOGGING_LEVEL
+logger.setLevel(DEFAULT_LOGGING_LEVEL)
+
 # from pyseqfile import Reader
 from atlasseq.utils import seq_to_kmers
 

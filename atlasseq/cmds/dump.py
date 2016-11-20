@@ -6,7 +6,9 @@ import json
 import logging
 import json
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from atlasseq.utils import DEFAULT_LOGGING_LEVEL
+logger.setLevel(DEFAULT_LOGGING_LEVEL)
+
 
 
 def dump(graph, file):

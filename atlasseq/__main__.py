@@ -15,7 +15,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from atlasseq.utils import DEFAULT_LOGGING_LEVEL
+logger.setLevel(DEFAULT_LOGGING_LEVEL)
+
 
 import hug
 from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
