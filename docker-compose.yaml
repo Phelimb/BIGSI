@@ -12,7 +12,8 @@ services:
         - "BFSIZE=$BFSIZE"
         - "NUM_HASHES=$NUM_HASHES"
         - "BULK_CMD_OUTDIR=$BULK_CMD_OUTDIR"
-        
+        - "STORAGE=$STORAGE"
+        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"        
     volumes:
         - "$DATA_DIR:/data"                   
     network_mode: "host"  

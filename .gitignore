@@ -1,3 +1,4 @@
+*.pk
 *nodes.conf
 atlasseq.egg-info/
 .coverage
