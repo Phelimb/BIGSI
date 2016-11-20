@@ -7,7 +7,12 @@ from atlasseq.utils import hash_key
 from atlasseq.utils import chunks
 from atlasseq.bitvector import BitArray
 import shutil
+import logging
+import time
+logging.basicConfig(level=logging.DEBUG)
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 try:
     import bsddb3 as bsddb
 except ImportError:
@@ -212,8 +217,17 @@ class RedisBitArrayStorage(BaseRedisStorage):
         return self._massive_setbits(indexes, colour, bit)
 
     def _massive_setbits(self, indexes, colour, bit):
-        for _indexes in chunks(indexes, self.max_bitset):
+        indexes = list(set(indexes))
+        logger.debug("Setting %i bits" % len(indexes))
+        logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
+        start = time.time()
+        for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
             self._setbits(_indexes, colour, bit)
+            logger.debug("%i processed in %i seconds" %
+                         ((i+1)*self.max_bitset, time.time()-start))
+        end = time.time()
+        logger.debug("finished setting %i bits in %i seconds" %
+                     (len(indexes), end-start))
 
     def _setbits(self, indexes, colour, bit):
         pipe = self.storage.pipeline()

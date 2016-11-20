@@ -41,19 +41,36 @@ import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def __init__(self, kmer_size=31, binary_kmers=True, storage={'dict': None},
                  bloom_filter_size=20000000, num_hashes=3):
-
-        self.bloom_filter_size = bloom_filter_size
-        self.num_hashes = num_hashes
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
         self.hll_sketch = HyperLogLogJaccardIndex()
+        self.bloom_filter_size = self.metadata.get('bloom_filter_size')
+        self.num_hashes = self.metadata.get('num_hashes')
+        if self.bloom_filter_size is not None:
+            self.bloom_filter_size = int(
+                self.bloom_filter_size.decode('utf-8'))
+            self.num_hashes = int(self.num_hashes.decode('utf-8'))
+            logger.debug("BF_SIZE %i " % self.bloom_filter_size)
+
+            if bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes:
+                raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i. 
+                                        You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
+                                 (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
+        else:
+            self.metadata['bloom_filter_size'] = bloom_filter_size
+            self.metadata['num_hashes'] = num_hashes
+            self.bloom_filter_size = bloom_filter_size
+            self.num_hashes = num_hashes
+
+        self.graph.set_bloom_filter_size(self.bloom_filter_size)
+        self.graph.set_num_hashes(self.num_hashes)
 
     def insert(self, kmers, sample):
         """
@@ -202,14 +219,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _choose_storage(self, storage_config):
         if 'dict' in storage_config:
-            self.graph = ProbabilisticInMemoryStorage(storage_config['dict'],
-                                                      bloom_filter_size=self.bloom_filter_size,
-                                                      num_hashes=self.num_hashes)
+            self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
             self.metadata = InMemoryStorage(storage_config['dict'])
         elif 'redis' in storage_config:
-            self.graph = ProbabilisticRedisHashStorage(storage_config['redis'],
-                                                       bloom_filter_size=self.bloom_filter_size,
-                                                       num_hashes=self.num_hashes)
+            self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
             self.metadata = SimpleRedisStorage(
                 {'conn': [(storage_config['redis']['conn'][0][0], storage_config['redis']['conn'][0][1], 0)]})
             self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
@@ -217,9 +230,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
                                                               config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
         elif 'redis-cluster' in storage_config:
-            self.graph = ProbabilisticRedisBitArrayStorage(storage_config['redis-cluster'],
-                                                           bloom_filter_size=self.bloom_filter_size,
-                                                           num_hashes=self.num_hashes)
+            self.graph = ProbabilisticRedisBitArrayStorage(
+                storage_config['redis-cluster'])
             self.metadata = SimpleRedisStorage(
                 {'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 0)]})
             self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
@@ -227,14 +239,11 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
                                                               config={'conn': [(storage_config['redis-cluster']['conn'][0][0], 6379, 2)]})
         elif 'berkeleydb' in storage_config:
-            self.graph = ProbabilisticBerkeleyDBStorage(storage_config['berkeleydb'],
-                                                        bloom_filter_size=self.bloom_filter_size,
-                                                        num_hashes=self.num_hashes)
+            self.graph = ProbabilisticBerkeleyDBStorage(
+                storage_config['berkeleydb'])
             self.metadata = BerkeleyDBStorage(storage_config['berkeleydb'])
         elif 'leveldb' in storage_config:
-            self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'],
-                                                     bloom_filter_size=self.bloom_filter_size,
-                                                     num_hashes=self.num_hashes)
+            self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'])
             self.metadata = LevelDBStorage(storage_config['leveldb'])
 
         else:

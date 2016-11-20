@@ -19,6 +19,11 @@ from sys import getsizeof
 import sys
 from HLL import HyperLogLog
 import logging
+import time
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 try:
     import redis
 except ImportError:
@@ -38,7 +43,8 @@ class BloomFilterMatrix:
         self.storage = storage
 
     def hash(self, element, seed):
-        return mmh3.hash(element, seed) % self.size
+        _hash = mmh3.hash(element, seed) % self.size
+        return _hash
 
     def hashes(self, element):
         for seed in range(self.num_hashes):
@@ -49,10 +55,19 @@ class BloomFilterMatrix:
             self._setbit(index, colour, 1)
 
     def update(self, elements, colour):
-        indexes = []
-        for element in elements:
-            indexes.extend(self.hashes(element))
+        indexes = self._get_all_indexes(elements)
         self._setbits(indexes, colour, 1)
+
+    def _get_all_indexes(self, elements):
+        start = time.time()
+        indexes = set()
+        for element in elements:
+            indexes.update(self.hashes(element))
+        indexes = list(indexes)
+        end = time.time()
+        logger.debug("Generated %i hashes for %i elements in %i seconds" % (
+            len(indexes), len(elements), end-start))
+        return indexes
 
     def contains(self, element, colour):
         for index in self.hashes(element):
@@ -118,6 +133,12 @@ class BaseProbabilisticStorage(BaseStorage):
         super().__init__(config)
         self.bloomfilter = BloomFilterMatrix(
             size=bloom_filter_size, num_hashes=num_hashes, storage=self)
+
+    def set_bloom_filter_size(self, bloom_filter_size):
+        self.bloomfilter.size = bloom_filter_size
+
+    def set_num_hashes(self, num_hashes):
+        self.bloomfilter.num_hashes = num_hashes
 
     def insert(self, kmers, colour):
         """Insert kmer/s into a colour"""
