@@ -50,10 +50,17 @@ from atlasseq.cmds.delete import delete
 
 
 API = hug.API('atlas')
+STORAGE = os.environ.get("STORAGE", 'berkeleydb')
+BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
+logger.info("Loading graph with %s storage" % STORAGE)
 
-GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                         "bulk_commands_directory": BULK_CMD_OUTDIR}},
-              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+if STORAGE == 'redis-cluster':
+    GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+                                             "bulk_commands_directory": BULK_CMD_OUTDIR}},
+                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+elif STORAGE == "berkeleydb":
+    GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
+                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
 @hug.object(name='atlas', version='0.0.1', api=API)
