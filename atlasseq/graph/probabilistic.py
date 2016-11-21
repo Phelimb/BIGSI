@@ -36,6 +36,7 @@ from atlasseq.storage import SimpleRedisStorage
 from atlasseq.storage import BerkeleyDBStorage
 from atlasseq.storage import LevelDBStorage
 from atlasseq.sketch import HyperLogLogJaccardIndex
+from atlasseq.sketch import MinHashHashSet
 from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 
 import logging
@@ -53,6 +54,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
         self.hll_sketch = HyperLogLogJaccardIndex()
+        self.min_hash = MinHashHashSet()
         self.bloom_filter_size = self.metadata.get('bloom_filter_size')
         self.num_hashes = self.metadata.get('num_hashes')
         if self.bloom_filter_size is not None:
@@ -72,6 +74,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
         self.graph.set_bloom_filter_size(self.bloom_filter_size)
         self.graph.set_num_hashes(self.num_hashes)
+        self.sketch_only = False
 
     def insert(self, kmers, sample):
         """
@@ -136,12 +139,17 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     @convert_kmers_to_canonical
     def _insert(self, kmers, colour, canonical=False):
-        self.graph.insert(kmers, colour)
-        self._insert_count(kmers, colour)
+        if kmers:
+            if not self.sketch_only:
+                logger.debug("Inserting %i kmers" % len(kmers))
+                self.graph.insert(kmers, colour)
+            self._insert_count(kmers, colour)
 
-    def _insert_count(self, kmers, sample):
+    def _insert_count(self, kmers, colour):
         if self.hll_sketch:
-            self.hll_sketch.insert(kmers, str(sample))
+            self.hll_sketch.insert(kmers, str(colour))
+        if self.min_hash:
+            self.min_hash.insert(kmers, str(colour))
 
     @convert_kmers_to_canonical
     def _get_kmer_colours(self, kmer, canonical=False):
@@ -278,6 +286,12 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def colours_to_sample_dict(self):
         return self.colour_to_sample_lookup
+
+    def delete_all(self):
+        self.graph.delete_all()
+        self.metadata.delete_all()
+        if self.min_hash:
+            self.min_hash.delete_all()
         """To do, fix this. Should be implemented as a hash colours -> 
         sample names"""
         # o = {}

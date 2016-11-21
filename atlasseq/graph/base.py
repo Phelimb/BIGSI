@@ -33,3 +33,4 @@ class BaseGraph(object):
     def delete_all(self):
         self.graph.delete_all()
         self.metadata.delete_all()
+        self.min_hash.delete_all()

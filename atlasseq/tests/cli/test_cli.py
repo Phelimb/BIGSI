@@ -25,6 +25,7 @@ def test_insert_search_cmd():
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
     response = hug.test.get(
         atlasseq.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
+
     assert response.data.get(seq).get(
         'results').get('test_kmers') == 1.0
 

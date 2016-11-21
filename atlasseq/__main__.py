@@ -24,7 +24,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
-BULK_CMD_OUTDIR = os.environ.get("BULK_CMD_OUTDIR")
+BULK_CMD_OUTDIR = bool(os.environ.get("BULK_CMD_OUTDIR"))
 if BULK_CMD_OUTDIR:
     logger.warning(
         "You're running with BULK_CMD_OUTDIR env variable set! Only do this if you know what you're doing!")
@@ -43,11 +43,10 @@ from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
 from atlasseq.cmds.samples import samples
 from atlasseq.cmds.dump import dump
-from atlasseq.cmds.dumps import dumps
 from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
-#from atlasseq.cmds.bitcount import bitcount
-#from atlasseq.cmds.jaccard_index import jaccard_index
+# from atlasseq.cmds.bitcount import bitcount
+from atlasseq.cmds.jaccard_index import jaccard_index
 
 
 API = hug.API('atlas')
@@ -86,7 +85,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA", output_format=hug.output_format.json)
     def search(self, seq: hug.types.text=None, fasta: hug.types.text=None, threshold: hug.types.float_number=1.0):
-        """Returns samples that contain the searched sequence. 
+        """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if not seq and not fasta:
             return "-s or -f must be provided"
@@ -130,11 +129,10 @@ class AtlasSeq(object):
     # def bitcount(self):
     #     return bitcount(graph=GRAPH)
 
-    # @hug.object.cli
-    # @hug.object.get('/js')
-    # def distance(self, s1=None, s2=None):
-    # return json.dumps(jaccard_index(s1, s2, graph=GRAPH),
-    # indent=1)
+    @hug.object.cli
+    @hug.object.get('/distance')
+    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll"))="min_hash"):
+        return jaccard_index(graph=GRAPH, s1=s1, s2=s2, method=method)
 
 
 def main():
