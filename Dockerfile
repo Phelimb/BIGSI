@@ -22,6 +22,7 @@ RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
 
 
 COPY . /usr/src/app
+RUN pip install cython
 RUN  pip install --no-cache-dir -r requirements.txt
 
 # install atlasseq

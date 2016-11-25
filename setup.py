@@ -23,7 +23,7 @@ setup(
     author='Phelim Bradley',
     author_email='wave@phel.im',
     ext_modules=cythonize("atlasseq/utils/fncts.pyx"),
-    install_requires=required[2:],
+    install_requires=required[3:],
     entry_points={
         'console_scripts': [
             'atlasseq = atlasseq.__main__:main',

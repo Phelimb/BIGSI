@@ -24,7 +24,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
-BULK_CMD_OUTDIR = bool(os.environ.get("BULK_CMD_OUTDIR"))
+BULK_CMD_OUTDIR = os.environ.get("BULK_CMD_OUTDIR")
 if BULK_CMD_OUTDIR:
     logger.warning(
         "You're running with BULK_CMD_OUTDIR env variable set! Only do this if you know what you're doing!")
@@ -45,6 +45,7 @@ from atlasseq.cmds.samples import samples
 from atlasseq.cmds.dump import dump
 from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
+from atlasseq.cmds.bloom import bloom
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
 
@@ -70,7 +71,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
     def insert(self, kmers=None, kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
-               intersect_kmers_file=None, count_only: hug.types.smart_boolean = False):
+               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
@@ -80,7 +81,21 @@ class AtlasSeq(object):
             return "--kmers or --kmer_file must be provided"
         return insert(kmers=kmers,
                       kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
-                      intersect_kmers_file=intersect_kmers_file, count_only=count_only)
+                      intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only)
+
+    @hug.object.cli
+    @hug.object.post('/bloom')
+    def bloom(self, kmers=None, kmer_file=None):
+        """Inserts kmers from a list of kmers into the graph
+
+        e.g. atlasseq insert ERR1010211.txt
+
+        """
+        if not kmers and not kmer_file:
+            return "--kmers or --kmer_file must be provided"
+        bf = bloom(kmers=kmers,
+                   kmer_file=kmer_file, graph=GRAPH)
+        sys.stdout.buffer.write(bf)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA", output_format=hug.output_format.json)
@@ -131,7 +146,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/distance')
-    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll"))="min_hash"):
+    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll"))="minhash"):
         return jaccard_index(graph=GRAPH, s1=s1, s2=s2, method=method)
 
 

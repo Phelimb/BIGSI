@@ -74,15 +74,14 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
         self.graph.set_bloom_filter_size(self.bloom_filter_size)
         self.graph.set_num_hashes(self.num_hashes)
-        self.sketch_only = False
 
-    def insert(self, kmers, sample):
+    def insert(self, kmers, sample, sketch_only=False):
         """
            Insert kmers into the multicoloured graph.
            sample can not already exist in the graph
         """
         colour = self._add_sample(sample)
-        self._insert(kmers, colour)
+        self._insert(kmers, colour, sketch_only=sketch_only)
 
     def search(self, seq, threshold=1):
         kmers = [k for k in seq_to_kmers(seq)]
@@ -101,6 +100,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def get_bloom_filter(self, sample):
         colour = self.get_colour_from_sample(sample)
         return self.graph.get_bloom_filter(colour)
+
+    def create_bloom_filter(self, kmers):
+        return self.graph.create_bloom_filter(kmers)
 
     def count_kmers(self, *samples):
         colours = [self.get_colour_from_sample(s) for s in samples]
@@ -138,9 +140,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.graph.load(infile, self.get_num_colours())
 
     @convert_kmers_to_canonical
-    def _insert(self, kmers, colour, canonical=False):
+    def _insert(self, kmers, colour, canonical=False, sketch_only=False):
         if kmers:
-            if not self.sketch_only:
+            if not sketch_only:
                 logger.debug("Inserting %i kmers" % len(kmers))
                 self.graph.insert(kmers, colour)
             self._insert_count(kmers, colour)

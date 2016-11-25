@@ -1,8 +1,41 @@
 import hashlib
 import struct 
+import sys
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS={'A':'00','G':'01','C':'10','T':'11'}
 BASES={'00':'A','01':'G','10':'C','11':'T'}
+from pyseqfile import Reader
+
+def bitwise_AND(bytes a, bytes b):
+    return (int.from_bytes(a, byteorder='big') & int.from_bytes(b, byteorder='big')).to_bytes(len(a), byteorder='big')
+
+def kmer_reader(f):
+    reader = Reader(f)
+    for i,line in enumerate(reader):
+        if i % 100000 == 0 and i >0:
+            sys.stderr.write(str(i)+'\n')
+            sys.stderr.flush() 
+            break
+        read = line.decode('utf-8')
+        for k in _seq_to_kmer_set(read):
+            yield k
+
+def unique_kmers(f):
+    return __unique_kmers(f)
+
+cdef set __unique_kmers(f):
+    a=set()
+    reader = Reader(f)
+    for i,line in enumerate(reader):
+        if i % 100000 == 0:
+            sys.stderr.write(str(i)+'\n')
+            sys.stderr.flush() 
+        read = line.decode('utf-8')
+        a.update(_seq_to_kmer_set(read))
+    return a
+
+cdef set _seq_to_kmer_set(str seq, int kmer_size = 31):
+    return {seq[i:i+kmer_size] for i in range(len(seq)-kmer_size+1)}
 
 def chunks(list l, int n):
     """Yield successive n-sized chunks from l."""
@@ -27,7 +60,7 @@ def decode_kmer(bytes binary_kmer, int kmer_size):
 
     return ret[::-1]
 
-def encode_kmer(str kmer):
+cdef long encode_kmer(str kmer):
     """
     Returns the encoded integer representation of the specified string kmer.
     """
@@ -36,7 +69,7 @@ def encode_kmer(str kmer):
     for j, nuc in enumerate(reversed(kmer)):
         v = codes[nuc]
         ret |= v << (2 * j)
-    return struct.pack('Q', ret)
+    return ret#struct.pack('Q', ret)
 
 def make_hash(str s):
     return hashlib.sha256(s.encode("ascii", errors="ignore")).hexdigest()
@@ -66,7 +99,27 @@ def min_lexo(str k):
     
 def seq_to_kmers(str seq, int kmer_size = 31):
     for i in range(len(seq)-kmer_size+1):
-        yield seq[i:i+kmer_size]
+        try:
+            yield seq[i:i+kmer_size]
+        except KeyError:
+            pass
+
+cdef set seq_to_kmer_set(str seq, int kmer_size = 31):
+    return {seq[i:i+kmer_size] for i in range(len(seq)-kmer_size+1)}
+
+
+def seq_to_encoded_kmers(str seq, int kmer_size=31):
+    try:
+        kmer=encode_kmer(seq[:kmer_size])
+    except KeyError:
+        seq_to_encoded_kmers(seq[1:])
+    else:
+        for base in seq[kmer_size:]:
+            kmer= kmer >> 2
+            bkmer=struct.pack('Q', kmer)
+            yield bkmer
+
+        
 
 def bits(f):
     return [(s >> i) & 1 for s in f for i in xrange(7, -1, -1)]

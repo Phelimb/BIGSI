@@ -9,8 +9,6 @@ before_install:
   - sudo mv docker-compose /usr/local/bin  
   - sudo docker-compose pull strictredis redis1 redismanager
   - sudo docker-compose up -d
-  - sudo docker exec atlasseq_main_1 python setup.py build_ext --inplace
-  - sudo docker exec atlasseq_main_1 sh clean.sh
   - sudo docker exec -it atlasseq_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
 script:
   - sudo docker exec atlasseq_main_1 py.test -v --cov=atlasseq --cov-config .coveragerc atlasseq/tests/

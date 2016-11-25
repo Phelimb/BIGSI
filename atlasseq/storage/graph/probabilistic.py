@@ -9,7 +9,7 @@ from atlasseq.storage import LevelDBStorage
 from atlasseq.utils import hash_key
 from atlasseq.bytearray import ByteArray
 from atlasseq.bitvector import BitArray
-
+from bitarray import bitarray
 import hashlib
 # from bitstring import BitArray
 import math
@@ -59,6 +59,17 @@ class BloomFilterMatrix:
     def update(self, elements, colour):
         indexes = self._get_all_indexes(elements)
         self._setbits(indexes, colour, 1)
+
+    def create(self, elements):
+        start = time.time()
+        bloomfilter = bitarray(self.size)
+        visited = set()
+        for e in elements:
+            for i in self.hashes(e):
+                bloomfilter[i] = True
+        end = time.time()
+        logger.debug("Created bloom filter %i seconds" % (end-start))
+        return bloomfilter
 
     def _get_all_indexes(self, elements):
         start = time.time()
@@ -164,6 +175,9 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def get_bloom_filter(self, colour):
         return self.bloomfilter.get_column(colour)
+
+    def create_bloom_filter(self, kmers):
+        return self.bloomfilter.create(kmers)
 
     def get_row(self, index, array_length=None):
         b = BitArray()
