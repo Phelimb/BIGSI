@@ -24,10 +24,10 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
-BULK_CMD_OUTDIR = os.environ.get("BULK_CMD_OUTDIR")
-if BULK_CMD_OUTDIR:
+CREDIS = bool(os.environ.get("CREDIS", True))
+if CREDIS:
     logger.warning(
-        "You're running with BULK_CMD_OUTDIR env variable set! Only do this if you know what you're doing!")
+        "You're running with CREDIS env variable set! Only do this if you know what you're doing!")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
@@ -51,13 +51,13 @@ from atlasseq.cmds.jaccard_index import jaccard_index
 
 
 API = hug.API('atlas')
-STORAGE = os.environ.get("STORAGE", 'berkeleydb')
+STORAGE = os.environ.get("STORAGE", 'redis-cluster')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 logger.info("Loading graph with %s storage" % STORAGE)
 
 if STORAGE == 'redis-cluster':
     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                             "bulk_commands_directory": BULK_CMD_OUTDIR}},
+                                             "credis": CREDIS}},
                   bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 elif STORAGE == "berkeleydb":
     GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},

@@ -12,13 +12,14 @@ def bitwise_AND(bytes a, bytes b):
 def kmer_reader(f):
     reader = Reader(f)
     for i,line in enumerate(reader):
-        if i % 100000 == 0 and i >0:
-            sys.stderr.write(str(i)+'\n')
-            sys.stderr.flush() 
-            break
+        # if i % 100000 == 0 and i >0:
+        #     sys.stderr.write(str(i)+'\n')
+        #     sys.stderr.flush() 
+        #     break
         read = line.decode('utf-8')
-        for k in _seq_to_kmer_set(read):
+        for k in seq_to_kmers(read):
             yield k
+
 
 def unique_kmers(f):
     return __unique_kmers(f)
@@ -27,7 +28,7 @@ cdef set __unique_kmers(f):
     a=set()
     reader = Reader(f)
     for i,line in enumerate(reader):
-        if i % 100000 == 0:
+        if i % 100000 == 0 and i >0:
             sys.stderr.write(str(i)+'\n')
             sys.stderr.flush() 
         read = line.decode('utf-8')

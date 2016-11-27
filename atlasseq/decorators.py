@@ -4,6 +4,9 @@ from atlasseq.utils import convert_query_kmers
 from atlasseq.utils import convert_query_kmer
 import logging
 import time
+import collections
+import itertools
+
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
@@ -11,9 +14,8 @@ from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
-
 def choose_convert_func(kmers):
-    if not isinstance(kmers, list):
+    if isinstance(kmers, str):
         convert_func = convert_query_kmer
     else:
         convert_func = convert_query_kmers
@@ -21,7 +23,7 @@ def choose_convert_func(kmers):
 
 
 def kmers_or_bytes(self, kmers):
-    if self.binary_kmers and isinstance(kmers, list):
+    if self.binary_kmers and not isinstance(kmers, str):
         return [self._kmer_to_bytes(k) for k in kmers]
     elif self.binary_kmers:
         return self._kmer_to_bytes(kmers)

@@ -9,6 +9,8 @@ import shutil
 import logging
 import time
 import crc16
+# from redis_protocol import encode as redis_encode
+# from redis.connection import Connection
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
@@ -19,15 +21,9 @@ try:
     import bsddb3 as bsddb
 except ImportError:
     bsddb = None
-# try:
-#     import leveldb
-# except ImportError:
-#     import leveldb
-#     # leveldb = None
-# try:
-#     import leveldb
-# except:
-#     import leveldb
+
+
+from credis import Connection
 
 
 class BaseStorage(object):
@@ -187,6 +183,14 @@ class SimpleRedisStorage(BaseRedisStorage):
                 yield (i, self[i])
 
 
+def proto(line):
+    result = "*%s\r\n$%s\r\n%s\r\n" % (str(len(line)),
+                                       str(len(line[0])), line[0])
+    for arg in line[1:]:
+        result += "$%s\r\n%s\r\n" % (str(len(arg)), arg)
+    return result
+
+
 class RedisBitArrayStorage(BaseRedisStorage):
 
     def __init__(self, config):
@@ -204,22 +208,16 @@ class RedisBitArrayStorage(BaseRedisStorage):
         self.max_bitset = 1000000
         self.cluster_info = self.get_cluster_info()
         self.cluster_slots = self.get_cluster_slots()
-        self.bulk_commands_directory = config.get('bulk_commands_directory')
+        self.slot_to_connection = self._init_slot_to_connection()
+        self.credis = config.get('credis', True)
 
-    def _init_outfiles(self, colour):
-        outdir = os.path.join(self.bulk_commands_directory, str(colour))
-        files = {}
-        try:
-            os.makedirs(outdir)
-        except FileExistsError:
-            pass
-
+    def _init_connections(self):
+        conns = {}
         for i, j in self.cluster_slots.items():
+            host = j.get('master')[0]
             port = j.get('master')[1]
-            files[port] = open(
-                os.path.join(outdir, str(port)+".txt"), 'w')
-
-        return files
+            conns[port] = Connection(host=host, port=port)
+        return conns
 
     def _get_key_slot(self, key, method="python"):
         if method == "python":
@@ -233,9 +231,15 @@ class RedisBitArrayStorage(BaseRedisStorage):
         return connection
 
     def _get_connection_of_slot(self, slot):
-        for i, j in self.cluster_slots.items():
-            if i[0] <= slot <= i[1]:
-                return j.get('master')
+        return self.slot_to_connection[slot]
+
+    def _init_slot_to_connection(self):
+        slot_to_connection = {}
+        for slot in range(16384):
+            for i, j in self.cluster_slots.items():
+                if i[0] <= slot <= i[1]:
+                    slot_to_connection[slot] = j.get('master')
+        return slot_to_connection
 
     def get_cluster_info(self):
         return self.storage.cluster_info()
@@ -264,16 +268,18 @@ class RedisBitArrayStorage(BaseRedisStorage):
             logger.debug("Setting %i bits" % len(indexes))
             logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
 
-            if self.bulk_commands_directory:
-                self.bulk_command_files = self._init_outfiles(colour)
+            if self.credis:
+                self.port_to_connections = self._init_connections()
+                port_to_commands = {}
                 for i in indexes:
                     port = self._get_key_connection(i)[1]
-                    file = self.bulk_command_files[port]
-                    file.write(" ".join(
-                        [" SETBIT", str(i), str(colour), str(bit), '\n']))
-                for f in self.bulk_command_files.values():
-                    f.write("\n")
-                    f.close()
+                    try:
+                        port_to_commands[port].append(
+                            ("SETBIT", i, colour, bit))
+                    except KeyError:
+                        port_to_commands[port] = [("SETBIT", i, colour, bit)]
+                for port, conn in self.port_to_connections.items():
+                    conn.execute_pipeline(port_to_commands.get(port, []))
             else:
                 start = time.time()
                 for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
@@ -285,6 +291,7 @@ class RedisBitArrayStorage(BaseRedisStorage):
                              (len(indexes), end-start))
 
     def _setbits(self, indexes, colour, bit):
+        logger.debug("Using redis-cluster pipeline")
         pipe = self.storage.pipeline()
         [pipe.setbit(i, colour, bit) for i in indexes]
         return pipe.execute()

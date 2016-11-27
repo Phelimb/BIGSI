@@ -17,7 +17,7 @@ from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 keys = []
-N = 100000
+N = 10000
 with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 
@@ -26,7 +26,9 @@ for storage in [{'dict': None},
                 # {"redis": {
                 #     "conn": [('localhost', 6379, 2)]}},
                 {"redis-cluster": {
-                    "conn": [('localhost', 7000, 0)]}}
+                    "conn": [('localhost', 7000, 0)], 'credis':True}},
+                {"redis-cluster": {
+                    "conn": [('localhost', 7000, 0)], 'credis':False}}
                 ]:
     sname = [k for k in storage.keys()][0]
     mc = Graph(storage=storage)
