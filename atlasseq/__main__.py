@@ -54,12 +54,12 @@ STORAGE = os.environ.get("STORAGE", 'redis-cluster')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 logger.info("Loading graph with %s storage" % STORAGE)
 
-if STORAGE == 'redis-cluster':
+if STORAGE == "berkeleydb":
+    GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
+                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+else:
     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
                                              "credis": CREDIS}},
-                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
-elif STORAGE == "berkeleydb":
-    GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
                   bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
