@@ -4,7 +4,7 @@ from bitarray import bitarray
 class BitArray(bitarray):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def setbit(self, i, bit):
         if i < 0:

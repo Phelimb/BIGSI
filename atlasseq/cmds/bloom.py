@@ -10,8 +10,20 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 from pyseqfile import Reader
 from atlasseq.utils import seq_to_kmers
-from atlasseq.utils import kmer_reader
-from atlasseq.utils import unique_kmers
+
+
+def kmer_reader(f):
+    count = 0
+    reader = Reader(f)
+    for i, line in enumerate(reader):
+        if i % 100000 == 0:
+            sys.stderr.write(str(i)+'\n')
+            sys.stderr.flush()
+        read = line.decode('utf-8')
+        for k in seq_to_kmers(read):
+            count += 1
+            yield k
+    sys.stderr.write(str(count))
 
 
 def insert_kmers(mc, kmers, colour, sample, count_only=False):
@@ -22,9 +34,6 @@ def insert_kmers(mc, kmers, colour, sample, count_only=False):
 
 def bloom(kmers, kmer_file, graph):
     if kmer_file is not None:
-        kmers = unique_kmers(kmer_file)
-    # for k in kmers:
-    #     k
+        kmers = {}.fromkeys(kmer_reader(kmer_file)).keys()
     bloom_filter = graph.create_bloom_filter(kmers)
     return bloom_filter.tobytes()
-    # return b''

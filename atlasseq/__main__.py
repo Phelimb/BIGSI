@@ -37,7 +37,6 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-
 from atlasseq.cmds.insert import insert
 from atlasseq.cmds.search import search
 from atlasseq.cmds.stats import stats
@@ -71,7 +70,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
     def insert(self, kmers=None, kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
-               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False):
+               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False, hug_timer=3):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
@@ -79,9 +78,9 @@ class AtlasSeq(object):
         """
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
-        return insert(kmers=kmers,
-                      kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
-                      intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only)
+        return {"result": insert(kmers=kmers,
+                                 kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
+                                 intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only), 'took': float(hug_timer)}
 
     @hug.object.cli
     @hug.object.post('/bloom')

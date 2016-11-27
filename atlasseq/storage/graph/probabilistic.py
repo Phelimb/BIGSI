@@ -63,12 +63,11 @@ class BloomFilterMatrix:
     def create(self, elements):
         start = time.time()
         bloomfilter = bitarray(self.size)
-        visited = set()
         for e in elements:
             for i in self.hashes(e):
                 bloomfilter[i] = True
         end = time.time()
-        logger.debug("Created bloom filter %i seconds" % (end-start))
+        logger.debug("Created bloom filter in %i seconds" % (end-start))
         return bloomfilter
 
     def _get_all_indexes(self, elements):
@@ -76,7 +75,6 @@ class BloomFilterMatrix:
         indexes = set()
         for element in elements:
             indexes.update(self.hashes(element))
-        indexes = list(indexes)
         end = time.time()
         logger.debug("Generated %i hashes for %i elements in %i seconds" % (
             len(indexes), len(elements), end-start))

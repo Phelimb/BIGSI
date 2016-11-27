@@ -53,15 +53,11 @@ def convert_kmers_to_canonical(func):
     # and it's reverse complement
     @wraps(func)
     def convert_kmers_inner(self, kmers, *args, **kwargs):
-        start = time.time()
         logger.debug("Converting kmers to canonical")
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
         if not kwargs.get('canonical'):
             # It is a list of kmers or a single kmer?
             kmers = convert_func(kmers)
-        end = time.time()
-        logger.debug(
-            "Converted %i kmers to canonical in %i seconds" % (len(kmers), end-start))
         return func(self, kmers, *args, **kwargs)
     return convert_kmers_inner

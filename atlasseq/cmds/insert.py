@@ -2,6 +2,7 @@
 from __future__ import print_function
 from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 import os.path
+import sys
 import logging
 import json
 logger = logging.getLogger(__name__)
@@ -10,7 +11,17 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 from pyseqfile import Reader
 from atlasseq.utils import seq_to_kmers
-from atlasseq.utils import kmer_reader
+
+
+def kmer_reader(f):
+    reader = Reader(f)
+    for i, line in enumerate(reader):
+        # if i % 100000 == 0:
+        #     sys.stderr.write(str(i)+'\n')
+        #     sys.stderr.flush()
+        read = line.decode('utf-8')
+        for k in seq_to_kmers(read):
+            yield k
 
 
 def insert_kmers(mc, kmers, colour, sample, count_only=False):
@@ -29,12 +40,12 @@ def insert(kmers, kmer_file, graph, force=False, sample_name=None, intersect_kme
         intersect_kmers = None
 
     if kmer_file is not None:
-        kmers = kmer_reader(kmer_file)
+        kmers = {}.fromkeys(kmer_reader(kmer_file)).keys()
 
     logger.debug("Starting insert. ")
     try:
         graph.insert(kmers, sample_name, sketch_only=sketch_only)
-        return {"result": "success",
+        return {"message": "success",
                 "colour": graph.get_colour_from_sample(sample_name),
                 "total-kmers": graph.count_kmers(),
                 "kmers-added": graph.count_kmers(sample_name),

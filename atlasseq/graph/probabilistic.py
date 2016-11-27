@@ -143,7 +143,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def _insert(self, kmers, colour, canonical=False, sketch_only=False):
         if kmers:
             if not sketch_only:
-                logger.debug("Inserting %i kmers" % len(kmers))
+                logger.debug("Inserting kmers")
                 self.graph.insert(kmers, colour)
             self._insert_count(kmers, colour)
 

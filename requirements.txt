@@ -1,10 +1,10 @@
-git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0 ## This must be the first in the list (see setup.py)
+git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 git+git://github.com/Grokzen/redis-py-cluster@9f9baeced12b7abac53b3680ea3f5a1b16a38038
 git+https://github.com/phelimb/pyseqfile
+bsddb3
 credis
 crc16
 uwsgi
-bsddb3
 mmh3
 HLL
 bitarray
@@ -16,7 +16,6 @@ cython
 flask
 celery
 biopython
-pyseqfile
 ## testing
 hypothesis
 pytest
@@ -25,6 +24,5 @@ pytest-cov
 
 ## Optional
 #pyrocksdb
-bsddb3
 #pathos
 
