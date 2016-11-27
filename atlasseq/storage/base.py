@@ -271,15 +271,25 @@ class RedisBitArrayStorage(BaseRedisStorage):
             if self.credis:
                 self.port_to_connections = self._init_connections()
                 port_to_commands = {}
-                for i in indexes:
-                    port = self._get_key_connection(i)[1]
+                for i, index in enumerate(indexes):
+                    port = self._get_key_connection(index)[1]
                     try:
                         port_to_commands[port].append(
-                            ("SETBIT", i, colour, bit))
+                            ("SETBIT", index, colour, bit))
                     except KeyError:
-                        port_to_commands[port] = [("SETBIT", i, colour, bit)]
-                for port, conn in self.port_to_connections.items():
-                    conn.execute_pipeline(port_to_commands.get(port, []))
+                        port_to_commands[port] = [
+                            ("SETBIT", index, colour, bit)]
+                    average_cmds = i / len(port_to_commands)
+                    if average_cmds % 1000 == 0 and average_cmds > 0:
+                        for port, commands in port_to_commands.items():
+                            conn = self.port_to_connections[port]
+                            if commands:
+                                conn.execute_pipeline(*commands)
+                                port_to_commands[port] = []
+                for port, commands in port_to_commands.items():
+                    conn = self.port_to_connections[port]
+                    if commands:
+                        conn.execute_pipeline(*commands)
             else:
                 start = time.time()
                 for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):

@@ -1,3 +1,3 @@
 from atlasseq.utils.fncts import *
-import logging
-DEFAULT_LOGGING_LEVEL = logging.DEBUG
+import os
+DEFAULT_LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'WARNING')

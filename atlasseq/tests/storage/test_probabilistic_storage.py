@@ -3,7 +3,8 @@ from atlasseq.tests.base import ST_SAMPLE_NAME
 from atlasseq.tests.base import ST_GRAPH
 from atlasseq.tests.base import ST_BINARY_KMERS
 from atlasseq.tests.base import ST_SAMPLE_COLOUR
-from atlasseq.tests.base import REDIS_CLUSTER_STORAGE
+from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_CREDIS
+from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_REDIS
 from hypothesis import given
 import hypothesis.strategies as st
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
@@ -16,7 +17,8 @@ import os
 POSSIBLE_STORAGES = [
     # ProbabilisticInMemoryStorage(),
     # ProbabilisticRedisHashStorage(REDIS_STORAGE),
-    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE),
+    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_CREDIS),
+    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS),
     ProbabilisticBerkeleyDBStorage({'filename': './db'}),
 ]
 ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)
@@ -108,6 +110,6 @@ def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,
 
 @given(key=st.integers(min_value=0))
 def test_cluster_keyslot(key):
-    storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE)
+    storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS)
     assert storage._get_key_slot(
         key, 'python') == storage._get_key_slot(key, 'redis')

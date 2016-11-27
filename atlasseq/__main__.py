@@ -26,8 +26,8 @@ BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
 if CREDIS:
-    logger.warning(
-        "You're running with CREDIS env variable set! Only do this if you know what you're doing!")
+    logger.info(
+        "You're running with credis.")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
