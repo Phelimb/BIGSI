@@ -53,6 +53,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                  bloom_filter_size=20000000, num_hashes=3):
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
+        self.storage = storage
         self.hll_sketch = HyperLogLogJaccardIndex()
         self.min_hash = MinHashHashSet()
         self.bloom_filter_size = self.metadata.get('bloom_filter_size')

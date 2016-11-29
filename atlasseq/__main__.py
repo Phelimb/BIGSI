@@ -69,7 +69,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers=None, kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False, hug_timer=3):
         """Inserts kmers from a list of kmers into the graph
 
@@ -79,8 +79,20 @@ class AtlasSeq(object):
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
         return {"result": insert(kmers=kmers,
-                                 kmer_file=kmer_file, graph=GRAPH, force=force, sample_name=sample,
-                                 intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only), 'took': float(hug_timer)}
+                                 kmer_file=kmer_file, graph=GRAPH,
+                                 force=force, sample_name=sample,
+                                 intersect_kmers_file=intersect_kmers_file,
+                                 sketch_only=sketch_only), 'took': float(hug_timer)}
+
+    @hug.post('/upload')
+    def upload(body, hug_timer=3):
+        kmers = set()
+        for fname, file_byte_content in body.items():
+            file_content = file_byte_content.decode('utf-8')
+            for line in file_content.split('\n'):
+                kmers.add(line)
+        return {"result": insert(
+            kmers=kmers, kmer_file=None, graph=GRAPH, sample_name=fname), 'took': float(hug_timer)}
 
     @hug.object.cli
     @hug.object.post('/bloom')
@@ -127,11 +139,11 @@ class AtlasSeq(object):
         r = dump(graph=GRAPH, file=filepath)
         return r
 
-    @hug.object.cli
-    @hug.object.get('/dumps', output_format=hug.output_format.json)
-    def dumps(self):
-        r = dumps(graph=GRAPH)
-        return r
+    # @hug.object.cli
+    # @hug.object.get('/dumps', output_format=hug.output_format.json)
+    # def dumps(self):
+    #     r = dumps(graph=GRAPH)
+    #     return r
 
     @hug.object.cli
     @hug.object.post('/load', output_format=hug.output_format.json)

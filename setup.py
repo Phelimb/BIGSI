@@ -14,6 +14,7 @@ setup(
         'atlasseq.utils',
         'atlasseq.graph',
         'atlasseq.sketch',
+        'atlasseq.tasks',
         'atlasseq.storage',
         'atlasseq.storage.graph',
     ],
