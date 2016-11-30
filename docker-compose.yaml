@@ -7,16 +7,42 @@ services:
       - "5000:5000"      
       - "8000:8000"      
     environment:
+        - CELERY=1
         - REDIS_IP_1=127.0.0.1
-        - REDIS_PORT_1=7000         
+        - REDIS_PORT_1=7000          
         - "BFSIZE=$BFSIZE"
         - "NUM_HASHES=$NUM_HASHES"
-        - "BULK_CMD_OUTDIR=$BULK_CMD_OUTDIR"
         - "STORAGE=$STORAGE"
-        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"        
+        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"
     volumes:
         - "$DATA_DIR:/data"                   
-    network_mode: "host"  
+    network_mode: "host"
+
+  worker:
+    image: phelimb/atlasseq
+    environment:
+        - CELERY=1      
+        - C_FORCE_ROOT=1
+        - REDIS_IP_1=127.0.0.1
+        - REDIS_PORT_1=7000          
+        - "BFSIZE=$BFSIZE"
+        - "NUM_HASHES=$NUM_HASHES"
+        - "STORAGE=$STORAGE"
+        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"    
+    volumes:
+        - "$DATA_DIR:/data"                   
+    network_mode: "host"
+    command: sh run_celery.sh        
+
+  celery-broker:
+    image: phelimb/redis-mcdbg
+    environment:
+        - PORT=6400    
+    ports:
+      - 6400  
+    volumes_from:
+      - "redismanager"      
+    network_mode: "host"   
 
   strictredis:
     image: phelimb/redis-mcdbg

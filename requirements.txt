@@ -16,13 +16,9 @@ cython
 flask
 celery
 biopython
+celery
 ## testing
 hypothesis
 pytest
 codecov
 pytest-cov
-
-## Optional
-#pyrocksdb
-#pathos
-

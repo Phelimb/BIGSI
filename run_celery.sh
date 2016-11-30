@@ -1,2 +1,1 @@
-cd atlasseq-server
-celery -A app.celery worker -l info
+celery -A atlasseq.tasks.tasks worker --loglevel=info
