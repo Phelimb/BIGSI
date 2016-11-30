@@ -1,4 +1,5 @@
 from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import ST_SEQ
 from atlasseq.tests.base import ST_SAMPLE_NAME
 from atlasseq.tests.base import ST_GRAPH
 from atlasseq.tests.base import ST_BINARY_KMERS
@@ -6,12 +7,15 @@ from atlasseq.tests.base import ST_SAMPLE_COLOUR
 from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_CREDIS
 from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_REDIS
 from hypothesis import given
+from hypothesis import settings
 import hypothesis.strategies as st
 from atlasseq.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticRedisHashStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 from atlasseq.storage.graph.probabilistic import ProbabilisticLevelDBStorage
+from atlasseq.utils import seq_to_kmers
+
 import os
 
 POSSIBLE_STORAGES = [
@@ -37,10 +41,11 @@ def test_add_contains(storage, colour, element, bloom_filter_size,  num_hashes):
     assert not storage.bloomfilter.contains(element + "a", colour)
 
 
-@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, elements=st.lists(ST_KMER),
+@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, elements=ST_SEQ,
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hashes):
+    elements = list(seq_to_kmers(elements))
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
     storage.delete_all()
@@ -77,11 +82,14 @@ def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_
             element, array_size).getbit(colour2) == True
 
 
-@given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
-       elements=st.lists(ST_KMER, min_size=1),
+@given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR,
+       colour2=ST_SAMPLE_COLOUR,
+       elements=ST_SEQ,
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
+@settings(suppress_health_check=[3])
 def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,  num_hashes):
+    elements = list(seq_to_kmers(elements))
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
     storage.delete_all()

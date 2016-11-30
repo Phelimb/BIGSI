@@ -10,6 +10,8 @@ REDIS_CLUSTER_STORAGE_CREDIS = {
     "conn": [(REDIS_HOST, REDIS_CLUSTER_PORT, 0)], 'credis': True}
 
 ST_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
+ST_SEQ = st.text(min_size=31, max_size=1000, alphabet=['A', 'T', 'C', 'G'])
+
 ST_SAMPLE_NAME = st.text(min_size=1)
 ST_GRAPH = st.just(ProbabilisticMultiColourDeBruijnGraph)
 ST_SAMPLE_COLOUR = st.integers(min_value=0, max_value=10)

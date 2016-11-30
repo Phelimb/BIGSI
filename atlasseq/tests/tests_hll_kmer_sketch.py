@@ -7,6 +7,7 @@ import hypothesis.strategies as st
 import os
 
 from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import ST_SEQ
 from atlasseq.tests.base import REDIS_HOST
 from atlasseq.tests.base import REDIS_PORT
 from atlasseq.utils import seq_to_kmers
@@ -26,9 +27,8 @@ def test_jaccard_index1(mc, kmers):
 
 
 @given(mc=st.sampled_from(SKETCHS),
-       kmers1=st.text(
-           min_size=1000, max_size=1000, alphabet=['A', 'T', 'C', 'G']),
-       kmers2=st.text(min_size=1000, max_size=1000, alphabet=['A', 'T', 'C', 'G']))
+       kmers1=ST_SEQ,
+       kmers2=ST_SEQ)
 def test_jaccard_index2(mc, kmers1, kmers2):
     kmers1 = list(seq_to_kmers(kmers1))
     kmers2 = list(seq_to_kmers(kmers2))
@@ -44,25 +44,24 @@ def test_jaccard_index2(mc, kmers1, kmers2):
     assert float(abs(ji-true_sim)) <= 0.2
 
 
-@given(kmers1=st.text(
-    min_size=100, max_size=100, alphabet=['A', 'T', 'C', 'G']),
-    kmers2=st.text(min_size=100, max_size=100, alphabet=['A', 'T', 'C', 'G']))
+@given(kmers1=ST_SEQ),
+    kmers2 = ST_SEQ)
 def test_jaccard_index3(kmers1, kmers2):
-    kmers1 = list(seq_to_kmers(kmers1))
-    kmers2 = list(seq_to_kmers(kmers2))
-    mc = HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT)
+    kmers1=list(seq_to_kmers(kmers1))
+    kmers2=list(seq_to_kmers(kmers2))
+    mc=HyperLogLogJaccardIndex(host = REDIS_HOST, port = REDIS_PORT)
     mc.delete_all()
     mc.insert(kmers1, '1234')
     mc.insert(kmers2, '1235')
-    skmers1 = set(kmers1)
-    skmers2 = set(kmers2)
-    true_sim = float(len(skmers1 & skmers2)) / float(len(skmers1 | skmers2))
-    true_sdiff = float(len(skmers1 ^ skmers2))
-    true_diff = float(len(skmers1 - skmers2))
+    skmers1=set(kmers1)
+    skmers2=set(kmers2)
+    true_sim=float(len(skmers1 & skmers2)) / float(len(skmers1 | skmers2))
+    true_sdiff=float(len(skmers1 ^ skmers2))
+    true_diff=float(len(skmers1 - skmers2))
 
-    ji = mc.jaccard_index('1234', '1235')
-    sd = mc.symmetric_difference('1234', '1235')
-    dd = mc.difference('1234', '1235')
+    ji=mc.jaccard_index('1234', '1235')
+    sd=mc.symmetric_difference('1234', '1235')
+    dd=mc.difference('1234', '1235')
     # print(ji, true_sim, float(abs(ji-true_sim)))
     # print(sd, true_sdiff, float(abs(sd-true_sdiff)))
     # print(dd, true_diff, float(abs(dd - true_diff)))

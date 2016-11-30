@@ -1,6 +1,7 @@
 """Tests that are unique to Probabilistic Graphs"""
 from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
 from atlasseq.tests.base import ST_KMER
+from atlasseq.tests.base import ST_SEQ
 from atlasseq.tests.base import ST_SAMPLE_NAME
 from atlasseq.tests.base import ST_GRAPH
 from atlasseq.tests.base import ST_STORAGE
@@ -15,11 +16,14 @@ from atlasseq.bytearray import ByteArray
 import tempfile
 import os
 import redis
+from atlasseq.utils import seq_to_kmers
+
 # Add test for insert, lookup.
 
 
-@given(storage=ST_STORAGE, binary_kmers=ST_STORAGE, sample=ST_SAMPLE_NAME, kmers=st.lists(ST_KMER, max_size=10))
-def test_get_bloomfilter(storage, binary_kmers, sample, kmers):
+@given(storage=ST_STORAGE, binary_kmers=ST_STORAGE, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
+def test_get_bloomfilter(storage, binary_kmers, sample, seq):
+    kmers = list(seq_to_kmers(seq))
     mc = Graph(
         binary_kmers=binary_kmers, storage=storage, bloom_filter_size=100)
     mc.delete_all()

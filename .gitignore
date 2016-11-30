@@ -1,3 +1,5 @@
+.env
+.env_prod
 scripts/
 *.pk
 *nodes.conf
