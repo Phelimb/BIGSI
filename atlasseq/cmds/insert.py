@@ -13,7 +13,7 @@ from atlasseq.tasks import run_insert
 
 
 def insert(kmers, kmer_file, graph, force=False, sample_name=None,
-           intersect_kmers_file=None, sketch_only=False, async=True):
+           intersect_kmers_file=None, sketch_only=False, async=False):
     if async:
         result = run_insert.delay(kmers, kmer_file, graph.storage, graph.bloom_filter_size, graph.num_hashes, force=force, sample_name=sample_name,
                                   intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only).get()

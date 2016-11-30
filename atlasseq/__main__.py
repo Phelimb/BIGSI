@@ -25,9 +25,13 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
+CELERY = bool(os.environ.get("CELERY", False))
 if CREDIS:
     logger.info(
         "You're running with credis.")
+if CELERY:
+    logger.info(
+        "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
@@ -69,8 +73,10 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, sample=None, force: hug.types.smart_boolean=False,
-               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False, hug_timer=3):
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, sample=None,
+               force: hug.types.smart_boolean=False,
+               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
+               hug_timer=3):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
@@ -82,7 +88,8 @@ class AtlasSeq(object):
                                  kmer_file=kmer_file, graph=GRAPH,
                                  force=force, sample_name=sample,
                                  intersect_kmers_file=intersect_kmers_file,
-                                 sketch_only=sketch_only), 'took': float(hug_timer)}
+                                 sketch_only=sketch_only,
+                                 async=CELERY), 'took': float(hug_timer)}
 
     @hug.post('/upload')
     def upload(body, hug_timer=3):

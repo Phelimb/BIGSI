@@ -7,6 +7,7 @@ services:
       - "5000:5000"      
       - "8000:8000"      
     environment:
+        - CELERY=1
         - REDIS_IP_1=127.0.0.1
         - REDIS_PORT_1=7000          
         - "BFSIZE=$BFSIZE"
@@ -20,12 +21,14 @@ services:
   worker:
     image: phelimb/atlasseq
     environment:
+        - CELERY=1    
         - REDIS_IP_1=127.0.0.1
         - REDIS_PORT_1=7000          
         - "BFSIZE=$BFSIZE"
         - "NUM_HASHES=$NUM_HASHES"
         - "STORAGE=$STORAGE"
-        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"    
+        - "BDB_DB_FILENAME=$BDB_DB_FILENAME"   
+        - C_FORCE_ROOT=1 
     volumes:
         - "$DATA_DIR:/data"                   
     network_mode: "host"
