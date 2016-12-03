@@ -20,6 +20,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
 import hug
+import tempfile
 from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
@@ -120,10 +121,19 @@ class AtlasSeq(object):
     def search(self, seq: hug.types.text=None, fasta: hug.types.text=None, threshold: hug.types.float_number=1.0):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
+        print(dir(self))
         if not seq and not fasta:
             return "-s or -f must be provided"
-        return search(seq=seq,
-                      fasta_file=fasta, threshold=threshold, graph=GRAPH)
+        if seq == "-":
+            _, fp = tempfile.mkstemp(text=True)
+            with open(fp, 'w') as openfile:
+                for line in sys.stdin:
+                    openfile.write(line)
+            return search(seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH)
+
+        else:
+            return search(seq=seq,
+                          fasta_file=fasta, threshold=threshold, graph=GRAPH)
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)

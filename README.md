@@ -39,6 +39,17 @@ sample.txt should be a text file of kmers. You can use tools like [mccortex](htt
 	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
 	docker exec atlasseq_main_1 atlasseq search -f seq.fasta
 
+# Search for variant alleles
+
+You'll need to install atlas-var e.g.
+
+	pip install git+https://github.com/Phelimb/atlas-var.git
+
+You can find instructions on how to generate probes for the variants that you want to genotype at [atlas-var](https://github.com/Phelimb/atlas-var.git)
+
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search --seq -
+
+
 # Parameter choices:
 
 

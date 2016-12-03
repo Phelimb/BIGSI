@@ -7,9 +7,10 @@ import logging
 logger = logging.getLogger(__name__)
 from atlasseq.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
+hostname = os.environ.get("BROKER_IP", "localhost")
 
-app = Celery('tasks', backend='redis://localhost:6400',
-             broker='redis://localhost:6400')
+app = Celery('tasks', backend='redis://%s:6400' % hostname,
+             broker='redis://%s:6400' % hostname)
 
 
 def kmer_reader(f):
