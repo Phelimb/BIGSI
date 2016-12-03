@@ -120,13 +120,10 @@ class AtlasSeq(object):
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
     def search(self, seq: hug.types.text=None, fasta: hug.types.text=None,
-               threshold: hug.types.float_number=1.0, output_format: hug.types.one_of(("json", "tsv", 'default'))='default'):
+               threshold: hug.types.float_number=1.0, output_format: hug.types.one_of(("json", "tsv"))='json'):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
-        if __name__ == "__main__" and output_format == "default":
-            output = "tsv"
-        else:
-            output = output_format
+
         if not seq and not fasta:
             return "-s or -f must be provided"
         if seq == "-":
@@ -135,14 +132,14 @@ class AtlasSeq(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH, output=output)
+                seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH, output_format=output_format)
 
         else:
             result = search(seq=seq,
-                            fasta_file=fasta, threshold=threshold, graph=GRAPH, output=output)
+                            fasta_file=fasta, threshold=threshold, graph=GRAPH, output_format=output_format)
 
-        if output == "json":
-            return result
+        # if output == "json":
+        #     return result
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)

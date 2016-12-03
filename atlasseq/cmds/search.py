@@ -28,32 +28,34 @@ def parse_input(infile):
     # return gene_to_kmers
 
 
-def _search(gene_name, seq, results, threshold, graph, output="json"):
+def _search(gene_name, seq, results, threshold, graph, output_format="json"):
     results[gene_name] = {}
     start = time.time()
     results[gene_name]['results'] = graph.search(seq, threshold=threshold)
     diff = time.time() - start
     results[gene_name]['time'] = diff
-    if output == "tsv":
-        if results:
+    if output_format == "tsv":
+        if results[gene_name]['results']:
             for sample_id, percent in results[gene_name]['results'].items():
                 print(
                     "\t".join([gene_name, sample_id, str(percent), str(diff)]))
         else:
-            logger.info("Found 0 samples that matched this search")
+            print("\t".join([gene_name, "NA", str(0), str(diff)]))
+    else:
+        print(json.dumps({gene_name: results[gene_name]}))
     return results
 
 
-def search(seq, fasta_file, threshold, graph, output="json"):
-    if output == "tsv":
+def search(seq, fasta_file, threshold, graph, output_format="json"):
+    if output_format == "tsv":
         print("\t".join(
             ["gene_name", "sample_id", str("kmer_coverage_percent"), str("time")]))
     results = {}
     if fasta_file is not None:
         for gene, seq in parse_input(fasta_file):
             results = _search(
-                gene_name=gene, seq=seq, results=results, threshold=threshold, graph=graph, output=output)
+                gene_name=gene, seq=seq, results=results, threshold=threshold, graph=graph, output_format=output_format)
     else:
         results = _search(
-            gene_name=seq, seq=seq, results=results, threshold=threshold, graph=graph, output=output)
+            gene_name=seq, seq=seq, results=results, threshold=threshold, graph=graph, output_format=output_format)
     return results
