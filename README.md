@@ -47,7 +47,11 @@ You'll need to install atlas-var e.g.
 
 You can find instructions on how to generate probes for the variants that you want to genotype at [atlas-var](https://github.com/Phelimb/atlas-var.git)
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search --seq -
+e.g.
+	
+	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe -o tsv
+
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe
 
 
 # Parameter choices:
