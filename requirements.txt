@@ -1,6 +1,7 @@
 git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 git+git://github.com/Grokzen/redis-py-cluster@9f9baeced12b7abac53b3680ea3f5a1b16a38038
 git+https://github.com/phelimb/pyseqfile
+cython
 bsddb3
 credis
 crc16
@@ -12,9 +13,7 @@ bitarray
 bitstring
 redis
 hiredis
-cython
 flask
-celery
 biopython
 celery
 ## testing
