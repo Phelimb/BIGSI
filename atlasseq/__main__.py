@@ -20,6 +20,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
 import hug
+import tempfile
 from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
@@ -116,14 +117,34 @@ class AtlasSeq(object):
         sys.stdout.buffer.write(bf)
 
     @hug.object.cli
-    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA", output_format=hug.output_format.json)
-    def search(self, seq: hug.types.text=None, fasta: hug.types.text=None, threshold: hug.types.float_number=1.0):
+    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
+                    output_format=hug.output_format.json)
+    def search(self, seq: hug.types.text=None, seqfile: hug.types.text=None,
+               threshold: hug.types.float_number=1.0,
+               output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
+               pipe_out: hug.types.smart_boolean=False,
+               pipe_in: hug.types.smart_boolean=False):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
-        if not seq and not fasta:
+        if output_format in ["tsv", "fasta"]:
+            pipe_out = True
+
+        if not pipe_in and (not seq and not seqfile):
             return "-s or -f must be provided"
-        return search(seq=seq,
-                      fasta_file=fasta, threshold=threshold, graph=GRAPH)
+        if seq == "-" or pipe_in:
+            _, fp = tempfile.mkstemp(text=True)
+            with open(fp, 'w') as openfile:
+                for line in sys.stdin:
+                    openfile.write(line)
+            result = search(
+                seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+
+        else:
+            result = search(seq=seq,
+                            fasta_file=seqfile, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+
+        if not pipe_out:
+            return result
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)

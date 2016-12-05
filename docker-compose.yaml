@@ -8,7 +8,7 @@ services:
       - "8000:8000"      
     environment:
         - CELERY=1
-        - REDIS_IP_1=127.0.0.1
+        - "REDIS_IP_1=$REDIS_IP"
         - REDIS_PORT_1=7000          
         - "BFSIZE=$BFSIZE"
         - "NUM_HASHES=$NUM_HASHES"
@@ -21,6 +21,7 @@ services:
   worker:
     image: phelimb/atlasseq
     environment:
+        - BROKER_IP="BROKER_IP"
         - CELERY=1      
         - C_FORCE_ROOT=1
         - REDIS_IP_1=127.0.0.1
