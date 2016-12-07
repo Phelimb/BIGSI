@@ -21,8 +21,35 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 	cd atlas-seq
 
+	virtualenv-3.4 venv
+	source venv/bin/activate
+
+	pip install cython
 	pip install -r requirements.txt
 	python setup.py install
+
+## If you're using the redis-cluster storage (recommended) you need to run:
+
+	export DATA_DIR="./"
+	export BFSIZE=25000000
+	export NUM_HASHES=3
+	export STORAGE=redis-cluster
+
+## Then, launch a small redis cluster:
+
+	redis-server &
+	redis-server --port 6400 &
+
+	for i in {1..10}
+	do
+		mkdir -p redis/"$i"
+		./scripts/create_redis_conf.py $i > redis/"$i"/redis.conf
+		cd redis/"$i" 
+		redis-server redis.conf &
+		cd ../../
+	done
+
+	yes yes | ./scripts/redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009'
 
 # Usage
 
@@ -49,9 +76,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe -o tsv
+	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:
