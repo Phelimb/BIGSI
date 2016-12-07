@@ -1,6 +1,16 @@
+prod/
+redis/1/
+scripts/10057-10.bloomfilter
+scripts/ERR1095101_1000000.bloomfilter
+scripts/GCF_000010525.1_ASM1052v1_genomic.fna.gz
+scripts/benchmark_binary_AND.py
+scripts/benchmarking_canonical_kmers.py
+scripts/nodegraph.tmp
+scripts/nodegraph.tmp.info
+scripts/nodegraph.tmp.tagset
+scripts/test_upload.py
 .env
 .env_prod
-scripts/
 *.pk
 *nodes.conf
 atlasseq.egg-info/
