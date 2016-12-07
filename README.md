@@ -37,18 +37,19 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 ## Then, launch a small redis cluster:
 
-	redis-server &
-	redis-server --port 6400 &
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server &
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server --port 6400 &
 
 	for i in {1..10}
 	do
 		mkdir -p redis/"$i"
 		./scripts/create_redis_conf.py $i > redis/"$i"/redis.conf
 		cd redis/"$i" 
-		redis-server redis.conf &
+		/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server redis.conf &
 		cd ../../
 	done
 
+	gem install redis
 	yes yes | ./scripts/redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009'
 
 # Usage
