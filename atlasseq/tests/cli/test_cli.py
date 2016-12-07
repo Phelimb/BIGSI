@@ -34,6 +34,24 @@ def test_insert_search_cmd():
         atlasseq.__main__, '', {})
 
 
+def test_insert_search_cmd_ctx():
+    # Returns a Response object
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    assert not '404' in response.data
+    response = hug.test.post(
+        atlasseq.__main__, 'insert', {'ctx': 'atlasseq/tests/data/test_kmers.ctx'})
+    # assert response.data.get('result') == 'success'
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
+    response = hug.test.get(
+        atlasseq.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
+
+    assert response.data.get(seq).get(
+        'results').get('test_kmers') == 1.0
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+
+
 @given(store=ST_STORAGE, sample=ST_SAMPLE_NAME,
        seq=ST_SEQ)
 def test_insert_search_cmd_2(store, sample, seq):
