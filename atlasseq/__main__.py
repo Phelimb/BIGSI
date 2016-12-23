@@ -20,6 +20,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
 import hug
+import tempfile
 from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
@@ -51,6 +52,7 @@ from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
+from atlasseq.utils.cortex import GraphReader
 
 
 API = hug.API('atlas')
@@ -67,13 +69,21 @@ else:
                   bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
+def extract_kmers_from_ctx(ctx):
+    gr = GraphReader(ctx)
+    kmers = []
+    for i in gr:
+        kmers.append(i.kmer.canonical_value)
+    return kmers
+
+
 @hug.object(name='atlas', version='0.0.1', api=API)
 @hug.object.urls('/', requires=())
 class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, sample=None,
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, ctx=None, sample=None,
                force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
                hug_timer=3):
@@ -82,8 +92,11 @@ class AtlasSeq(object):
         e.g. atlasseq insert ERR1010211.txt
 
         """
+        if ctx:
+            kmers = extract_kmers_from_ctx(ctx)
+            sample = os.path.basename(ctx).split('.')[0]
         if not kmers and not kmer_file:
-            return "--kmers or --kmer_file must be provided"
+            return "--kmers, --kmer_file or ctx must be provided"
         return {"result": insert(kmers=kmers,
                                  kmer_file=kmer_file, graph=GRAPH,
                                  force=force, sample_name=sample,
@@ -116,14 +129,34 @@ class AtlasSeq(object):
         sys.stdout.buffer.write(bf)
 
     @hug.object.cli
-    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA", output_format=hug.output_format.json)
-    def search(self, seq: hug.types.text=None, fasta: hug.types.text=None, threshold: hug.types.float_number=1.0):
+    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
+                    output_format=hug.output_format.json)
+    def search(self, seq: hug.types.text=None, seqfile: hug.types.text=None,
+               threshold: hug.types.float_number=1.0,
+               output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
+               pipe_out: hug.types.smart_boolean=False,
+               pipe_in: hug.types.smart_boolean=False):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
-        if not seq and not fasta:
+        if output_format in ["tsv", "fasta"]:
+            pipe_out = True
+
+        if not pipe_in and (not seq and not seqfile):
             return "-s or -f must be provided"
-        return search(seq=seq,
-                      fasta_file=fasta, threshold=threshold, graph=GRAPH)
+        if seq == "-" or pipe_in:
+            _, fp = tempfile.mkstemp(text=True)
+            with open(fp, 'w') as openfile:
+                for line in sys.stdin:
+                    openfile.write(line)
+            result = search(
+                seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+
+        else:
+            result = search(seq=seq,
+                            fasta_file=seqfile, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+
+        if not pipe_out:
+            return result
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)

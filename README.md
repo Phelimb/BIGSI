@@ -21,8 +21,36 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 	cd atlas-seq
 
+	virtualenv-3.4 venv
+	source venv/bin/activate
+
+	pip install cython
 	pip install -r requirements.txt
 	python setup.py install
+
+## If you're using the redis-cluster storage (recommended) you need to run:
+
+	export DATA_DIR="./"
+	export BFSIZE=25000000
+	export NUM_HASHES=3
+	export STORAGE=redis-cluster
+
+## Then, launch a small redis cluster:
+
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server &
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server --port 6400 &
+
+	for i in {1..10}
+	do
+		mkdir -p redis/"$i"
+		./scripts/create_redis_conf.py $i > redis/"$i"/redis.conf
+		cd redis/"$i" 
+		/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server redis.conf &
+		cd ../../
+	done
+
+	gem install redis
+	yes yes | ./scripts/redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009'
 
 # Usage
 
@@ -38,6 +66,21 @@ sample.txt should be a text file of kmers. You can use tools like [mccortex](htt
 
 	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
 	docker exec atlasseq_main_1 atlasseq search -f seq.fasta
+
+# Search for variant alleles
+
+You'll need to install atlas-var e.g.
+
+	pip install git+https://github.com/Phelimb/atlas-var.git
+
+You can find instructions on how to generate probes for the variants that you want to genotype at [atlas-var](https://github.com/Phelimb/atlas-var.git)
+
+e.g.
+	
+	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe_in -o tsv
+
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe_in -o tsv
+
 
 # Parameter choices:
 

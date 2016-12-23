@@ -82,13 +82,14 @@ def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_
             element, array_size).getbit(colour2) == True
 
 
-@given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR,
-       colour2=ST_SAMPLE_COLOUR,
+@given(storage=ST_STORAGE,
        elements=ST_SEQ,
        bloom_filter_size=st.integers(10000, 1000000),
        num_hashes=st.integers(min_value=1, max_value=5))
 @settings(suppress_health_check=[3])
-def test_add_lookup_list(storage, colour1, colour2, elements, bloom_filter_size,  num_hashes):
+def test_add_lookup_list(storage, elements, bloom_filter_size,  num_hashes):
+    colour1 = 0
+    colour2 = 1
     elements = list(seq_to_kmers(elements))
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
