@@ -71,10 +71,11 @@ else:
 
 def extract_kmers_from_ctx(ctx):
     gr = GraphReader(ctx)
-    kmers = []
+    # kmers = []
     for i in gr:
-        kmers.append(i.kmer.canonical_value)
-    return kmers
+        yield i.kmer.canonical_value
+    #     kmers.append()
+    # return kmers
 
 
 @hug.object(name='atlas', version='0.0.1', api=API)
