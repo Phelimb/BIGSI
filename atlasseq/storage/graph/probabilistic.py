@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 from atlasseq.utils import DEFAULT_LOGGING_LEVEL
+from atlasseq.utils import chunks
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 try:
@@ -203,9 +204,10 @@ class BaseProbabilisticStorage(BaseStorage):
             yield (i, self.get(i, b''))
 
     def dump(self, outfile, num_colours):
-        for i in range(self.bloomfilter.size):
-            v = self.get_row(i, array_length=num_colours)
-            outfile.write(v.tobytes())
+        for indices in chunks(range(self.bloomfilter.size), 10000):
+            vs = self.get_rows(indices, array_length=num_colours)
+            for v in vs:
+                outfile.write(v.tobytes())
 
     def load(self, infile, num_colours):
         record_size = math.ceil(num_colours / 8)
