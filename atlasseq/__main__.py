@@ -26,7 +26,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
-CELERY = bool(os.environ.get("CELERY", False))
+CELERY = bool(int(os.environ.get("CELERY", 0)))
 if CREDIS:
     logger.info(
         "You're running with credis.")
