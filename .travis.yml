@@ -7,10 +7,10 @@ before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin  
-  - sudo docker-compose pull strictredis redis1 redismanager
+  - sudo docker-compose pull strictredis redis1 redismanager 
   - sudo docker-compose up -d
-  - sudo docker exec -it atlasseq_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
 script:
+  - sudo docker exec -it atlasseq_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
   - sudo docker exec atlasseq_main_1 py.test -v --cov=atlasseq --cov-config .coveragerc atlasseq/tests/
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
