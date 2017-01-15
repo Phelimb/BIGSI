@@ -234,7 +234,7 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
         return self.get_row(index).getbit(colour)
 
 
-class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisHashStorage):
+class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
 
     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
         super().__init__(config, bloom_filter_size, num_hashes)
