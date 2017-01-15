@@ -58,7 +58,7 @@ from atlasseq.utils.cortex import GraphReader
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'redis-cluster')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-logger.info("Loading graph with %s storage" % STORAGE)
+logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
 if STORAGE == "berkeleydb":
     GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},

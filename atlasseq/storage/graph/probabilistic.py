@@ -204,7 +204,7 @@ class BaseProbabilisticStorage(BaseStorage):
             yield (i, self.get(i, b''))
 
     def dump(self, outfile, num_colours):
-        for indices in chunks(range(self.bloomfilter.size), 10000):
+        for indices in chunks(range(self.bloomfilter.size), min(self.bloomfilter.size, 10000)):
             vs = self.get_rows(indices, array_length=num_colours)
             for v in vs:
                 outfile.write(v.tobytes())
