@@ -26,7 +26,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
-CELERY = bool(os.environ.get("CELERY", False))
+CELERY = bool(int(os.environ.get("CELERY", 0)))
 if CREDIS:
     logger.info(
         "You're running with credis.")
@@ -58,7 +58,7 @@ from atlasseq.utils.cortex import GraphReader
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'redis-cluster')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-logger.info("Loading graph with %s storage" % STORAGE)
+logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
 if STORAGE == "berkeleydb":
     GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
@@ -71,10 +71,11 @@ else:
 
 def extract_kmers_from_ctx(ctx):
     gr = GraphReader(ctx)
-    kmers = []
+    # kmers = []
     for i in gr:
-        kmers.append(i.kmer.canonical_value)
-    return kmers
+        yield i.kmer.canonical_value
+    #     kmers.append()
+    # return kmers
 
 
 @hug.object(name='atlas', version='0.0.1', api=API)

@@ -124,5 +124,11 @@ However, if my minimum expected query size is 40 bps using the same parameters w
 	
 	N * m bits 
 
+## installing berkeleydb on mac
+
+	brew install berkeley-db4
+
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+
 
 
