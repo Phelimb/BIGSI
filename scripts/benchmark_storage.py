@@ -18,9 +18,9 @@ from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 keys = []
 N = 10000
-with open('scripts/ERR1095101_1000000.txt', 'r') as infile:
+with open('atlasseq/tests/data/test_kmers.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
-
+N=len(keys)
 for storage in [
     #{'dict': None},
     #{'berkeleydb': {'filename': './db'}},
@@ -32,7 +32,7 @@ for storage in [
         "conn": [('localhost', 7000, 0)], 'credis':False}}
 ]:
     sname = [k for k in storage.keys()][0]
-    mc = Graph(storage=storage)
+    mc = Graph(storage=storage, bloom_filter_size=10000)
     mc.delete_all()
     c = 3
     start = time.time()
@@ -43,7 +43,11 @@ for storage in [
     start = time.time()
     vals = mc._search(keys[:10000])
     end = time.time()
-    print("get 10000kmers %s - %i" % (sname, N), end-start)
+    print("get kmers %s - %i" % (sname, N), end-start)
+    start = time.time()
+    vals = mc.dump('/tmp/tmp_dump')
+    end = time.time()
+    print("dump kmers %s - %i" % (sname, N), end-start)    
     # start = time.time()
     # vals = mc.search(keys[0])
     # end = time.time()
