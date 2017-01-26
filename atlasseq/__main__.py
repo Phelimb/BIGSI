@@ -26,7 +26,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
-CELERY = bool(os.environ.get("CELERY", False))
+CELERY = bool(int(os.environ.get("CELERY", 0)))
 if CREDIS:
     logger.info(
         "You're running with credis.")
@@ -52,12 +52,13 @@ from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
+from atlasseq.utils.cortex import GraphReader
 
 
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'redis-cluster')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-logger.info("Loading graph with %s storage" % STORAGE)
+logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
 if STORAGE == "berkeleydb":
     GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
@@ -68,13 +69,22 @@ else:
                   bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
+def extract_kmers_from_ctx(ctx):
+    gr = GraphReader(ctx)
+    # kmers = []
+    for i in gr:
+        yield i.kmer.canonical_value
+    #     kmers.append()
+    # return kmers
+
+
 @hug.object(name='atlas', version='0.0.1', api=API)
 @hug.object.urls('/', requires=())
 class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, sample=None,
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, ctx=None, sample=None,
                force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
                hug_timer=3):
@@ -83,8 +93,11 @@ class AtlasSeq(object):
         e.g. atlasseq insert ERR1010211.txt
 
         """
+        if ctx:
+            kmers = extract_kmers_from_ctx(ctx)
+            sample = os.path.basename(ctx).split('.')[0]
         if not kmers and not kmer_file:
-            return "--kmers or --kmer_file must be provided"
+            return "--kmers, --kmer_file or ctx must be provided"
         return {"result": insert(kmers=kmers,
                                  kmer_file=kmer_file, graph=GRAPH,
                                  force=force, sample_name=sample,

@@ -37,18 +37,19 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 ## Then, launch a small redis cluster:
 
-	redis-server &
-	redis-server --port 6400 &
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server &
+	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server --port 6400 &
 
 	for i in {1..10}
 	do
 		mkdir -p redis/"$i"
 		./scripts/create_redis_conf.py $i > redis/"$i"/redis.conf
 		cd redis/"$i" 
-		redis-server redis.conf &
+		/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server redis.conf &
 		cd ../../
 	done
 
+	gem install redis
 	yes yes | ./scripts/redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009'
 
 # Usage
@@ -122,6 +123,12 @@ However, if my minimum expected query size is 40 bps using the same parameters w
 *Note* that you cannot change these parameters once samples have been added to the graph (you would need to rebuild from scratch). So, if in doubt choose parameters such that p <= 0.1. Choosing a low p will increase the size of the database but it's likely to not be prohibitive. You can calculate the resulting data structure size with:
 	
 	N * m bits 
+
+## installing berkeleydb on mac
+
+	brew install berkeley-db4
+
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
 
 
 
