@@ -1,8 +1,7 @@
 import os
 import hug
 import redis
-r = redis.StrictRedis()
-r.flushall()
+
 import atlasseq.__main__
 import json
 from atlasseq.tests.base import ST_SEQ
@@ -20,10 +19,6 @@ import numpy as np
 
 
 def test_bloom_cmd():
-    # Returns a Response object
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
-    assert not '404' in response.data
     f = '/tmp/test_kmers.bloom'
     response = hug.test.post(
         atlasseq.__main__, 'bloom', {'ctx': 'atlasseq/tests/data/test_kmers.ctx', 'outfile': f})
@@ -31,8 +26,7 @@ def test_bloom_cmd():
     with open(f, 'rb') as inf:
         a.fromfile(inf)
     assert sum(a) > 0
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
+
     os.remove(f)
 
 
@@ -44,10 +38,6 @@ def load_bloomfilter(f):
 
 
 def test_build_cmd():
-    # Returns a Response object
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
-    assert not '404' in response.data
     N = 3
     bloomfilter_filepaths = ['atlasseq/tests/data/test_kmers.bloom']*N
     f = '/tmp/data.dat'
@@ -59,16 +49,10 @@ def test_build_cmd():
     assert fp[22, 1] == True
     assert fp[22, 2] == True
 
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
     os.remove(f)
 
 
 def test_merge_cmd():
-    # Returns a Response object
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
-    assert not '404' in response.data
     f = '/tmp/merged_data.dat'
     try:
         os.remove(f)
@@ -85,8 +69,6 @@ def test_merge_cmd():
     for i in range(3*N):
         assert fp[22, i] == True
 
-    response = hug.test.delete(
-        atlasseq.__main__, '', {})
     os.remove(f)
 
 
