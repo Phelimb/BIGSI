@@ -16,6 +16,7 @@ import random
 import tempfile
 from atlasseq.utils import seq_to_kmers
 from bitarray import bitarray
+import numpy as np
 
 
 def test_bloom_cmd():
@@ -32,7 +33,35 @@ def test_bloom_cmd():
     assert sum(a) > 0
     response = hug.test.delete(
         atlasseq.__main__, '', {})
-    os.remove('/tmp/test_kmers.bloom')
+    os.remove(f)
+
+
+def load_bloomfilter(f):
+    bloomfilter = bitarray()
+    with open(f, 'rb') as inf:
+        bloomfilter.fromfile(inf)
+    return np.array(bloomfilter)
+
+
+def test_build_cmd():
+    # Returns a Response object
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    assert not '404' in response.data
+    N = 3
+    bloomfilter_filepaths = ['atlasseq/tests/data/test_kmers.bloom']*N
+    f = '/tmp/data.dat'
+    response = hug.test.post(
+        atlasseq.__main__, 'build', {'bloomfilters': bloomfilter_filepaths, 'outfile': f})
+    a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
+    fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N))
+    assert fp[10275920, 0] == True
+    assert fp[10275920, 1] == True
+    assert fp[10275920, 2] == True
+
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    os.remove(f)
 
 
 def test_insert_search_cmd():

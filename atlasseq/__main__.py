@@ -50,6 +50,7 @@ from atlasseq.cmds.dump import dump
 from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
+from atlasseq.cmds.build import build
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
 from atlasseq.utils.cortex import GraphReader
@@ -129,6 +130,12 @@ class AtlasSeq(object):
             return "--kmers or --kmer_file must be provided"
         bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=kmer_file, graph=GRAPH)
+
+    @hug.object.cli
+    @hug.object.post('/build')
+    def build(self, bloomfilters, outfile):
+        print(outfile)
+        build(bloomfilter_filepaths=bloomfilters, outfile=outfile,)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
