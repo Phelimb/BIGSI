@@ -1,3 +1,4 @@
+import os
 import hug
 import redis
 r = redis.StrictRedis()
@@ -14,6 +15,24 @@ from hypothesis import given
 import random
 import tempfile
 from atlasseq.utils import seq_to_kmers
+from bitarray import bitarray
+
+
+def test_bloom_cmd():
+    # Returns a Response object
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    assert not '404' in response.data
+    f = '/tmp/test_kmers.bloom'
+    response = hug.test.post(
+        atlasseq.__main__, 'bloom', {'ctx': 'atlasseq/tests/data/test_kmers.ctx', 'outfile': f})
+    a = bitarray()
+    with open(f, 'rb') as inf:
+        a.fromfile(inf)
+    assert sum(a) > 0
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    os.remove('/tmp/test_kmers.bloom')
 
 
 def test_insert_search_cmd():

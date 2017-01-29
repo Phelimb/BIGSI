@@ -56,7 +56,7 @@ from atlasseq.utils.cortex import GraphReader
 
 
 API = hug.API('atlas')
-STORAGE = os.environ.get("STORAGE", 'redis-cluster')
+STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
@@ -117,17 +117,18 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, kmers=None, kmer_file=None):
+    def bloom(self, outfile, kmers=None, kmer_file=None, ctx=None, ):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
 
         """
+        if ctx:
+            kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
-        bf = bloom(kmers=kmers,
+        bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=kmer_file, graph=GRAPH)
-        sys.stdout.buffer.write(bf)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
