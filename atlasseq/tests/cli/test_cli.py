@@ -64,6 +64,32 @@ def test_build_cmd():
     os.remove(f)
 
 
+def test_merge_cmd():
+    # Returns a Response object
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    assert not '404' in response.data
+    f = '/tmp/merged_data.dat'
+    try:
+        os.remove(f)
+    except FileNotFoundError:
+        pass
+    N = 3
+    uncompressed_graphs = [
+        'atlasseq/tests/data/test_kmers_x3.uncompressed.graph'] * N
+    a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
+
+    response = hug.test.post(
+        atlasseq.__main__, 'merge', {'uncompressed_graphs': uncompressed_graphs, 'sizes': [(a, 3)]*N, 'outfile': f})
+    fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N*3))
+    for i in range(3*N):
+        assert fp[10275920, i] == True
+
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    os.remove(f)
+
+
 def test_insert_search_cmd():
     # Returns a Response object
     response = hug.test.delete(

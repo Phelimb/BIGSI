@@ -17,6 +17,7 @@ hiredis
 flask
 biopython
 celery
+psutil
 ## testing
 hypothesis
 pytest

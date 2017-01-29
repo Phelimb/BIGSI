@@ -51,6 +51,7 @@ from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
 from atlasseq.cmds.build import build
+from atlasseq.cmds.merge import merge
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
 from atlasseq.utils.cortex import GraphReader
@@ -135,7 +136,13 @@ class AtlasSeq(object):
     @hug.object.post('/build')
     def build(self, bloomfilters, outfile):
         print(outfile)
-        build(bloomfilter_filepaths=bloomfilters, outfile=outfile,)
+        build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
+
+    @hug.object.cli
+    @hug.object.post('/merge')
+    def merge(self, uncompressed_graphs, sizes, outfile):
+        merge(uncompressed_graphs=uncompressed_graphs,
+              sizes=sizes, outfile=outfile)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
