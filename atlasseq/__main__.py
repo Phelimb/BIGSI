@@ -138,7 +138,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
-        return build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
+        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=outfile))
 
     @hug.object.cli
     @hug.object.post('/merge')
