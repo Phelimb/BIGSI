@@ -44,6 +44,7 @@ def test_build_cmd():
     response = hug.test.post(
         atlasseq.__main__, 'build', {'bloomfilters': bloomfilter_filepaths, 'outfile': f})
     a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
+    assert(response.data.get('shape') == [1000, 3])
     fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N))
     assert fp[22, 0] == True
     assert fp[22, 1] == True
@@ -64,7 +65,7 @@ def test_merge_cmd():
     a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
 
     response = hug.test.post(
-        atlasseq.__main__, 'merge', {'uncompressed_graphs': uncompressed_graphs, 'sizes': [(a, 3)]*N, 'outfile': f})
+        atlasseq.__main__, 'merge', {'build_results': ['atlasseq/tests/data/test_kmers.json']*3, 'outfile': f})
     fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N*3))
     for i in range(3*N):
         assert fp[22, i] == True

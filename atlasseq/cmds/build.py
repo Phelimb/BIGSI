@@ -25,7 +25,9 @@ def build(bloomfilter_filepaths, outfile):
     for f in bloomfilter_filepaths:
         bloomfilters.append(load_bloomfilter(f))
     bloomfilters = np.array(bloomfilters)
+    _shape = (len(bloomfilters[0]), len(bloomfilters))
     fp = np.memmap(outfile, dtype='bool_', mode='w+',
-                   shape=(len(bloomfilters[0]), len(bloomfilters)))
+                   shape=_shape)
     fp[:] = bloomfilters.transpose()
     fp.flush()
+    return {"shape": _shape, "uncompressed_graph": outfile}

@@ -138,12 +138,18 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.post('/build')
     def build(self, bloomfilters, outfile):
-        print(outfile)
-        build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
+        return build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
 
     @hug.object.cli
     @hug.object.post('/merge')
-    def merge(self, uncompressed_graphs, sizes, outfile):
+    def merge(self, build_results, outfile):
+        sizes = []
+        uncompressed_graphs = []
+        for build_result in build_results:
+            with open(build_result, 'r') as inf:
+                metadata = json.load(inf)
+                sizes.append(metadata.get('shape'))
+                uncompressed_graphs.append(metadata.get('uncompressed_graph'))
         merge(uncompressed_graphs=uncompressed_graphs,
               sizes=sizes, outfile=outfile)
 
