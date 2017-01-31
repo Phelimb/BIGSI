@@ -137,7 +137,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/build')
-    def build(self, bloomfilters, outfile):
+    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
         return build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
 
     @hug.object.cli
