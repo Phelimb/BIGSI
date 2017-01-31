@@ -136,7 +136,7 @@ class AtlasSeq(object):
                    kmer_file=kmer_file, bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
     @hug.object.cli
-    @hug.object.post('/build')
+    @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
         return build(bloomfilter_filepaths=bloomfilters, outfile=outfile)
 
