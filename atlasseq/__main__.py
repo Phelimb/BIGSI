@@ -150,8 +150,8 @@ class AtlasSeq(object):
                 metadata = json.load(inf)
                 sizes.append(metadata.get('shape'))
                 uncompressed_graphs.append(metadata.get('uncompressed_graph'))
-        merge(uncompressed_graphs=uncompressed_graphs,
-              sizes=sizes, outfile=outfile)
+        return json.dumps(merge(uncompressed_graphs=uncompressed_graphs,
+                                sizes=sizes, outfile=outfile))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",

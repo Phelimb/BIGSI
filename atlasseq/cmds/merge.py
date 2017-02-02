@@ -25,8 +25,9 @@ def load_memmap(filename, size):
 def merge(uncompressed_graphs, sizes, outfile):
     ncols = sum([j for i, j in sizes])
     nrows = sizes[0][0]
+    _shape = (nrows, ncols)
     fp = np.memmap(outfile, dtype='bool_', mode='w+',
-                   shape=(nrows, ncols))
+                   shape=_shape)
     ii = 0
     for f, size in zip(uncompressed_graphs, sizes):
         jj = ii+size[1]
@@ -36,6 +37,8 @@ def merge(uncompressed_graphs, sizes, outfile):
         ii = jj
         fp.flush()
     fp.flush()
+    return {"shape": _shape, "uncompressed_graph": outfile}
+
     # start = time.time()
     # ugs = []
     # for f, size in zip(uncompressed_graphs, sizes):
