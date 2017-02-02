@@ -20,8 +20,7 @@ import time
 
 def load_memmap(filename, rowi, rowj):
     logger.info("%i MB" % int(process.memory_info().rss/1000000))
-    return np.load(filename, mmap_mode='r')[rowi:rowj, :]
-    # return np.memmap(filename, dtype='bool_', mode='r', shape=tuple(size))
+    return np.load(filename)[rowi:rowj, :]
 
 
 def merge(uncompressed_graphs, sizes, outfile):

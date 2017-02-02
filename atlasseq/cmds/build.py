@@ -20,17 +20,20 @@ def load_bloomfilter(f):
     return np.array(bloomfilter)
 
 
-def build(bloomfilter_filepaths, outfile):
+def build(bloomfilter_filepaths, outfile, max_rows=10000):
     bloomfilters = []
     for f in bloomfilter_filepaths:
         bloomfilters.append(load_bloomfilter(f))
     bloomfilters = np.array(bloomfilters)
     _shape = (len(bloomfilters[0]), len(bloomfilters))
     bloomfilters = bloomfilters.transpose()
-
-    # fp = np.memmap(outfile, dtype='bool_', mode='w+',
-    #                shape=_shape)
-    # fp[:] = bloomfilters.transpose()
-    # fp.flush()
-    np.save(outfile, bloomfilters)
-    return {"shape": _shape, "uncompressed_graph": outfile+'.npy'}
+    # Calc number of output matrices
+    d = {"shape": _shape, "uncompressed_graphs": {}}
+    for i in range(int(_shape[0]/max_rows)):
+        ii = i*max_rows
+        jj = min((i+1)*max_rows, _shape[0])
+        X = bloomfilters[ii:jj, :]
+        chunk_outfile = "%s_rows_%i_to_%i" % (outfile, ii, jj)
+        np.save(chunk_outfile, X)
+        d["uncompressed_graphs"][i] = chunk_outfile+".npy"
+    return d
