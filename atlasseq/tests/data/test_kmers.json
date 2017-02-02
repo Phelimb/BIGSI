@@ -1,1 +1,1 @@
-{"shape": [1000, 3], "uncompressed_graph": "/Users/phelimb/git/atlas-seq/atlasseq/tests/data/test_kmers.dat"}
+{"shape": [1000, 2], "uncompressed_graph": "/Users/phelimb/git/atlas-seq/atlasseq/tests/data/test_kmers.npy"}

@@ -19,7 +19,8 @@ import time
 
 
 def load_memmap(filename, size):
-    return np.memmap(filename, dtype='bool_', mode='r', shape=tuple(size))
+    return np.load(filename, mmap_mode='r')
+    # return np.memmap(filename, dtype='bool_', mode='r', shape=tuple(size))
 
 
 def merge(uncompressed_graphs, sizes, outfile):
@@ -34,7 +35,7 @@ def merge(uncompressed_graphs, sizes, outfile):
     with open(outfile, 'wb') as outf:
         for i in range(nrows):
             a = np.append([], [ugs[j][i, ] for j in range(len(ugs))])
-            if i % 100000 == 0:
+            if i % 10000 == 0:
                 logger.info(i)
                 logger.info(time.time()-start)
                 logger.info("%i MB" % int(process.memory_info().rss/1000000))
