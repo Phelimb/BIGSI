@@ -149,7 +149,7 @@ class AtlasSeq(object):
             with open(build_result, 'r') as inf:
                 metadata = json.load(inf)
                 sizes.append(metadata.get('shape'))
-                uncompressed_graphs.append(metadata.get('uncompressed_graph'))
+                uncompressed_graphs.append(metadata.get('uncompressed_graphs'))
         return json.dumps(merge(uncompressed_graphs=uncompressed_graphs,
                                 sizes=sizes, outfile=os.path.abspath(outfile)))
 

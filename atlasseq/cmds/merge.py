@@ -18,9 +18,9 @@ process = psutil.Process(os.getpid())
 import time
 
 
-def load_memmap(filename, rowi, rowj):
+def load_memmap(filename):
     logger.info("%i MB" % int(process.memory_info().rss/1000000))
-    return np.load(filename)[rowi:rowj, :]
+    return np.load(filename)
 
 
 def merge(uncompressed_graphs, sizes, outfile):
@@ -34,7 +34,7 @@ def merge(uncompressed_graphs, sizes, outfile):
         for batch in range(int(sizes[0][0]/nrows)):
             ugs = []
             for f, size in zip(uncompressed_graphs, sizes):
-                a = load_memmap(f, 0 + (batch*nrows), nrows+(batch*nrows))
+                a = load_memmap(f[str(batch)])
                 ugs.append(a)
             for i in range(nrows):
                 a = np.append([], [ugs[j][i, ] for j in range(len(ugs))])
