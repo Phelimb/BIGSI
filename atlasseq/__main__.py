@@ -138,7 +138,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
-        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=outfile))
+        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
 
     @hug.object.cli
     @hug.object.post('/merge')
@@ -151,7 +151,7 @@ class AtlasSeq(object):
                 sizes.append(metadata.get('shape'))
                 uncompressed_graphs.append(metadata.get('uncompressed_graph'))
         return json.dumps(merge(uncompressed_graphs=uncompressed_graphs,
-                                sizes=sizes, outfile=outfile))
+                                sizes=sizes, outfile=os.path.abspath(outfile)))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
