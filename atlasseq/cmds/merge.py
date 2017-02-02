@@ -19,30 +19,25 @@ import time
 
 
 def load_memmap(filename):
-    logger.info("%i MB" % int(process.memory_info().rss/1000000))
-    return np.load(filename)
+    a = np.load(filename)
+    return a
 
 
 def merge(uncompressed_graphs, sizes, outfile):
     ncols = sum([j for i, j in sizes])
     nrows = 10000  # sizes[0][0]
-    print(int(sizes[0][0]/nrows))
     _shape = (nrows, ncols)
     start = time.time()
 
     with open(outfile, 'wb') as outf:
         for batch in range(int(sizes[0][0]/nrows)):
+            logger.info("batch %i of %i" % (batch, int(sizes[0][0]/nrows)))
             ugs = []
-            for f, size in zip(uncompressed_graphs, sizes):
-                a = load_memmap(f[str(batch)])
-                ugs.append(a)
-            for i in range(nrows):
-                a = np.append([], [ugs[j][i, ] for j in range(len(ugs))])
-                if (batch*nrows + i) % 10000 == 0:
-                    logger.info(batch*nrows + i)
-                    logger.info(time.time()-start)
-                    logger.info("%i MB" %
-                                int(process.memory_info().rss/1000000))
-                ba_out = bitarray(a.tolist())
+            for f in uncompressed_graphs:
+                ug = load_memmap(f[str(batch)])
+                ugs.append(ug)
+            X = np.concatenate(ugs, axis=1)
+            for row in X:
+                ba_out = bitarray(row.tolist())
                 outf.write(ba_out.tobytes())
     return {'graph': outfile, "shape": _shape}
