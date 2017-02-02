@@ -26,27 +26,18 @@ def merge(uncompressed_graphs, sizes, outfile):
     ncols = sum([j for i, j in sizes])
     nrows = sizes[0][0]
     _shape = (nrows, ncols)
-    fp = np.memmap(outfile, dtype='bool_', mode='w+',
-                   shape=_shape)
-    ii = 0
+    start = time.time()
+    ugs = []
     for f, size in zip(uncompressed_graphs, sizes):
-        jj = ii+size[1]
         a = load_memmap(f, size)
-        logger.info("%i MB" % int(process.memory_info().rss/1000000))
-        fp[:, ii:jj] = a
-        ii = jj
-        fp.flush()
-    fp.flush()
-    return {"shape": _shape, "uncompressed_graph": outfile}
-
-    # start = time.time()
-    # ugs = []
-    # for f, size in zip(uncompressed_graphs, sizes):
-    #     a = load_memmap(f, size)
-    #     ugs.append(a)
-    # for i in range(nrows):
-    #     a = np.append([], [ugs[j][i, ] for j in range(len(ugs))])
-    #     if i % 1000 == 0:
-    #         logger.info(i)
-    #         logger.info(time.time()-start)
-    #         logger.info("%i MB" % int(process.memory_info().rss/1000000))
+        ugs.append(a)
+    with open(outfile, 'wb') as outf:
+        for i in range(nrows):
+            a = np.append([], [ugs[j][i, ] for j in range(len(ugs))])
+            if i % 100000 == 0:
+                logger.info(i)
+                logger.info(time.time()-start)
+                logger.info("%i MB" % int(process.memory_info().rss/1000000))
+            ba_out = bitarray(a.tolist())
+            outf.write(ba_out.tobytes())
+    return {'graph': outfile, "shape": _shape}
