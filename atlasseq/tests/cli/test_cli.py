@@ -40,17 +40,20 @@ def load_bloomfilter(f):
 def test_build_cmd():
     N = 3
     bloomfilter_filepaths = ['atlasseq/tests/data/test_kmers.bloom']*N
-    f = '/tmp/data.dat'
+    f = '/tmp/data'
     response = hug.test.post(
         atlasseq.__main__, 'build', {'bloomfilters': bloomfilter_filepaths, 'outfile': f})
     a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
-    assert(response.data.get('shape') == [1000, 3])
-    fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N))
+
+    d = json.loads(response.data)
+    assert(d.get('shape') == [1000, 3])
+    assert(d.get('cols') == bloomfilter_filepaths)
+    fp = np.load('/tmp/data_rows_0_to_1000.npy')
     assert fp[22, 0] == True
     assert fp[22, 1] == True
     assert fp[22, 2] == True
 
-    os.remove(f)
+    os.remove("/tmp/data_rows_0_to_1000.npy")
 
 
 def test_merge_cmd():

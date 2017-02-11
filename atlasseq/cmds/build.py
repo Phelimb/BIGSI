@@ -27,8 +27,10 @@ def build(bloomfilter_filepaths, outfile, max_rows=10000):
     bloomfilters = np.array(bloomfilters)
     _shape = (len(bloomfilters[0]), len(bloomfilters))
     bloomfilters = bloomfilters.transpose()
+    max_rows = min(max_rows, _shape[0])
     # Calc number of output matrices
-    d = {"shape": _shape, "uncompressed_graphs": {}}
+    d = {"shape": _shape, "uncompressed_graphs": {},
+         "cols": bloomfilter_filepaths}
     for i in range(int(_shape[0]/max_rows)):
         ii = i*max_rows
         jj = min((i+1)*max_rows, _shape[0])
