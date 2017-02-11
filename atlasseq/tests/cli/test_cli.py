@@ -63,17 +63,17 @@ def test_merge_cmd():
     except FileNotFoundError:
         pass
     N = 3
-    uncompressed_graphs = [
-        'atlasseq/tests/data/test_kmers_x3.uncompressed.graph'] * N
     a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
 
-    response = hug.test.post(
-        atlasseq.__main__, 'merge', {'build_results': ['atlasseq/tests/data/test_kmers.json']*3, 'outfile': f})
-    fp = np.memmap(f, dtype='bool_', mode='r', shape=(a, N*3))
-    for i in range(3*N):
-        assert fp[22, i] == True
-
-    os.remove(f)
+    response = hug.test.post(atlasseq.__main__, 'merge', {
+                             'build_results': ['atlasseq/tests/data/test_kmers.json']*N, 'outfile': f})
+    d = json.loads(response.data)
+    assert(d.get('cols') == ['atlasseq/tests/data/test_kmers.bloom']*N*2)
+#    fp = np.load(f, dtype='bool_', mode='r', shape=(a, N*3))
+#    for i in range(3*N):
+#        assert fp[22, i] == True
+#
+#    os.remove(f)
 
 
 def test_insert_search_cmd():

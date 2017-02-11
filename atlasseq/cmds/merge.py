@@ -23,12 +23,16 @@ def load_memmap(filename):
     return a
 
 
-def merge(uncompressed_graphs, sizes, outfile):
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+
+
+def merge(uncompressed_graphs, sizes, cols_list, outfile):
     ncols = sum([j for i, j in sizes])
     nrows = 10000  # sizes[0][0]
     _shape = (nrows, ncols)
     start = time.time()
-
+    cols = flatten(cols_list)
     with open(outfile, 'wb') as outf:
         for batch in range(int(sizes[0][0]/nrows)):
             logger.info("batch %i of %i" % (batch, int(sizes[0][0]/nrows)))
@@ -40,4 +44,4 @@ def merge(uncompressed_graphs, sizes, outfile):
             for row in X:
                 ba_out = bitarray(row.tolist())
                 outf.write(ba_out.tobytes())
-    return {'graph': outfile, "shape": _shape}
+    return {'graph': outfile, 'cols': cols}
