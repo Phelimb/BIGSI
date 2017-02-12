@@ -49,7 +49,10 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outdir, force=False):
             j = i + batch*10000
             logger.info("index %i of 25000000" % (j))
             ba_out = bitarray(row.tolist())
-            outfile = "/".join([outdir, "row_%i" % j])
+            directory = "/".join([outdir, str(batch)])
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            outfile = "/".join([directory, "row_%i" % j])
             outfiles[j] = outfile
             with open(outfile, 'wb') as outf:
                 outf.write(ba_out.tobytes())
