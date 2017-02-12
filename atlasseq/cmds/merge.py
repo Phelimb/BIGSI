@@ -38,18 +38,19 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outfile, force=False):
                 if force:
                     graph._add_sample(s+str(i))
 
-    with open(outfile, 'wb') as outf:
-        for batch in indexes:
-            logger.info("batch %i of %i" % (batch, max(indexes)))
-            ugs = []
-            for f in uncompressed_graphs:
-                ug = load_memmap(f[str(batch)])
-                ugs.append(ug)
-            X = np.concatenate(ugs, axis=1)
-            for i, row in enumerate(X):
-                logger.info("index %i of 25000000" % (i + batch*10000))
+    # with open(outfile, 'wb') as outf:
+    for batch in indexes:
+        logger.info("batch %i of %i" % (batch, max(indexes)))
+        ugs = []
+        for f in uncompressed_graphs:
+            ug = load_memmap(f[str(batch)])
+            ugs.append(ug)
+        X = np.concatenate(ugs, axis=1)
+        for i, row in enumerate(X):
+            logger.info("index %i of 25000000" % (i + batch*10000))
 
-                ba_out = bitarray(row.tolist())
-                graph.graph[i + batch*10000] = ba_out.tobytes()
-                # outf.write(ba_out.tobytes())
+            ba_out = bitarray(row.tolist())
+            graph.graph[i + batch*10000] = ba_out.tobytes()
+            # outf.write(ba_out.tobytes())
+    graph.graph.storage.sync()
     return {'graph': outfile, 'cols': cols}

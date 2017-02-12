@@ -439,7 +439,6 @@ class BerkeleyDBStorage(BaseStorage):
         assert isinstance(key, bytes)
         assert isinstance(val, bytes)
         self.storage[key] = val
-        self.storage.sync()
 
     def __getitem__(self, key):
         if isinstance(key, str):
