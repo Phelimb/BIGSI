@@ -21,8 +21,8 @@ import os
 POSSIBLE_STORAGES = [
     # ProbabilisticInMemoryStorage(),
     # ProbabilisticRedisHashStorage(REDIS_STORAGE),
-    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_CREDIS),
-    ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS),
+    # ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_CREDIS),
+    # ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS),
     ProbabilisticBerkeleyDBStorage({'filename': './db'}),
 ]
 ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)

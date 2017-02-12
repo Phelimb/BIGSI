@@ -19,18 +19,18 @@ ST_SAMPLE_COLOUR = st.integers(min_value=0, max_value=10)
 POSSIBLE_STORAGES = [
     # {'dict': None},
     # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-    {"redis-cluster": REDIS_CLUSTER_STORAGE_REDIS},
-    {"redis-cluster": REDIS_CLUSTER_STORAGE_CREDIS},
+    # {"redis-cluster": REDIS_CLUSTER_STORAGE_REDIS},
+    # {"redis-cluster": REDIS_CLUSTER_STORAGE_CREDIS},
     {'berkeleydb': {'filename': './db'}},
     # {'leveldb': {'filename': './db2'}}
 ]
 
 PERSISTANT_STORAGES = [
     # {"redis": {"conn": [(REDIS_HOST, REDIS_PORT, 2)]}},
-    {"redis-cluster": REDIS_CLUSTER_STORAGE_REDIS},
-    {"redis-cluster": REDIS_CLUSTER_STORAGE_CREDIS},
+    # {"redis-cluster": REDIS_CLUSTER_STORAGE_REDIS},
+    # {"redis-cluster": REDIS_CLUSTER_STORAGE_CREDIS},
 
-    # {'berkeleydb': {'filename': './db'}},
+    {'berkeleydb': {'filename': './db'}},
     # {'leveldb': {'filename': './db2'}}
 ]
 ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)

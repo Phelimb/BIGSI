@@ -60,8 +60,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self.num_hashes = self.metadata.get('num_hashes')
         if self.bloom_filter_size is not None:
             self.bloom_filter_size = int(
-                self.bloom_filter_size.decode('utf-8'))
-            self.num_hashes = int(self.num_hashes.decode('utf-8'))
+                self.bloom_filter_size)
+            self.num_hashes = int(self.num_hashes)
             logger.debug("BF_SIZE %i " % self.bloom_filter_size)
             if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
                 raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i.
@@ -146,7 +146,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if not sketch_only:
                 logger.debug("Inserting kmers")
                 self.graph.insert(kmers, colour)
-            self._insert_count(kmers, colour)
+            # self._insert_count(kmers, colour)
 
     def _insert_count(self, kmers, colour):
         if self.hll_sketch:
@@ -229,25 +229,42 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return samples_present
 
     def _choose_storage(self, storage_config):
-        self.metadata = SimpleRedisStorage(
-            {'conn': [('127.0.0.1', 6379, 0)]})
-        self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-                                                          config={'conn': [('127.0.0.1', 6379, 1)]})
-        self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-                                                          config={'conn': [('127.0.0.1', 6379, 2)]})
 
         if 'dict' in storage_config:
+            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                              config={'conn': [('127.0.0.1', 6379, 1)]})
+            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                              config={'conn': [('127.0.0.1', 6379, 2)]})
             self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
             self.metadata = InMemoryStorage(storage_config['dict'])
         elif 'redis' in storage_config:
+            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                              config={'conn': [('127.0.0.1', 6379, 1)]})
+            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                              config={'conn': [('127.0.0.1', 6379, 2)]})
             self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
+            self.metadata = SimpleRedisStorage(
+                {'conn': [('127.0.0.1', 6379, 0)]})
         elif 'redis-cluster' in storage_config:
+            self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+                                                              config={'conn': [('127.0.0.1', 6379, 1)]})
+            self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+                                                              config={'conn': [('127.0.0.1', 6379, 2)]})
             self.graph = ProbabilisticRedisBitArrayStorage(
                 storage_config['redis-cluster'])
+            self.metadata = SimpleRedisStorage(
+                {'conn': [('127.0.0.1', 6379, 0)]})
 
         elif 'berkeleydb' in storage_config:
+            filename = storage_config['berkeleydb']['filename']
+            self.sample_to_colour_lookup = BerkeleyDBStorage(
+                config={'decode': 'utf-8', 'filename': filename + 'sample_to_colour_lookup'})
+            self.colour_to_sample_lookup = BerkeleyDBStorage(
+                config={'decode': 'utf-8', 'filename': filename + 'colour_to_sample_lookup'})
             self.graph = ProbabilisticBerkeleyDBStorage(
                 storage_config['berkeleydb'])
+            self.metadata = BerkeleyDBStorage(
+                config={'decode': 'utf-8', 'filename': filename + 'metadata'})
         elif 'leveldb' in storage_config:
             self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'])
 
@@ -291,16 +308,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return self.colour_to_sample_lookup
 
     def delete_all(self):
+        self.sample_to_colour_lookup.delete_all()
+        self.colour_to_sample_lookup.delete_all()
         self.graph.delete_all()
         self.metadata.delete_all()
         if self.min_hash:
             self.min_hash.delete_all()
-        """To do, fix this. Should be implemented as a hash colours -> 
-        sample names"""
-        # o = {}
-        # for s in self.metadata.keys():
-        #     if isinstance(s, bytes):
-        #         s = s.decode("utf-8")
-        #     if s[0] == 's':
-        #         o[int(self.metadata.get(s))] = s[1:]
-        # return o

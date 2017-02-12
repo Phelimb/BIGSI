@@ -401,10 +401,11 @@ class BerkeleyDBStorage(BaseStorage):
                 "You must supply a 'filename' in your config%s" % config)
         self.db_file = config['filename']
         try:
-            self.storage = bsddb.hashopen(self.db_file)
+            self.storage = bsddb.hashopen(self.db_file, flag='c')
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
+        self.decode = config.get('decode', None)
 
     def incr(self, key):
         if self.get(key) is None:
@@ -421,7 +422,7 @@ class BerkeleyDBStorage(BaseStorage):
 
     def items(self):
         for i in self.storage.keys():
-            yield (i.decode('utf-8'), self[i].decode('utf-8'))
+            yield (i.decode('utf-8'), self[i])
 
     def count_keys(self):
         return len(self.keys())
@@ -435,14 +436,21 @@ class BerkeleyDBStorage(BaseStorage):
             val = str.encode(val)
         elif isinstance(val, int):
             val = str.encode(str(val))
+        assert isinstance(key, bytes)
+        assert isinstance(val, bytes)
         self.storage[key] = val
+        self.storage.sync()
 
     def __getitem__(self, key):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
             key = str.encode(str(key))
-        return self.storage[key]
+        v = self.storage[key]
+        if self.decode:
+            return v.decode(self.decode)
+        else:
+            return v
 
     def get(self, key, default=None):
         if isinstance(key, str):
