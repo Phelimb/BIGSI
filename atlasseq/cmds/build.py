@@ -24,8 +24,8 @@ def build(bloomfilter_filepaths, outfile, max_rows=10000):
     bloomfilters = []
     for f in bloomfilter_filepaths:
         bloomfilters.append(load_bloomfilter(f))
-    bloomfilters = np.array(bloomfilters)
     _shape = (len(bloomfilters[0]), len(bloomfilters))
+    bloomfilters = np.array(bloomfilters)
     bloomfilters = bloomfilters.transpose()
     max_rows = min(max_rows, _shape[0])
     # Calc number of output matrices

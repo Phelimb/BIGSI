@@ -142,7 +142,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/merge')
-    def merge(self, outfile, build_results: hug.types.multiple):
+    def merge(self, outfile, build_results: hug.types.multiple, indexes: hug.types.multiple = []):
         sizes = []
         uncompressed_graphs = []
         cols_list = []
@@ -152,8 +152,12 @@ class AtlasSeq(object):
                 sizes.append(metadata.get('shape'))
                 uncompressed_graphs.append(metadata.get('uncompressed_graphs'))
                 cols_list.append(metadata.get('cols'))
-        return json.dumps(merge(uncompressed_graphs=uncompressed_graphs,
-                                sizes=sizes,
+                if not indexes:
+                    indexes = list(
+                        metadata.get('uncompressed_graphs').keys())
+        indexes = [int(i) for i in indexes]
+        return json.dumps(merge(graph=get_graph(), uncompressed_graphs=uncompressed_graphs,
+                                indexes=indexes,
                                 cols_list=cols_list,
                                 outfile=os.path.abspath(outfile)))
 

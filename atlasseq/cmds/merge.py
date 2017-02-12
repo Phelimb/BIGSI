@@ -27,21 +27,25 @@ def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
-def merge(uncompressed_graphs, sizes, cols_list, outfile):
-    ncols = sum([j for i, j in sizes])
-    nrows = 10000  # sizes[0][0]
-    _shape = (nrows, ncols)
+def merge(graph, uncompressed_graphs, indexes, cols_list, outfile):
     start = time.time()
     cols = flatten(cols_list)
+    for i, s in enumerate(cols):
+        try:
+            graph._add_sample(s)
+        except ValueError:
+            graph._add_sample(s+str(i))
+
     with open(outfile, 'wb') as outf:
-        for batch in range(int(sizes[0][0]/nrows)):
-            logger.info("batch %i of %i" % (batch, int(sizes[0][0]/nrows)))
+        for batch in indexes:
+            logger.info("batch %i of %i" % (batch, max(indexes)))
             ugs = []
             for f in uncompressed_graphs:
                 ug = load_memmap(f[str(batch)])
                 ugs.append(ug)
             X = np.concatenate(ugs, axis=1)
-            for row in X:
+            for i, row in enumerate(X):
                 ba_out = bitarray(row.tolist())
-                outf.write(ba_out.tobytes())
+                graph.graph[i] = ba_out.tobytes()
+                # outf.write(ba_out.tobytes())
     return {'graph': outfile, 'cols': cols}
