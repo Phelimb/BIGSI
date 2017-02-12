@@ -6,6 +6,7 @@ from atlasseq.tests.base import ST_BINARY_KMERS
 from atlasseq.tests.base import ST_SAMPLE_COLOUR
 from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_CREDIS
 from atlasseq.tests.base import REDIS_CLUSTER_STORAGE_REDIS
+import hypothesis
 from hypothesis import given
 from hypothesis import settings
 import hypothesis.strategies as st
@@ -83,11 +84,12 @@ def test_add_lookup(storage, colour1, colour2, element, bloom_filter_size,  num_
 
 
 @given(storage=ST_STORAGE,
-       elements=ST_SEQ,
-       bloom_filter_size=st.integers(10000, 1000000),
-       num_hashes=st.integers(min_value=1, max_value=5))
-@settings(suppress_health_check=[3])
-def test_add_lookup_list(storage, elements, bloom_filter_size,  num_hashes):
+       elements=st.text(
+           min_size=31, max_size=100, alphabet=['A', 'T', 'C', 'G']),
+       bloom_filter_size=st.integers(1000, 10000))
+@settings(suppress_health_check=hypothesis.errors.Timeout)
+def test_add_lookup_list(storage, elements, bloom_filter_size):
+    num_hashes = 3
     colour1 = 0
     colour2 = 1
     elements = list(seq_to_kmers(elements))
