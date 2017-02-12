@@ -27,7 +27,7 @@ def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
-def merge(graph, uncompressed_graphs, indexes, cols_list, outfile, force=False):
+def merge(graph, uncompressed_graphs, indexes, cols_list, outdir, force=False):
     start = time.time()
     cols = flatten(cols_list)
     if 0 in indexes:
@@ -37,8 +37,7 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outfile, force=False):
             except ValueError as e:
                 if force:
                     graph._add_sample(s+str(i))
-
-    # with open(outfile, 'wb') as outf:
+    outfiles = {}
     for batch in indexes:
         logger.info("batch %i of %i" % (batch, max(indexes)))
         ugs = []
@@ -47,10 +46,12 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outfile, force=False):
             ugs.append(ug)
         X = np.concatenate(ugs, axis=1)
         for i, row in enumerate(X):
-            logger.info("index %i of 25000000" % (i + batch*10000))
-
+            j = i + batch*10000
+            logger.info("index %i of 25000000" % (j))
             ba_out = bitarray(row.tolist())
-            graph.graph[i + batch*10000] = ba_out.tobytes()
-            # outf.write(ba_out.tobytes())
+            outfile = "/".join(outdir, "row_%i" % j)
+            outfiles[j] = outfile
+            with open(outfile, 'wb') as outf:
+                outf.write(ba_out.tobytes())
     graph.graph.storage.sync()
-    return {'graph': outfile, 'cols': cols}
+    return {'graph': outfiles, 'cols': cols}
