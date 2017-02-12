@@ -45,7 +45,9 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outfile):
                 ugs.append(ug)
             X = np.concatenate(ugs, axis=1)
             for i, row in enumerate(X):
+                logger.info("index %i of 25000000" % (i + batch*10000))
+
                 ba_out = bitarray(row.tolist())
-                graph.graph[i] = ba_out.tobytes()
+                graph.graph[i + batch*10000] = ba_out.tobytes()
                 # outf.write(ba_out.tobytes())
     return {'graph': outfile, 'cols': cols}
