@@ -81,7 +81,7 @@ def insert_from_merge_results(merge_results, graph, force=False):
                     logger.warning(e)
     indexes = [int(i) for i in metadata['graph'].keys()]
     logger.info("Inserting rows %i to %i" % (min(indexes), max(indexes)))
-    for row, bitarray_f in metadata.get('graph').items():
+    # for row, bitarray_f in metadata.get('graph').items():
     for row in sorted(indexes):
         row = str(row)
         bitarray_f = metadata['graph'][row]
