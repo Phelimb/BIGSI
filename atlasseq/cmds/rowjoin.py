@@ -12,6 +12,7 @@ def rowjoin(partitioned_data, out_db, N=25000000):
     for x in ["colour_to_sample_lookup", "sample_to_colour_lookup", "metadata"]:
         shutil.copy("".join([partitioned_data, "_0", x]), "".join([out_db, x]))
     batch = 0
+    logger.info("Loading %s" % "".join([partitioned_data, "_", str(batch)]))
     db = BerkeleyDBStorage(
         config={'filename': "".join([partitioned_data, "_", str(batch)])})
     for i in range(N):
