@@ -89,7 +89,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, ctx=None, sample=None,
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, merge_results=None, ctx=None, sample=None,
                force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
                hug_timer=3):
@@ -101,14 +101,20 @@ class AtlasSeq(object):
         if ctx:
             kmers = extract_kmers_from_ctx(ctx)
             sample = os.path.basename(ctx).split('.')[0]
-        if not kmers and not kmer_file:
-            return "--kmers, --kmer_file or ctx must be provided"
-        return {"result": insert(kmers=kmers,
-                                 kmer_file=kmer_file, graph=get_graph(),
-                                 force=force, sample_name=sample,
-                                 intersect_kmers_file=intersect_kmers_file,
-                                 sketch_only=sketch_only,
-                                 async=CELERY), 'took': float(hug_timer)}
+        if not kmers and not kmer_file and not merge_results:
+            return "--kmers, --kmer_file, --merge_results or --ctx must be provided"
+        graph = get_graph()
+        result = insert(kmers=kmers,
+                        kmer_file=kmer_file,
+                        merge_results=merge_results,
+                        graph=get_graph(),
+                        force=force, sample_name=sample,
+                        intersect_kmers_file=intersect_kmers_file,
+                        sketch_only=sketch_only,
+                        async=CELERY)
+        graph.sync()
+        return {"result": result, 'took':
+                float(hug_timer)}
 
     @hug.post('/upload')
     def upload(body, hug_timer=3):

@@ -436,9 +436,9 @@ class BerkeleyDBStorage(BaseStorage):
             val = str.encode(val)
         elif isinstance(val, int):
             val = str.encode(str(val))
-        assert isinstance(key, bytes)
-        assert isinstance(val, bytes)
         self.storage[key] = val
+        if self.decode:
+            self.storage.sync()
 
     def __getitem__(self, key):
         if isinstance(key, str):

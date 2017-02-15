@@ -307,6 +307,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def colours_to_sample_dict(self):
         return self.colour_to_sample_lookup
 
+    def sync(self):
+        if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
+            self.sample_to_colour_lookup.storage.sync()
+            self.colour_to_sample_lookup.storage.sync()
+            self.graph.storage.sync()
+            self.metadata.storage.sync()
+
     def delete_all(self):
         self.sample_to_colour_lookup.delete_all()
         self.colour_to_sample_lookup.delete_all()

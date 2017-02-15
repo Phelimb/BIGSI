@@ -65,15 +65,34 @@ def test_merge_cmd():
     N = 3
     a = len(load_bloomfilter('atlasseq/tests/data/test_kmers.bloom'))
 
-    response = hug.test.post(atlasseq.__main__, 'merge', {
-                             'build_results': ['atlasseq/tests/data/test_kmers.json']*N, 'outfile': f})
+    response = hug.test.post(atlasseq.__main__, 'merge', {'outdir': '/tmp/',
+                                                          'build_results': ['atlasseq/tests/data/test_kmers.json']*N, 'outfile': f})
     d = json.loads(response.data)
-    assert(d.get('cols') == ['atlasseq/tests/data/test_kmers.bloom']*N*2)
+    assert(d.get('cols') == [
+           'atlasseq/tests/data/test_kmers.bloom']*N*3)
 #    fp = np.load(f, dtype='bool_', mode='r', shape=(a, N*3))
 #    for i in range(3*N):
 #        assert fp[22, i] == True
 #
 #    os.remove(f)
+
+
+def test_insert_from_merge_and_search_cmd():
+    # Returns a Response object
+    response = hug.test.delete(
+        atlasseq.__main__, '', {})
+    assert not '404' in response.data
+    response = hug.test.post(
+        atlasseq.__main__, 'insert', {'merge_results': 'atlasseq/tests/data/merge/test_merge_resuts.json', 'force': True})
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
+    response = hug.test.get(atlasseq.__main__, 'search', {'seq': seq})
+    for i in range(1, 6):
+        assert response.data.get(seq).get(
+            'results').get('atlasseq/tests/data/test_kmers.bloom%i' % i) == 1.0
+    assert response.data.get(seq).get(
+        'results').get('atlasseq/tests/data/test_kmers.bloom') == 1.0
+    # response = hug.test.delete(
+    #     atlasseq.__main__, '', {})
 
 
 def test_insert_search_cmd():
@@ -85,9 +104,7 @@ def test_insert_search_cmd():
         atlasseq.__main__, 'insert', {'kmer_file': 'atlasseq/tests/data/test_kmers.txt'})
     # assert response.data.get('result') == 'success'
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-    response = hug.test.get(
-        atlasseq.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
-
+    response = hug.test.get(atlasseq.__main__, 'search', {'seq': seq})
     assert response.data.get(seq).get(
         'results').get('test_kmers') == 1.0
     response = hug.test.delete(

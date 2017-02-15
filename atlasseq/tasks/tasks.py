@@ -3,6 +3,7 @@ from atlasseq.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 import os
 from pyseqfile import Reader
 from atlasseq.utils import seq_to_kmers
+import json
 import logging
 logger = logging.getLogger(__name__)
 from atlasseq.utils import DEFAULT_LOGGING_LEVEL
@@ -30,12 +31,9 @@ def insert_kmers(mc, kmers, colour, sample, count_only=False):
     graph.add_to_kmers_count(kmers, sample)
 
 
-@app.task
-def run_insert(kmers, kmer_file, storage, bloom_filter_size, num_hashes,
-               force=False, sample_name=None, intersect_kmers_file=None, sketch_only=False):
-    graph = Graph(storage=storage,
-                  bloom_filter_size=bloom_filter_size,
-                  num_hashes=num_hashes)
+def insert_from_kmers(kmers, kmer_file, graph,
+                      force=False, sample_name=None, intersect_kmers_file=None, sketch_only=False):
+
     if sample_name is None:
         sample_name = os.path.basename(kmer_file).split('.')[0]
 
@@ -50,6 +48,7 @@ def run_insert(kmers, kmer_file, storage, bloom_filter_size, num_hashes,
     logger.debug("Starting insert. ")
     try:
         graph.insert(kmers, sample_name, sketch_only=sketch_only)
+        graph.sync()
         return {"message": "success",
                 "colour": graph.get_colour_from_sample(sample_name),
                 "total-kmers": graph.count_kmers(),
@@ -65,3 +64,39 @@ def run_insert(kmers, kmer_file, storage, bloom_filter_size, num_hashes,
                     }
         else:
             raise NotImplemented("Force not implemented yet")
+
+
+def insert_from_merge_results(merge_results, graph, force=False):
+    with open(merge_results, 'r') as infile:
+        metadata = json.load(infile)
+    # insert samples
+    if "0" in metadata.get('graph'):
+        for i, s in enumerate(metadata.get('cols')):
+            try:
+                graph._add_sample(s)
+            except ValueError as e:
+                if force:
+                    graph._add_sample(s+str(i))
+                else:
+                    logger.warning(e)
+    indexes = [int(i) for i in metadata['graph'].keys()]
+    logger.info("Inserting rows %i to %i" % (min(indexes), max(indexes)))
+    for row, bitarray_f in metadata.get('graph').items():
+        with open(bitarray_f, 'rb') as inf:
+            res = inf.read()
+            graph.graph[row] = res
+    graph.sync()
+    return {"result": "success"}
+
+
+@app.task
+def run_insert(kmers, kmer_file, merge_results, storage, bloom_filter_size, num_hashes,
+               force=False, sample_name=None, intersect_kmers_file=None, sketch_only=False):
+    graph = Graph(storage=storage,
+                  bloom_filter_size=bloom_filter_size,
+                  num_hashes=num_hashes)
+    if not merge_results:
+        return insert_from_kmers(kmers, kmer_file, graph, force=force, sample_name=sample_name,
+                                 intersect_kmers_file=intersect_kmers_file, sketch_only=sketch_only)
+    else:
+        return insert_from_merge_results(merge_results, graph, force=force)
