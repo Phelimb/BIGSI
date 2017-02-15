@@ -52,6 +52,7 @@ from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
 from atlasseq.cmds.build import build
 from atlasseq.cmds.merge import merge
+from atlasseq.cmds.rowjoin import rowjoin
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
 from atlasseq.utils.cortex import GraphReader
@@ -145,6 +146,11 @@ class AtlasSeq(object):
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
         return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
+
+    @hug.object.cli
+    @hug.object.post('/rowjoin', output_format=hug.output_format.json)
+    def rowjoin(self, partitioned_data, out_db,  N):
+        return rowjoin(partitioned_data, out_db,  N)
 
     @hug.object.cli
     @hug.object.post('/merge')
