@@ -27,10 +27,16 @@ def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
-def merge(graph, uncompressed_graphs, indexes, cols_list, outdir, force=False):
+def merge(graph, uncompressed_graphs, indexes, cols_list, force=False):
     start = time.time()
     cols = flatten(cols_list)
-    outfiles = {}
+    if 0 in indexes:
+        for i, s in enumerate(cols):
+            try:
+                graph._add_sample(s)
+            except ValueError as e:
+                if force:
+                    graph._add_sample(s+str(i))
     for batch in indexes:
         logger.info("batch %i of %i" % (batch, max(indexes)))
         ugs = []
@@ -41,11 +47,6 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, outdir, force=False):
         for i, row in enumerate(X):
             j = i + batch*10000
             ba_out = bitarray(row.tolist())
-            directory = "/".join([outdir, str(batch)])
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            outfile = "/".join([directory, "row_%i" % j])
-            outfiles[j] = outfile
-            with open(outfile, 'wb') as outf:
-                outf.write(ba_out.tobytes())
-    return {'graph': outfiles, 'cols': cols}
+            graph.graph[i + batch*10000] = ba_out.tobytes()
+    graph.graph.storage.sync()
+    return {'graph': graph.graph.db_file, 'cols': cols}
