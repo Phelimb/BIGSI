@@ -61,12 +61,18 @@ from atlasseq.utils.cortex import GraphReader
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
 
-def get_graph():
+def get_graph(bdb_db_filename=None):
+    logger.info("Loading graph with %s storage." % (STORAGE))
+
     if STORAGE == "berkeleydb":
-        GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
+
+        if bdb_db_filename is None:
+            bdb_db_filename = BDB_DB_FILENAME
+        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
+
+        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename}},
                       bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
     else:
         GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
@@ -175,7 +181,7 @@ class AtlasSeq(object):
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
-    def search(self, seq: hug.types.text=None, seqfile: hug.types.text=None,
+    def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
@@ -193,11 +199,11 @@ class AtlasSeq(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(), output_format=output_format, pipe=pipe_out)
+                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold, graph=get_graph(), output_format=output_format, pipe=pipe_out)
+                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
 
         if not pipe_out:
             return result

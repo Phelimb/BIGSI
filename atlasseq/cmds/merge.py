@@ -47,6 +47,6 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, force=False):
         for i, row in enumerate(X):
             j = i + batch*10000
             ba_out = bitarray(row.tolist())
-            graph.graph[i + batch*10000] = ba_out.tobytes()
+            graph.graph[j] = ba_out.tobytes()
     graph.graph.storage.sync()
     return {'graph': graph.graph.db_file, 'cols': cols}
