@@ -27,12 +27,12 @@ BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
 CELERY = bool(int(os.environ.get("CELERY", 0)))
-if CREDIS:
-    logger.info(
-        "You're running with credis.")
-if CELERY:
-    logger.info(
-        "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
+# if CREDIS:
+#     logger.info(
+#         "You're running with credis.")
+# if CELERY:
+#     logger.info(
+#         "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
