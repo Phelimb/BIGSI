@@ -451,6 +451,13 @@ class BerkeleyDBStorage(BaseStorage):
         else:
             return v
 
+    def __delitem__(self, key):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        del self.storage[key]
+
     def get(self, key, default=None):
         if isinstance(key, str):
             key = str.encode(key)

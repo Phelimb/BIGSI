@@ -210,8 +210,8 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)
-    def delete(self):
-        return delete(graph=get_graph())
+    def delete(self, db: hug.types.text=None):
+        return delete(graph=get_graph(bdb_db_filename=db))
 
     @hug.object.cli
     @hug.object.get('/graph', output_format=hug.output_format.json)
@@ -220,8 +220,8 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/samples', output_format=hug.output_format.json)
-    def samples(self, name=None):
-        return samples(name, graph=get_graph())
+    def samples(self, sample_name: hug.types.text=None, db: hug.types.text=None, delete: hug.types.smart_boolean=False):
+        return samples(sample_name, graph=get_graph(bdb_db_filename=db), delete=delete)
 
     @hug.object.cli
     @hug.object.post('/dump', output_format=hug.output_format.json)
@@ -247,7 +247,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.get('/distance')
-    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll"))="minhash"):
+    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll")) = "minhash"):
         return jaccard_index(graph=get_graph(), s1=s1, s2=s2, method=method)
 
 

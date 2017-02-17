@@ -51,15 +51,15 @@ def insert_from_kmers(kmers, kmer_file, graph,
         graph.sync()
         return {"message": "success",
                 "colour": graph.get_colour_from_sample(sample_name),
-                "total-kmers": graph.count_kmers(),
-                "kmers-added": graph.count_kmers(sample_name),
+                # "total-kmers": graph.count_kmers(),
+                # "kmers-added": graph.count_kmers(sample_name),
                 #                          "memory": graph.calculate_memory()
                 }
     except ValueError as e:
         if not force:
             return {"result": "failed", "message": str(e),
-                    "total-kmers": graph.count_kmers(),
-                    "kmers-added": graph.count_kmers(sample_name),
+                    # "total-kmers": graph.count_kmers(),
+                    # "kmers-added": graph.count_kmers(sample_name),
                     # "memory": graph.calculate_memory()
                     }
         else:

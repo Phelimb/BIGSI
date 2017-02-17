@@ -54,8 +54,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
         self.storage = storage
-        self.hll_sketch = HyperLogLogJaccardIndex()
-        self.min_hash = MinHashHashSet()
+        # self.hll_sketch = HyperLogLogJaccardIndex()
+        # self.min_hash = MinHashHashSet()
         self.bloom_filter_size = self.metadata.get('bloom_filter_size')
         self.num_hashes = self.metadata.get('num_hashes')
         if self.bloom_filter_size is not None:
@@ -181,7 +181,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colours_to_sample_dict = self.colours_to_sample_dict()
         for colour in self._get_kmer_colours(kmer, canonical=True):
             sample = colours_to_sample_dict.get(colour, 'missing')
-            out[sample] = 1.0
+            if sample != "DELETED":
+                out[sample] = 1.0
         return out
 
     @convert_kmers_to_canonical
@@ -200,7 +201,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         for k, f in tmp.items():
             res = f/len(kmers)
             if res >= threshold:
-                out[colours_to_sample_dict.get(k, k)] = res
+                sample = colours_to_sample_dict.get(k, k)
+                if sample != "DELETED":
+                    out[sample] = res
         return out
 
     def _search_kmers_threshold_1(self, kmers):
@@ -210,7 +213,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         out = {}
         for c in ba.colours():
             sample = self.get_sample_from_colour(c)
-            out[sample] = 1.0
+            if sample != "DELETED":
+                out[sample] = 1.0
         return out
 
     @convert_kmers_to_canonical
@@ -272,6 +276,15 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             raise ValueError(
                 "Only in-memory dictionary, berkeleydb and redis are supported.")
 
+    def delete_sample(self, sample_name):
+        try:
+            colour = int(self.get_colour_from_sample(sample_name))
+        except:
+            raise ValueError("Can't find sample %s" % sample_name)
+        else:
+            self.colour_to_sample_lookup[colour] = "DELETED"
+            del self.sample_to_colour_lookup[sample_name]
+
     def _add_sample(self, sample_name):
         logger.debug("Adding %s" % sample_name)
         existing_index = self.get_colour_from_sample(sample_name)
@@ -319,5 +332,5 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self.colour_to_sample_lookup.delete_all()
         self.graph.delete_all()
         self.metadata.delete_all()
-        if self.min_hash:
-            self.min_hash.delete_all()
+        # if self.min_hash:
+        #     self.min_hash.delete_all()
