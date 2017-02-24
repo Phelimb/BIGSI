@@ -27,12 +27,12 @@ BFSIZE = int(os.environ.get("BFSIZE", 20000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
 CELERY = bool(int(os.environ.get("CELERY", 0)))
-if CREDIS:
-    logger.info(
-        "You're running with credis.")
-if CELERY:
-    logger.info(
-        "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
+# if CREDIS:
+#     logger.info(
+#         "You're running with credis.")
+# if CELERY:
+#     logger.info(
+#         "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
@@ -50,23 +50,35 @@ from atlasseq.cmds.dump import dump
 from atlasseq.cmds.load import load
 from atlasseq.cmds.delete import delete
 from atlasseq.cmds.bloom import bloom
+from atlasseq.cmds.build import build
+from atlasseq.cmds.merge import merge
+from atlasseq.cmds.rowjoin import rowjoin
 # from atlasseq.cmds.bitcount import bitcount
 from atlasseq.cmds.jaccard_index import jaccard_index
 from atlasseq.utils.cortex import GraphReader
 
 
 API = hug.API('atlas')
-STORAGE = os.environ.get("STORAGE", 'redis-cluster')
+STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-logger.info("Loading graph with %s storage. %s" % (STORAGE, CONN_CONFIG))
 
-if STORAGE == "berkeleydb":
-    GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME}},
-                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
-else:
-    GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                             "credis": CREDIS}},
-                  bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+
+def get_graph(bdb_db_filename=None):
+    logger.info("Loading graph with %s storage." % (STORAGE))
+
+    if STORAGE == "berkeleydb":
+
+        if bdb_db_filename is None:
+            bdb_db_filename = BDB_DB_FILENAME
+        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
+
+        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename}},
+                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+    else:
+        GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+                                                 "credis": CREDIS}},
+                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+    return GRAPH
 
 
 def extract_kmers_from_ctx(ctx):
@@ -84,7 +96,7 @@ class AtlasSeq(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, ctx=None, sample=None,
+    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, merge_results=None, ctx=None, sample=None,
                force: hug.types.smart_boolean=False,
                intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
                hug_timer=3):
@@ -96,14 +108,20 @@ class AtlasSeq(object):
         if ctx:
             kmers = extract_kmers_from_ctx(ctx)
             sample = os.path.basename(ctx).split('.')[0]
-        if not kmers and not kmer_file:
-            return "--kmers, --kmer_file or ctx must be provided"
-        return {"result": insert(kmers=kmers,
-                                 kmer_file=kmer_file, graph=GRAPH,
-                                 force=force, sample_name=sample,
-                                 intersect_kmers_file=intersect_kmers_file,
-                                 sketch_only=sketch_only,
-                                 async=CELERY), 'took': float(hug_timer)}
+        if not kmers and not kmer_file and not merge_results:
+            return "--kmers, --kmer_file, --merge_results or --ctx must be provided"
+        graph = get_graph()
+        result = insert(kmers=kmers,
+                        kmer_file=kmer_file,
+                        merge_results=merge_results,
+                        graph=get_graph(),
+                        force=force, sample_name=sample,
+                        intersect_kmers_file=intersect_kmers_file,
+                        sketch_only=sketch_only,
+                        async=CELERY)
+        graph.sync()
+        return {"result": result, 'took':
+                float(hug_timer)}
 
     @hug.post('/upload')
     def upload(body, hug_timer=3):
@@ -113,26 +131,57 @@ class AtlasSeq(object):
             for line in file_content.split('\n'):
                 kmers.add(line)
         return {"result": insert(
-            kmers=kmers, kmer_file=None, graph=GRAPH, sample_name=fname), 'took': float(hug_timer)}
+            kmers=kmers, kmer_file=None, graph=get_graph(), sample_name=fname), 'took': float(hug_timer)}
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, kmers=None, kmer_file=None):
+    def bloom(self, outfile, kmers=None, kmer_file=None, ctx=None):
         """Inserts kmers from a list of kmers into the graph
 
         e.g. atlasseq insert ERR1010211.txt
 
         """
+        if ctx:
+            kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not kmer_file:
             return "--kmers or --kmer_file must be provided"
-        bf = bloom(kmers=kmers,
-                   kmer_file=kmer_file, graph=GRAPH)
-        sys.stdout.buffer.write(bf)
+        bf = bloom(outfile=outfile, kmers=kmers,
+                   kmer_file=kmer_file, bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+
+    @hug.object.cli
+    @hug.object.post('/build', output_format=hug.output_format.json)
+    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
+        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
+
+    @hug.object.cli
+    @hug.object.post('/rowjoin', output_format=hug.output_format.json)
+    def rowjoin(self, partitioned_data, out_db,  N):
+        return rowjoin(partitioned_data, out_db,  N)
+
+    @hug.object.cli
+    @hug.object.post('/merge')
+    def merge(self, build_results: hug.types.multiple, indexes: hug.types.multiple = []):
+        sizes = []
+        uncompressed_graphs = []
+        cols_list = []
+        for build_result in build_results:
+            with open(build_result, 'r') as inf:
+                metadata = json.load(inf)
+                sizes.append(metadata.get('shape'))
+                uncompressed_graphs.append(metadata.get('uncompressed_graphs'))
+                cols_list.append(metadata.get('cols'))
+                if not indexes:
+                    indexes = list(
+                        metadata.get('uncompressed_graphs').keys())
+        indexes = [int(i) for i in indexes]
+        return json.dumps(merge(graph=get_graph(), uncompressed_graphs=uncompressed_graphs,
+                                indexes=indexes,
+                                cols_list=cols_list))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
-    def search(self, seq: hug.types.text=None, seqfile: hug.types.text=None,
+    def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
@@ -150,56 +199,56 @@ class AtlasSeq(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold, graph=GRAPH, output_format=output_format, pipe=pipe_out)
+                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
 
         if not pipe_out:
             return result
 
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)
-    def delete(self):
-        return delete(graph=GRAPH)
+    def delete(self, db: hug.types.text=None):
+        return delete(graph=get_graph(bdb_db_filename=db))
 
     @hug.object.cli
     @hug.object.get('/graph', output_format=hug.output_format.json)
     def stats(self):
-        return stats(graph=GRAPH)
+        return stats(graph=get_graph())
 
     @hug.object.cli
     @hug.object.get('/samples', output_format=hug.output_format.json)
-    def samples(self, name=None):
-        return samples(name, graph=GRAPH)
+    def samples(self, sample_name: hug.types.text=None, db: hug.types.text=None, delete: hug.types.smart_boolean=False):
+        return samples(sample_name, graph=get_graph(bdb_db_filename=db), delete=delete)
 
     @hug.object.cli
     @hug.object.post('/dump', output_format=hug.output_format.json)
     def dump(self, filepath):
-        r = dump(graph=GRAPH, file=filepath)
+        r = dump(graph=get_graph(), file=filepath)
         return r
 
     # @hug.object.cli
     # @hug.object.get('/dumps', output_format=hug.output_format.json)
     # def dumps(self):
-    #     r = dumps(graph=GRAPH)
+    #     r = dumps(graph=get_graph())
     #     return r
 
     @hug.object.cli
     @hug.object.post('/load', output_format=hug.output_format.json)
     def load(self, filepath):
-        r = load(graph=GRAPH, file=filepath)
+        r = load(graph=get_graph(), file=filepath)
         return r
     # @hug.object.cli
     # @hug.object.get('/bitcount')
     # def bitcount(self):
-    #     return bitcount(graph=GRAPH)
+    #     return bitcount(graph=get_graph())
 
     @hug.object.cli
     @hug.object.get('/distance')
-    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll"))="minhash"):
-        return jaccard_index(graph=GRAPH, s1=s1, s2=s2, method=method)
+    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll")) = "minhash"):
+        return jaccard_index(graph=get_graph(), s1=s1, s2=s2, method=method)
 
 
 def main():

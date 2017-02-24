@@ -51,7 +51,8 @@ class BloomFilterMatrix:
 
     def hashes(self, element):
         for seed in range(self.num_hashes):
-            yield self.hash(element, seed)
+            h = self.hash(element, seed)
+            yield h
 
     def add(self, element, colour):
         for index in self.hashes(element):

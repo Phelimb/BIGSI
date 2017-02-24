@@ -53,12 +53,12 @@ def test_unique_sample_names(Graph, store, sample, seq):
        seq=ST_SEQ)
 def test_unique_sample_names2(Graph, store, sample, seq):
     kmers = list(seq_to_kmers(seq))
-
     # Persistant stores should be able to create a new instance but retain
     # metadata
     mc = Graph(storage=store)
     mc.delete_all()
     mc.insert(kmers, sample)
+
     mc2 = Graph(storage=store)
     with pytest.raises(ValueError):
         mc2.insert(kmers, sample)

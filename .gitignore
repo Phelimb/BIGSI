@@ -58,3 +58,12 @@ scripts/benchmark_dumps.py
 test_dump.pk
 venvtmp/
 
+db
+dbcolour_to_sample_lookup
+dbmetadata
+dbsample_to_colour_lookup
+.DS_Store
+test_db
+test_dbcolour_to_sample_lookup
+test_dbmetadata
+test_dbsample_to_colour_lookup
