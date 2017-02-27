@@ -466,7 +466,8 @@ class BerkeleyDBStorage(BaseStorage):
         self.db_file = config['filename']
         self.mode = config.get('mode', 'c')
         try:
-            self.storage = hashopen(self.db_file, flag=self.mode, cachesize=4)
+            # self.storage = hashopen(self.db_file, flag=self.mode, cachesize=4)
+            self.storage = hashopen(self.db_file, flag=self.mode)
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
