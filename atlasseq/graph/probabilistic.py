@@ -194,6 +194,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _search_kmers_threshold_not_1(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
+        print(colours_to_sample_dict)
         tmp = Counter()
         for kmer, colours in self._get_kmers_colours(kmers).items():
             tmp.update(colours)
