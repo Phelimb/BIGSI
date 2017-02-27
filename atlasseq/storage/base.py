@@ -449,12 +449,12 @@ class BerkeleyDBCollectionStorage(BaseStorage):
     def _create_berkeley_dbs(self, row_orded_filenames):
         self.dbs = {}
         for i, f in enumerate(row_orded_filenames):
-            self.dbs[i] = BerkeleyDBStorage({"filename": f})
+            self.dbs[i] = f
 
     def __getitem__(self, key):
         assert isinstance(key, int)
-        db = self.dbs[int(math.floor(key/self.rows_per_file))]
-        return db[key]
+        f = self.dbs[int(math.floor(key/self.rows_per_file))]
+        return BerkeleyDBStorage({"filename": f})[key]
 
 
 class BerkeleyDBStorage(BaseStorage):
