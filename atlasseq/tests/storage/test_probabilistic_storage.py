@@ -119,8 +119,8 @@ def test_add_lookup_list(storage, elements, bloom_filter_size):
             colour2) == True for i in range(len(elements))])
 
 
-@given(key=st.integers(min_value=0))
-def test_cluster_keyslot(key):
-    storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS)
-    assert storage._get_key_slot(
-        key, 'python') == storage._get_key_slot(key, 'redis')
+# @given(key=st.integers(min_value=0))
+# def test_cluster_keyslot(key):
+#     storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS)
+#     assert storage._get_key_slot(
+#         key, 'python') == storage._get_key_slot(key, 'redis')

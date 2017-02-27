@@ -9,6 +9,7 @@ import shutil
 import logging
 import time
 import crc16
+import math
 # from redis_protocol import encode as redis_encode
 # from redis.connection import Connection
 logging.basicConfig(level=logging.DEBUG)
@@ -393,6 +394,69 @@ def _batch_insert_prob_redis(conn, names, all_hashes, colour, count=0):
                     "Failed %s %s. Too many retries. Contining regardless." % (r, name))
 
 
+def _openDBEnv(cachesize):
+    e = bsddb.db.DBEnv()
+    if cachesize is not None:
+        if cachesize >= 1:
+            e.set_cachesize(cachesize, 0)
+        else:
+            raise error("cachesize must be >= 1")
+    e.set_lk_detect(bsddb.db.DB_LOCK_DEFAULT)
+    e.open('.', bsddb.db.DB_PRIVATE | bsddb.db.DB_CREATE |
+           bsddb.db.DB_THREAD | bsddb.db.DB_INIT_LOCK | bsddb.db.DB_INIT_MPOOL)
+    return e
+
+
+# def _openDBEnvRead(cachesize):
+#     e = bsddb.db.DBEnv()
+#     if cachesize is not None:
+#         if cachesize >= 1:
+#             e.set_cachesize(cachesize, 0)
+#         else:
+#             raise error("cachesize must be >= 1")
+#     # e.set_lk_detect(bsddb.db.DB_LOCK_DEFAULT)
+#     e.open('.', bsddb.db.DB_PRIVATE | bsddb.db.DB_CREATE |
+#            bsddb.db.DB_THREAD | bsddb.db.DB_INIT_MPOOL)
+#     return e
+
+
+def hashopen(file, flag='c', mode=0o666, pgsize=None, ffactor=None, nelem=None,
+             cachesize=None, lorder=None, hflags=0):
+
+    flags = bsddb._checkflag(flag, file)
+    e = _openDBEnv(cachesize)
+    d = bsddb.db.DB(e)
+    d.set_flags(hflags)
+    if pgsize is not None:
+        d.set_pagesize(pgsize)
+    if lorder is not None:
+        d.set_lorder(lorder)
+    if ffactor is not None:
+        d.set_h_ffactor(ffactor)
+    if nelem is not None:
+        d.set_h_nelem(nelem)
+    d.open(file, bsddb.db.DB_HASH, flags, mode)
+    return bsddb._DBWithCursor(d)
+
+
+class BerkeleyDBCollectionStorage(BaseStorage):
+
+    def __init__(self, row_orded_filenames, rows_per_file=10000):
+        self.dbs = {}
+        self._create_berkeley_dbs(row_orded_filenames)
+        self.rows_per_file = rows_per_file
+
+    def _create_berkeley_dbs(self, row_orded_filenames):
+        self.dbs = {}
+        for i, f in enumerate(row_orded_filenames):
+            self.dbs[i] = BerkeleyDBStorage({"filename": f})
+
+    def __getitem__(self, key):
+        assert isinstance(key, int)
+        db = self.dbs[int(math.floor(key/self.rows_per_file))]
+        return db[key]
+
+
 class BerkeleyDBStorage(BaseStorage):
 
     def __init__(self, config):
@@ -400,8 +464,9 @@ class BerkeleyDBStorage(BaseStorage):
             raise ValueError(
                 "You must supply a 'filename' in your config%s" % config)
         self.db_file = config['filename']
+        self.mode = config.get('mode', 'c')
         try:
-            self.storage = bsddb.hashopen(self.db_file, flag='c')
+            self.storage = hashopen(self.db_file, flag=self.mode, cachesize=4)
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
@@ -471,7 +536,7 @@ class BerkeleyDBStorage(BaseStorage):
     def delete_all(self):
         self.storage.close()
         os.remove(self.db_file)
-        self.storage = bsddb.hashopen(self.db_file)
+        self.storage = hashopen(self.db_file)
 
     def getmemoryusage(self):
         return 0
