@@ -68,7 +68,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
         results[gene_name]['results'] = graph.search(seq, threshold=threshold)
         diff = time.time() - start
         results[gene_name]['time'] = diff
-    return results
+    return json.dumps(results)
 
 
 def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False):
