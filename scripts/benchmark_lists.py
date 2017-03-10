@@ -13,7 +13,7 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "../redis-py")))
-from atlasseq.mcdbg import McDBG
+from bfg.mcdbg import McDBG
 
 keys = []
 # with open('/data4/projects/atlas/ecol/data/kmers/k31/ERR1095101.txt',

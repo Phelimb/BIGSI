@@ -1,4 +1,4 @@
-rm -rf atlasseq/__pycache__/
-rm -rf atlasseq/*/__pycache__/
-rm -rf atlasseq/*/*/__pycache__/
-rm -rf atlasseq/*/*/*/__pycache__/
+rm -rf bfg/__pycache__/
+rm -rf bfg/*/__pycache__/
+rm -rf bfg/*/*/__pycache__/
+rm -rf bfg/*/*/*/__pycache__/

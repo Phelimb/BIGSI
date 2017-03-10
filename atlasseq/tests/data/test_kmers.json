@@ -1,1 +1,0 @@
-{"shape": [1000, 3], "uncompressed_graphs": {"0": "/Users/phelimb/git/atlas-seq/atlasseq/tests/data/test_kmers_rows_0_to_1000.npy"}, "cols": ["atlasseq/tests/data/test_kmers.bloom", "atlasseq/tests/data/test_kmers.bloom", "atlasseq/tests/data/test_kmers.bloom"]}

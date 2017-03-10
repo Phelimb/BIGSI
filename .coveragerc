@@ -1,2 +1,2 @@
 [run]
-omit = atlasseq/tests/*,atlasseq/cmds/*,atlasseq/version.py,atlasseq/main.py,atlasseq/bytearray.py
+omit = bfg/tests/*,bfg/cmds/*,bfg/version.py,bfg/main.py,bfg/bytearray.py

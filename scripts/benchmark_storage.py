@@ -13,12 +13,12 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "../redis-py")))
-from atlasseq import ProbabilisticMultiColourDeBruijnGraph as Graph
+from bfg import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 keys = []
 N = 10000
-with open('atlasseq/tests/data/test_kmers.txt', 'r') as infile:
+with open('bfg/tests/data/test_kmers.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N])
 N=len(keys)
 for storage in [

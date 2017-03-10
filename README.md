@@ -54,18 +54,18 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 # Usage
 
-Examples below are assuming you're running atlas-seq using docker-compose. To run without docker compose launch a redis instance `redis-server` and remove the references to `docker exec atlasseq_main_1` below. 
+Examples below are assuming you're running atlas-seq using docker-compose. To run without docker compose launch a redis instance `redis-server` and remove the references to `docker exec bfg_main_1` below. 
 
 # Insert sample
 
 sample.txt should be a text file of kmers. You can use tools like [mccortex](https://github.com/mcveanlab/mccortex), [cortex](https://github.com/iqbal-lab/cortex) or [jellyfish](https://github.com/gmarcais/Jellyfish) to quickly generate kmers from fastq/bam file. 
 
-	docker exec atlasseq_main_1 atlasseq insert sample.txt
+	docker exec bfg_main_1 bfg insert sample.txt
 
 # Query for sequence
 
-	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	docker exec atlasseq_main_1 atlasseq search -f seq.fasta
+	docker exec bfg_main_1 bfg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
+	docker exec bfg_main_1 bfg search -f seq.fasta
 
 # Search for variant alleles
 
@@ -77,9 +77,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./bfg/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bfg/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:
