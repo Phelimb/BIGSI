@@ -1,4 +1,5 @@
 from bitarray import bitarray
+import numpy as np
 
 
 class BitArray(bitarray):
@@ -23,7 +24,8 @@ class BitArray(bitarray):
             return False
 
     def indexes(self):
-        return [i for i, j in enumerate(self) if j]
+        a = np.array(self)
+        return np.where(a).tolist()
 
     def colours(self):
         return self.indexes()
