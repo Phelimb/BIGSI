@@ -207,7 +207,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if lkmers == 0:
                 cumsum = np.array(ba, dtype='i4')
             else:
-                l = np.array(ba, dtype='_bool')
+                l = np.array(ba, dtype='bool_')
                 cumsum = np.add(cumsum, l)
             lkmers += 1
         out = {}
