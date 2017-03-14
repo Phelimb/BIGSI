@@ -1,4 +1,5 @@
 import sys
+import psutil
 import redis
 import math
 import uuid
@@ -203,6 +204,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         for kmer, colours in self._get_kmers_colours(kmers).items():
+            logger.debug('%s - %i %s' %
+                         (kmer, len(colours), psutil.Process().memory_info()))
             tmp.update(colours)
         out = {}
         for k, f in tmp.items():

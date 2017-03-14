@@ -135,8 +135,6 @@ def test_query_kmers(Graph, x, store, binary_kmers):
         '1234': 0.5, '1235': 1, '1236': 0.5}
     mc.delete_all()
 
-from bfg.storage.graph.probabilistic import BloomFilterMatrix
-
 
 @given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
        store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
