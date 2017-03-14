@@ -103,8 +103,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self._insert(bloom_filter, colour)
 
     def search(self, seq, threshold=1):
-        kmers = [k for k in seq_to_kmers(seq)]
-        return self._search(kmers, threshold=threshold)
+        return self._search(seq_to_kmers(seq), threshold=threshold)
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
@@ -178,10 +177,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _search(self, kmers, threshold=1):
         """Return sample names where this kmer is present"""
-        if isinstance(kmers, list):
-            return self._search_kmers(kmers, threshold=threshold)
-        else:
+        if isinstance(kmers, str):
             return self._search_kmer(kmers)
+        else:
+            return self._search_kmers(kmers, threshold=threshold)
 
     @convert_kmers_to_canonical
     def _search_kmer(self, kmer, canonical=False):
