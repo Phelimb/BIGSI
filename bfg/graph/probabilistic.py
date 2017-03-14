@@ -173,7 +173,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         o = {}
         for kmer in kmers:
             ba = self.graph.lookup(kmer)
-            o[kmer] = ba.colours()
+            o[kmer] = ba
         return o
 
     def _search(self, kmers, threshold=1):
@@ -204,10 +204,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         lkmers = 0
-        for kmer, colours in self._get_kmers_colours(kmers).items():
+        for kmer, ba in self._get_kmers_colours(kmers).items():
             # logger.debug('%s - %i %s' %
             #              (kmer, len(colours), psutil.Process().memory_info()))
-            tmp.update(colours)
+            tmp.update(ba.colours())
             lkmers += 1
         out = {}
         for k, f in tmp.items():
