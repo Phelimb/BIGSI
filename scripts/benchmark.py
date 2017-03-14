@@ -17,9 +17,9 @@ from bfg import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 keys = []
-N = 10000
+N = 100000
 with open('bfg/tests/data/test_kmers.txt', 'r') as infile:
-    keys.extend(infile.read().splitlines()[:N])
+    keys.extend(infile.read().splitlines()[:N]*1000)
 N = len(keys)
 for storage in [
     #{'dict': None},

@@ -23,16 +23,7 @@ class BitArray(bitarray):
             return False
 
     def indexes(self):
-        indexes = []
-        i = 0
-        while True:
-            try:
-                i = self.index(True, i)
-                indexes.append(i)
-                i += 1
-            except ValueError:
-                break
-        return indexes
+        return [i for i, j in enumerate(self) if j]
 
     def colours(self):
         return self.indexes()
