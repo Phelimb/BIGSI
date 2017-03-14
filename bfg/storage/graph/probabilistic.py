@@ -58,6 +58,10 @@ class BloomFilterMatrix:
         for index in self.hashes(element):
             self._setbit(index, colour, 1)
 
+    def add_column(self, bloomfilter, colour):
+        for i, j in enumerate(bloomfilter):
+            self._setbit(i, colour, j)
+
     def update(self, elements, colour):
         indexes = self._get_all_indexes(elements)
         self._setbits(indexes, colour, 1)
@@ -153,12 +157,9 @@ class BaseProbabilisticStorage(BaseStorage):
     def set_num_hashes(self, num_hashes):
         self.bloomfilter.num_hashes = num_hashes
 
-    def insert(self, kmers, colour):
-        """Insert kmer/s into a colour"""
-        if isinstance(kmers, str):
-            self.bloomfilter.add(kmers, colour)
-        else:
-            self.bloomfilter.update(kmers, colour)
+    def insert(self, bloomfilter, colour):
+        """Insert bloomfilter into a colour"""
+        self.bloomfilter.add_column(bloomfilter, colour)
 
     def lookup(self, kmer, array_length):
         return self.bloomfilter.lookup(kmer, array_length=array_length)

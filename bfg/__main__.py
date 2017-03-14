@@ -54,7 +54,7 @@ from bfg.cmds.build import build
 from bfg.cmds.merge import merge
 from bfg.cmds.rowjoin import rowjoin
 # from bfg.cmds.bitcount import bitcount
-from bfg.cmds.jaccard_index import jaccard_index
+# from bfg.cmds.jaccard_index import jaccard_index
 from bfg.utils.cortex import GraphReader
 
 
@@ -83,11 +83,8 @@ def get_graph(bdb_db_filename=None):
 
 def extract_kmers_from_ctx(ctx):
     gr = GraphReader(ctx)
-    # kmers = []
     for i in gr:
         yield i.kmer.canonical_value
-    #     kmers.append()
-    # return kmers
 
 
 @hug.object(name='atlas', version='0.0.1', api=API)
@@ -96,49 +93,24 @@ class bfg(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, kmers: hug.types.multiple = [], kmer_file=None, merge_results=None, ctx=None, sample=None,
-               force: hug.types.smart_boolean=False,
-               intersect_kmers_file=None, sketch_only: hug.types.smart_boolean = False,
-               hug_timer=3):
-        """Inserts kmers from a list of kmers into the graph
+    def insert(self, bloom_filter):
+        """Inserts a bloom filter into the graph
 
-        e.g. bfg insert ERR1010211.txt
+        e.g. bfg insert ERR1010211.bloom
 
         """
-        if ctx:
-            kmers = extract_kmers_from_ctx(ctx)
-            sample = os.path.basename(ctx).split('.')[0]
-        if not kmers and not kmer_file and not merge_results:
-            return "--kmers, --kmer_file, --merge_results or --ctx must be provided"
         graph = get_graph()
-        result = insert(kmers=kmers,
-                        kmer_file=kmer_file,
-                        merge_results=merge_results,
-                        graph=get_graph(),
-                        force=force, sample_name=sample,
-                        intersect_kmers_file=intersect_kmers_file,
-                        sketch_only=sketch_only,
-                        async=CELERY)
+        result = insert(bloom_filter, async=CELERY)
         graph.sync()
         return {"result": result, 'took':
                 float(hug_timer)}
 
-    @hug.post('/upload')
-    def upload(body, hug_timer=3):
-        kmers = set()
-        for fname, file_byte_content in body.items():
-            file_content = file_byte_content.decode('utf-8')
-            for line in file_content.split('\n'):
-                kmers.add(line)
-        return {"result": insert(
-            kmers=kmers, kmer_file=None, graph=get_graph(), sample_name=fname), 'took': float(hug_timer)}
-
     @hug.object.cli
     @hug.object.post('/bloom')
     def bloom(self, outfile, kmers=None, kmer_file=None, ctx=None):
-        """Inserts kmers from a list of kmers into the graph
+        """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
-        e.g. bfg insert ERR1010211.txt
+        e.g. bfg insert ERR1010211.ctx
 
         """
         if ctx:
@@ -152,11 +124,6 @@ class bfg(object):
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
         return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
-
-    @hug.object.cli
-    @hug.object.post('/rowjoin', output_format=hug.output_format.json)
-    def rowjoin(self, partitioned_data, out_db,  N):
-        return rowjoin(partitioned_data, out_db,  N)
 
     @hug.object.cli
     @hug.object.post('/merge')
@@ -229,26 +196,11 @@ class bfg(object):
         r = dump(graph=get_graph(), file=filepath)
         return r
 
-    # @hug.object.cli
-    # @hug.object.get('/dumps', output_format=hug.output_format.json)
-    # def dumps(self):
-    #     r = dumps(graph=get_graph())
-    #     return r
-
     @hug.object.cli
     @hug.object.post('/load', output_format=hug.output_format.json)
     def load(self, filepath):
         r = load(graph=get_graph(), file=filepath)
         return r
-    # @hug.object.cli
-    # @hug.object.get('/bitcount')
-    # def bitcount(self):
-    #     return bitcount(graph=get_graph())
-
-    @hug.object.cli
-    @hug.object.get('/distance')
-    def distance(self, s1, s2=None, method: hug.types.one_of(("minhash", "hll")) = "minhash"):
-        return jaccard_index(graph=get_graph(), s1=s1, s2=s2, method=method)
 
 
 def main():
