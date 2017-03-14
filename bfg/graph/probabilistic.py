@@ -29,22 +29,28 @@ from bfg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 from bfg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
 from bfg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from bfg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
-from bfg.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 
 from bfg.storage import InMemoryStorage
 from bfg.storage import SimpleRedisStorage
 from bfg.storage import BerkeleyDBStorage
-from bfg.storage import LevelDBStorage
 from bfg.sketch import HyperLogLogJaccardIndex
 from bfg.sketch import MinHashHashSet
 from bfg.utils import DEFAULT_LOGGING_LEVEL
-
+from bfg.matrix import transpose
+from bitarray import bitarray
 import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 from bfg.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
+
+
+def load_bloomfilter(f):
+    bloomfilter = bitarray()
+    with open(f, 'rb') as inf:
+        bloomfilter.fromfile(inf)
+    return bloomfilter
 
 
 class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
@@ -75,6 +81,18 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
         self.graph.set_bloom_filter_size(self.bloom_filter_size)
         self.graph.set_num_hashes(self.num_hashes)
+
+    def build(self, bloomfilters, samples):
+        assert len(bloomfilters) == len(samples)
+        [self._add_sample(s) for s in samples]
+        bfg = transpose(bloomfilters)
+        for i, ba in enumerate(bfg):
+            self.graph[i] = ba.tobytes()
+        self.sync()
+
+    @convert_kmers_to_canonical
+    def bloom(self, kmers):
+        return self.graph.bloomfilter.create(kmers)
 
     def insert(self, bloom_filter, sample):
         """
@@ -140,23 +158,22 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         with open(fp+".graph", 'rb') as infile:
             self.graph.load(infile, self.get_num_colours())
 
-    def _insert(self, bloomfilter, colour):
-        if bloomfilter:
+    def _insert(self, bloomfilter_filepath, colour):
+        if bloomfilter_filepath:
             logger.debug("Inserting BF")
-            self.graph.insert(bloomfilter, colour)
+            self.graph.insert(bloomfilter, int(colour))
 
     @convert_kmers_to_canonical
     def _get_kmer_colours(self, kmer, canonical=False):
         colour_presence_boolean_array = self.graph.lookup(
-            kmer, array_length=self.get_num_colours())
+            kmer)
         return {kmer: colour_presence_boolean_array.colours()}
 
     def _get_kmers_colours(self, kmers):
-        bas = self.graph.lookup(
-            kmers, array_length=self.get_num_colours())
         o = {}
-        for kmer, bas in zip(kmers, bas):
-            o[kmer] = bas.colours()
+        for kmer in kmers:
+            ba = self.graph.lookup(kmer)
+            o[kmer] = ba.colours()
         return o
 
     def _search(self, kmers, threshold=1):
@@ -185,7 +202,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _search_kmers_threshold_not_1(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
-        print(colours_to_sample_dict)
         tmp = Counter()
         for kmer, colours in self._get_kmers_colours(kmers).items():
             tmp.update(colours)
@@ -201,7 +217,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def _search_kmers_threshold_1(self, kmers):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
         ba = self.graph.lookup_all_present(
-            kmers, array_length=self.get_num_colours())
+            kmers)
         out = {}
         for c in ba.colours():
             sample = self.get_sample_from_colour(c)
@@ -215,7 +231,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         num_colours = self.get_num_colours()
         colour_to_sample = self.colours_to_sample_dict()
         colour_presence_boolean_array = self.graph.lookup(
-            kmer, array_length=self.get_num_colours())
+            kmer)
         samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
             if present:
@@ -261,9 +277,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 storage_config['berkeleydb'])
             self.metadata = BerkeleyDBStorage(
                 config={'decode': 'utf-8', 'filename': filename + 'metadata'})
-        elif 'leveldb' in storage_config:
-            self.graph = ProbabilisticLevelDBStorage(storage_config['leveldb'])
-
         else:
             raise ValueError(
                 "Only in-memory dictionary, berkeleydb and redis are supported.")

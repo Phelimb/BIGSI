@@ -33,11 +33,9 @@ def insert_kmers(mc, kmers, colour, sample, count_only=False):
     graph.add_to_kmers_count(kmers, sample)
 
 
-def bloom(outfile, kmers, kmer_file, bloom_filter_size, num_hashes):
+def bloom(outfile, kmers, kmer_file, graph):
     if kmer_file is not None:
         kmers = {}.fromkeys(kmer_reader(kmer_file)).keys()
-    bloom_filter_matrix = BloomFilterMatrix(
-        size=bloom_filter_size, num_hashes=num_hashes, storage=None)
-    bloomfilter = bloom_filter_matrix.create(kmers)
+    bloomfilter = graph.bloom(kmers)
     with open(outfile, 'wb') as of:
         bloomfilter.tofile(of)
