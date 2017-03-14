@@ -42,7 +42,7 @@ def convert_kmers(func):
         if not kwargs.get('min_lexo'):
             # It is a list of kmers or a single kmer?
             kmers = convert_func(kmers)
-        kmers = kmers_or_bytes(self, kmers)
+        # kmers = kmers_or_bytes(self, kmers)
         return func(self, kmers, *args, **kwargs)
     return convert_kmers_inner
 
