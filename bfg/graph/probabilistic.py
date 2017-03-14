@@ -203,13 +203,15 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def _search_kmers_threshold_not_1(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
+        lkmers = 0
         for kmer, colours in self._get_kmers_colours(kmers).items():
-            logger.debug('%s - %i %s' %
-                         (kmer, len(colours), psutil.Process().memory_info()))
+            # logger.debug('%s - %i %s' %
+            #              (kmer, len(colours), psutil.Process().memory_info()))
             tmp.update(colours)
+            lkmers += 1
         out = {}
         for k, f in tmp.items():
-            res = f/len(kmers)
+            res = f/lkmers
             if res >= threshold:
                 sample = colours_to_sample_dict.get(k, k)
                 if sample != "DELETED":
