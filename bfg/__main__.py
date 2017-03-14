@@ -107,7 +107,7 @@ class bfg(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, kmers=None, kmer_file=None, ctx=None):
+    def bloom(self, outfile, kmers=None, seqfile=None, ctx=None):
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. bfg insert ERR1010211.ctx
@@ -115,10 +115,10 @@ class bfg(object):
         """
         if ctx:
             kmers = extract_kmers_from_ctx(ctx)
-        if not kmers and not kmer_file:
-            return "--kmers or --kmer_file must be provided"
+        if not kmers and not seqfile:
+            return "--kmers or --seqfile must be provided"
         bf = bloom(outfile=outfile, kmers=kmers,
-                   kmer_file=kmer_file, bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+                   seqfile=seqfile, bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
@@ -153,7 +153,7 @@ class bfg(object):
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
                pipe_in: hug.types.smart_boolean=False,
-               cachesize=4):
+               cachesize: hug.types.number=4):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
