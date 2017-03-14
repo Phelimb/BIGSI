@@ -50,7 +50,8 @@ def reverse_comp(str s):
     return "".join([COMPLEMENT.get(base, base) for base in reversed(s)])
 
 def convert_query_kmers(kmers):
-    return [convert_query_kmer(k) for k in kmers]
+    for k in kmers:
+        yield convert_query_kmer(k)
 
 def convert_query_kmer(str kmer):
     return canonical(kmer)
