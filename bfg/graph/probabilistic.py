@@ -8,7 +8,7 @@ from collections import Counter
 import json
 import logging
 import pickle
-
+import numpy as np
 from bfg.graph.base import BaseGraph
 from bfg.utils import seq_to_kmers
 
@@ -203,13 +203,19 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         tmp = Counter()
         lkmers = 0
         for kmer, ba in self._get_kmers_colours(kmers):
-            tmp.update(ba.colours())
+            l = np.array(ba, dtype='bool_')
+            if lkmers == 0:
+                cumsum = l
+            # tmp.update(ba.colours())
+            cumsum += l
             lkmers += 1
         out = {}
-        for k, f in tmp.items():
+
+        # for i, f in tmp.items():
+        for i, f in enumerate(cumsum):
             res = f/lkmers
             if res >= threshold:
-                sample = colours_to_sample_dict.get(k, k)
+                sample = colours_to_sample_dict.get(i, i)
                 if sample != "DELETED":
                     out[sample] = res
         return out

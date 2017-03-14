@@ -24,8 +24,7 @@ class BitArray(bitarray):
             return False
 
     def indexes(self):
-        a = np.array(self)
-        return np.where(a).tolist()
+        return np.where(self)[0].tolist()
 
     def colours(self):
         return self.indexes()
