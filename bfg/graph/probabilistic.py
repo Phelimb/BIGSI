@@ -170,11 +170,9 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return {kmer: colour_presence_boolean_array.colours()}
 
     def _get_kmers_colours(self, kmers):
-        o = {}
         for kmer in kmers:
             ba = self.graph.lookup(kmer)
-            o[kmer] = ba
-        return o
+            yield kmer, ba
 
     def _search(self, kmers, threshold=1):
         """Return sample names where this kmer is present"""
@@ -204,7 +202,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         lkmers = 0
-        for kmer, ba in self._get_kmers_colours(kmers).items():
+        for kmer, ba in self._get_kmers_colours(kmers):
             # logger.debug('%s - %i %s' %
             #              (kmer, len(colours), psutil.Process().memory_info()))
             tmp.update(ba.colours())
