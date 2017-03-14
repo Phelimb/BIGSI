@@ -203,8 +203,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         tmp = Counter()
         lkmers = 0
         for kmer, ba in self._get_kmers_colours(kmers):
-            # logger.debug('%s - %i %s' %
-            #              (kmer, len(colours), psutil.Process().memory_info()))
             tmp.update(ba.colours())
             lkmers += 1
         out = {}

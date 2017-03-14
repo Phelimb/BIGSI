@@ -61,7 +61,6 @@ def reverse_comp(s):
 
 def convert_query_kmers(kmers):
     for k in kmers:
-        logger.debug('%s %s' % (k, psutil.Process().memory_info()))
         yield convert_query_kmer(k)
 
 
