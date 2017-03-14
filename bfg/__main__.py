@@ -63,7 +63,7 @@ STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 
 
-def get_graph(bdb_db_filename=None):
+def get_graph(bdb_db_filename=None, cachesize=4, mode='c'):
     logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
@@ -72,7 +72,7 @@ def get_graph(bdb_db_filename=None):
             bdb_db_filename = BDB_DB_FILENAME
         logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
 
-        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename}},
+        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
                       bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
     else:
         GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
@@ -152,7 +152,8 @@ class bfg(object):
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
-               pipe_in: hug.types.smart_boolean=False):
+               pipe_in: hug.types.smart_boolean=False,
+               cachesize=4):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -166,11 +167,11 @@ class bfg(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
+                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r'), output_format=output_format, pipe=pipe_out)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db), output_format=output_format, pipe=pipe_out)
+                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r'), output_format=output_format, pipe=pipe_out)
 
         if not pipe_out:
             return result

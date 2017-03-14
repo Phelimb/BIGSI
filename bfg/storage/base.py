@@ -465,8 +465,10 @@ class BerkeleyDBStorage(BaseStorage):
                 "You must supply a 'filename' in your config%s" % config)
         self.db_file = config['filename']
         self.mode = config.get('mode', 'c')
+        self.cachesize = config.get('cachesize', 4)
         try:
-            self.storage = hashopen(self.db_file, flag=self.mode, cachesize=4)
+            self.storage = hashopen(
+                self.db_file, flag=self.mode, cachesize=self.cachesize)
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
@@ -611,4 +613,3 @@ class LevelDBStorage(BaseStorage):
 
     def getmemoryusage(self):
         return 0
-
