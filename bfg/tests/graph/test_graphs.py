@@ -116,7 +116,7 @@ def test_query_kmer(Graph, kmer, store, binary_kmers):
 def test_query_kmers(Graph, x, store, binary_kmers):
     k1, k2, k3, k4, k5 = x
     mc = Graph(
-        binary_kmers=binary_kmers, storage=store, bloom_filter_size=100)
+        binary_kmers=binary_kmers, storage=store, bloom_filter_size=1000)
     mc.delete_all()
 
     bloom1 = mc.bloom([k1, k2])

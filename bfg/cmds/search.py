@@ -79,8 +79,10 @@ def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False):
     if fasta_file is not None:
         for gene, seq in parse_input(fasta_file):
             results = _search(
-                gene_name=gene, seq=seq, results=results, threshold=threshold, graph=graph, output_format=output_format, pipe=pipe)
+                gene_name=gene, seq=seq, results=results, threshold=threshold,
+                graph=graph, output_format=output_format, pipe=pipe)
     else:
         results = _search(
-            gene_name=seq, seq=seq, results=results, threshold=threshold, graph=graph, output_format=output_format, pipe=pipe)
+            gene_name=seq, seq=seq, results=results, threshold=threshold,
+            graph=graph, output_format=output_format, pipe=pipe)
     return results
