@@ -57,7 +57,7 @@ def load_bloomfilter(f):
 class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def __init__(self, kmer_size=31, binary_kmers=True, storage={'dict': None},
-                 bloom_filter_size=20000000, num_hashes=3):
+                 bloom_filter_size=25000000, num_hashes=3):
         super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
                          storage=storage)
         self.storage = storage
@@ -88,6 +88,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         [self._add_sample(s) for s in samples]
         bfg = transpose(bloomfilters)
         for i, ba in enumerate(bfg):
+            logger.debug(i)
             self.graph[i] = ba.tobytes()
         self.sync()
 
