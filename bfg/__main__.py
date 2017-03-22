@@ -123,7 +123,7 @@ class bfg(object):
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
-        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
+        return build(bloomfilter_filepaths=bloomfilters, samples=bloomfilters, graph=get_graph(bdb_db_filename=outfile))
 
     @hug.object.cli
     @hug.object.post('/merge')

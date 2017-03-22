@@ -25,3 +25,4 @@ def build(bloomfilter_filepaths, samples, graph):
     for f in bloomfilter_filepaths:
         bloomfilters.append(load_bloomfilter(f))
     graph.build(bloomfilter_filepaths, samples)
+    return {'result': 'success'}
