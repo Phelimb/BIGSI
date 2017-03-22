@@ -63,7 +63,7 @@ STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 
 
-def get_graph(bdb_db_filename=None, cachesize=4, mode='c'):
+def get_graph(bdb_db_filename=None, cachesize=1, mode='c'):
     logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
