@@ -6,7 +6,7 @@ import begin
 def main(N):
     N = int(N)
     ports = [
-        "docker exec atlasseq_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0"]
+        "docker exec bfg_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0"]
     for i in range(N):
         port = 7000+i
         port_string = "127.0.0.1:%i" % port

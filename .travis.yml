@@ -2,7 +2,7 @@ sudo: required
 services:
   - docker
 before_install:
-  - docker build -t phelimb/atlasseq .
+  - docker build -t phelimb/bfg .
   - sudo rm /usr/local/bin/docker-compose
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
@@ -10,11 +10,11 @@ before_install:
   - sudo docker-compose pull strictredis redis1 redismanager 
   - sudo docker-compose up -d
 script:
-  - sudo docker exec -it atlasseq_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
-  - sudo docker exec atlasseq_main_1 py.test -v --cov=atlasseq --cov-config .coveragerc atlasseq/tests/
+  - sudo docker exec -it bfg_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
+  - sudo docker exec bfg_main_1 py.test -v --cov=bfg --cov-config .coveragerc bfg/tests/
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push phelimb/atlasseq;
+    docker push phelimb/bfg;
     fi
 

@@ -13,7 +13,7 @@ scripts/test_upload.py
 .env_prod
 *.pk
 *nodes.conf
-atlasseq.egg-info/
+bfg.egg-info/
 .coverage
 .hypothesis/
 dist/
@@ -24,8 +24,8 @@ venv
 *~
 *.pyc
 ._*
-atlasseq/utils.c
-atlasseq/utils.so
+bfg/utils.c
+bfg/utils.so
 *.fasta
 *.json
 *.txt
@@ -34,7 +34,7 @@ atlasseq/utils.so
 .cache
 
 
-atlasseq/utils.cpython-35m-darwin.so
+bfg/utils.cpython-35m-darwin.so
 cortex-py/
 db
 docker-compose1.yaml
@@ -49,9 +49,9 @@ remcdbg/
 scripts/probablistic.py
 
 *#
-atlasseq/demo.sh
-atlasseq/utils/*.c
-atlasseq/utils/*.so
+bfg/demo.sh
+bfg/utils/*.c
+bfg/utils/*.so
 db2/
 redis-cluster/redis_tmp.conf
 scripts/benchmark_dumps.py
