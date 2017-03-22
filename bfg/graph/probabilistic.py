@@ -88,7 +88,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         [self._add_sample(s) for s in samples]
         bfg = transpose(bloomfilters)
         for i, ba in enumerate(bfg):
-            logger.debug(i)
+            if (i % self.bloom_filter_size/100) == 0:
+                logger.debug("%i of %i" % (i, self.bloom_filter_size))
             self.graph[i] = ba.tobytes()
         self.sync()
 
