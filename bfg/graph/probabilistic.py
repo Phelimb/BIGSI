@@ -104,16 +104,20 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self._insert(bloom_filter, colour)
 
     def search(self, seq, threshold=1):
-        return self._search(seq_to_kmers(seq), threshold=threshold)
+        return self._search(seq_to_kmers(seq, self.kmer_size), threshold=threshold)
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
+        if isinstance(kmers, str) and len(kmers) > self.kmer_size:
+            kmers = seq_to_kmers(kmers, self.kmer_size)
         out = {}
-        if isinstance(kmers, list):
+        if isinstance(kmers, str):
+            out[kmers] = self._lookup(kmers)
+
+        else:
             for kmer in kmers:
                 out[kmer] = self._lookup(kmer)
-        else:
-            out[kmers] = self._lookup(kmers)
+
         return out
 
     def get_bloom_filter(self, sample):
@@ -158,8 +162,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         with open(fp+".graph", 'rb') as infile:
             self.graph.load(infile, self.get_num_colours())
 
-    def _insert(self, bloomfilter_filepath, colour):
-        if bloomfilter_filepath:
+    def _insert(self, bloomfilter, colour):
+        if bloomfilter:
             logger.debug("Inserting BF")
             self.graph.insert(bloomfilter, int(colour))
 
