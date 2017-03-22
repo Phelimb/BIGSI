@@ -10,7 +10,7 @@ def transpose(bitarrays):
         # Takes a list of bitarrays and returns the transpose as a list of
         # bitarrays
     x = len(bitarrays)
-    y = len(bitarrays[0])
+    y = bitarrays[0].length()
     logger.info("BFM dims %i %i" % (x, y))
 
     tbitarrays = []

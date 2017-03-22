@@ -23,7 +23,7 @@ import hug
 import tempfile
 from bfg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
-BFSIZE = int(os.environ.get("BFSIZE", 20000000))
+BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
 CELERY = bool(int(os.environ.get("CELERY", 0)))
@@ -122,8 +122,12 @@ class bfg(object):
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
-        return build(bloomfilter_filepaths=bloomfilters, samples=bloomfilters, graph=get_graph(bdb_db_filename=outfile))
+    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple, samples: hug.types.multiple = []):
+        if samples:
+            assert len(samples) == len(bloomfilters)
+        else:
+            samples = bloomfilters
+        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile))
 
     @hug.object.cli
     @hug.object.post('/merge')
