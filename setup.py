@@ -6,26 +6,26 @@ with open('requirements.txt') as f:
 from Cython.Build import cythonize
 
 setup(
-    name='atlasseq',
+    name='bfg',
     version='0.0.1',
     packages=[
-        'atlasseq',
-        'atlasseq.cmds',
-        'atlasseq.utils',
-        'atlasseq.graph',
-        'atlasseq.sketch',
-        'atlasseq.tasks',
-        'atlasseq.storage',
-        'atlasseq.storage.graph',
+        'bfg',
+        'bfg.cmds',
+        'bfg.utils',
+        'bfg.graph',
+        'bfg.sketch',
+        'bfg.tasks',
+        'bfg.storage',
+        'bfg.storage.graph',
     ],
     license='MIT',
-    url='http://github.com/phelimb/atlasseq',
+    url='http://github.com/phelimb/bfg',
     description='.',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-    ext_modules=cythonize("atlasseq/utils/fncts.pyx"),
+    ext_modules=cythonize("bfg/utils/fncts.pyx"),
     install_requires=required[3:],
     entry_points={
         'console_scripts': [
-            'atlasseq = atlasseq.__main__:main',
+            'bfg = bfg.__main__:main',
         ]})

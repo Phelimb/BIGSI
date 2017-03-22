@@ -1,13 +1,11 @@
-# atlas-seq
-[![Build Status](https://travis-ci.org/Phelimb/atlas-seq.svg)](https://travis-ci.org/Phelimb/atlas-seq)
-
-	git clone https://github.com/Phelimb/atlas-seq.git
+# Bloom filter graph [BFG]
+[![Build Status](https://travis-ci.org/Phelimb/bfg.svg)](https://travis-ci.org/Phelimb/bfg)
 
 # Launch
 
 First, clone the repository. 
 
-	git clone --recursive https://github.com/Phelimb/atlas-seq.git
+	git clone --recursive https://github.com/Phelimb/bfg.git
 	
 ## With docker
 
@@ -17,9 +15,7 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 
 ## Without docker
-
-
-	cd atlas-seq
+	cd bfg
 
 	virtualenv-3.4 venv
 	source venv/bin/activate
@@ -28,44 +24,35 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 	pip install -r requirements.txt
 	python setup.py install
 
-## If you're using the redis-cluster storage (recommended) you need to run:
+## If you're using the berkeley-db storage (recommended) you need to run:
 
 	export DATA_DIR="./"
 	export BFSIZE=25000000
 	export NUM_HASHES=3
-	export STORAGE=redis-cluster
-
-## Then, launch a small redis cluster:
-
-	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server &
-	/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server --port 6400 &
-
-	for i in {1..10}
-	do
-		mkdir -p redis/"$i"
-		./scripts/create_redis_conf.py $i > redis/"$i"/redis.conf
-		cd redis/"$i" 
-		/data2/users/phelim/tools/redis-3.0.5/64bit/redis-server redis.conf &
-		cd ../../
-	done
-
-	gem install redis
-	yes yes | ./scripts/redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009'
+	export STORAGE=berkeley-db
 
 # Usage
 
-Examples below are assuming you're running atlas-seq using docker-compose. To run without docker compose launch a redis instance `redis-server` and remove the references to `docker exec atlasseq_main_1` below. 
+# Build bloomfilters
 
-# Insert sample
+This step can be parallelised over samples. 
 
-sample.txt should be a text file of kmers. You can use tools like [mccortex](https://github.com/mcveanlab/mccortex), [cortex](https://github.com/iqbal-lab/cortex) or [jellyfish](https://github.com/gmarcais/Jellyfish) to quickly generate kmers from fastq/bam file. 
+## From cortex graph
 
-	docker exec atlasseq_main_1 atlasseq insert sample.txt
+	bfg bloom --outfile seq1.bloom --ctx seq1.ctx 
+
+## From sequence file 
+
+	bfg bloom --outfile seq1.bloom --seqfile seq1.fastq
+
+## With GNU parallel. 
+	
+	parallel -j 10 bfg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
 
 # Query for sequence
 
-	docker exec atlasseq_main_1 atlasseq search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	docker exec atlasseq_main_1 atlasseq search -f seq.fasta
+	bfg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
+	bfg search -f seq.fasta
 
 # Search for variant alleles
 
@@ -77,9 +64,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./atlasseq/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./bfg/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./atlasseq/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bfg/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:

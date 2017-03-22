@@ -2,6 +2,7 @@ git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc6
 git+git://github.com/Grokzen/redis-py-cluster@9f9baeced12b7abac53b3680ea3f5a1b16a38038
 git+https://github.com/phelimb/pyseqfile
 cython
+numpy
 bsddb3
 credis
 crc16
@@ -16,6 +17,7 @@ hiredis
 flask
 biopython
 celery
+psutil
 ## testing
 hypothesis
 pytest

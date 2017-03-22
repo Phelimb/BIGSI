@@ -1,1 +1,1 @@
-docker build  -t phelimb/atlasseq .
+docker build  -t phelimb/bfg .

@@ -25,11 +25,11 @@ COPY . /usr/src/app
 RUN pip install cython
 RUN  pip install --no-cache-dir -r requirements.txt
 
-# install atlasseq
+# install bfg
 WORKDIR /usr/src/app
 RUN python setup.py install
 RUN sh clean.sh
 RUN python setup.py build_ext --inplace
 
 EXPOSE 8000
-CMD uwsgi --processes 4 --http 0.0.0.0:8000 --wsgi-file /usr/src/app/atlasseq/__main__.py --callable __hug_wsgi__
+CMD uwsgi --processes 4 --http 0.0.0.0:8000 --wsgi-file /usr/src/app/bfg/__main__.py --callable __hug_wsgi__

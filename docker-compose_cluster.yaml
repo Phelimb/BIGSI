@@ -2,7 +2,7 @@ version: '2'
 
 services:
   main:
-    image: phelimb/atlasseq
+    image: phelimb/bfg
     ports:
       - "5000:5000"      
 

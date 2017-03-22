@@ -1,1 +1,1 @@
-celery -A atlasseq.tasks.tasks worker --loglevel=info
+celery -A bfg.tasks.tasks worker --loglevel=info
