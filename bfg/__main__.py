@@ -69,12 +69,11 @@ def get_graph(bdb_db_filename=None, cachesize=5, mode='c'):
     logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
-
+        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
         if bdb_db_filename is None:
             bdb_db_filename = BDB_DB_FILENAME
             return DEFAULT_GRAPH
         else:
-            logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
             GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
                           bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
     else:
