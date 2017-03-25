@@ -56,6 +56,20 @@ from bfg.cmds.rowjoin import rowjoin
 # from bfg.cmds.bitcount import bitcount
 # from bfg.cmds.jaccard_index import jaccard_index
 from bfg.utils.cortex import GraphReader
+import cProfile
+
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
 
 
 API = hug.API('atlas')
@@ -154,6 +168,7 @@ class bfg(object):
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
+    @do_cprofile
     def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
