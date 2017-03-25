@@ -46,6 +46,21 @@ logger = logging.getLogger(__name__)
 from bfg.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
+import cProfile
+
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
+
 
 def load_bloomfilter(f):
     bloomfilter = bitarray()
@@ -105,6 +120,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colour = self._add_sample(sample)
         self._insert(bloom_filter, colour)
 
+    @do_cprofile
     def search(self, seq, threshold=1):
         return self._search(seq_to_kmers(seq, self.kmer_size), threshold=threshold)
 
