@@ -168,7 +168,7 @@ class bfg(object):
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
-    @do_cprofile
+    # @do_cprofile
     def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
