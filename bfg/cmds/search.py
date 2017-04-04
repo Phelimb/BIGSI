@@ -49,7 +49,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
                 print(
                     " ".join(['>', gene_name, sample, "kmer-%i coverage" % graph.kmer_size]))
                 presence = []
-                for kmer in seq_to_kmers(seq):
+                for kmer in seq_to_kmers(seq, self.kmer_size):
                     if sample in kmer_presence.get(kmer, []):
                         presence.append("1")
                     else:
@@ -68,7 +68,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
         results[gene_name]['results'] = graph.search(seq, threshold=threshold)
         diff = time.time() - start
         results[gene_name]['time'] = diff
-    return json.dumps(results)
+    return results
 
 
 def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False):

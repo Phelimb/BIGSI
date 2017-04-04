@@ -23,7 +23,7 @@ import hug
 import tempfile
 from bfg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
 
-BFSIZE = int(os.environ.get("BFSIZE", 20000000))
+BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
 CREDIS = bool(os.environ.get("CREDIS", True))
 CELERY = bool(int(os.environ.get("CELERY", 0)))
@@ -56,24 +56,40 @@ from bfg.cmds.rowjoin import rowjoin
 # from bfg.cmds.bitcount import bitcount
 # from bfg.cmds.jaccard_index import jaccard_index
 from bfg.utils.cortex import GraphReader
+import cProfile
+
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            profile.print_stats()
+    return profiled_func
 
 
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
+DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 5, 'mode': 'c'}},
+                              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
-def get_graph(bdb_db_filename=None, cachesize=4, mode='c'):
+def get_graph(bdb_db_filename=None, cachesize=5, mode='c'):
     logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
-
+        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
         if bdb_db_filename is None:
             bdb_db_filename = BDB_DB_FILENAME
-        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
-
-        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+            return DEFAULT_GRAPH
+        else:
+            GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
+                          bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
     else:
         GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
                                                  "credis": CREDIS}},
@@ -122,8 +138,12 @@ class bfg(object):
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple):
-        return json.dumps(build(bloomfilter_filepaths=bloomfilters, outfile=os.path.abspath(outfile)))
+    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple, samples: hug.types.multiple = []):
+        if samples:
+            assert len(samples) == len(bloomfilters)
+        else:
+            samples = bloomfilters
+        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile))
 
     @hug.object.cli
     @hug.object.post('/merge')
@@ -148,6 +168,7 @@ class bfg(object):
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json)
+    # @do_cprofile
     def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',

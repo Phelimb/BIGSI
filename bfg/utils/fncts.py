@@ -4,7 +4,7 @@ import sys
 import psutil
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+logger.setLevel('INFO')
 
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BITS = {'A': '00', 'G': '01', 'C': '10', 'T': '11'}
@@ -83,6 +83,12 @@ def min_lexo(k):
 def seq_to_kmers(seq, kmer_size=31):
     for i in range(len(seq)-kmer_size+1):
         yield seq[i:i+kmer_size]
+
+
+def seq_to_disjoint_kmers(seq, kmer_size=31):
+    for i in range(0, len(seq), kmer_size):
+        if len(seq[i:i+kmer_size]) == kmer_size:
+            yield seq[i:i+kmer_size]
 
 
 def bits(f):
