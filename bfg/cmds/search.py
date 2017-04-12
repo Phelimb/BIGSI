@@ -47,7 +47,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             print(seq)
             result = graph.search(seq, threshold=threshold)
             result = sorted(
-                x.items(), key=operator.itemgetter(1), reverse=True)
+                result.items(), key=operator.itemgetter(1), reverse=True)
             for sample, percent in result:
                 percent = round(percent * 100, 2)
                 colour = int(graph.sample_to_colour_lookup.get(sample))
