@@ -9,7 +9,7 @@ import time
 from Bio import SeqIO
 import json
 import logging
-
+import sys
 logger = logging.getLogger(__name__)
 from bfg.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
@@ -50,13 +50,8 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
                     " ".join(['>', gene_name, sample, "kmer-%i coverage" % graph.kmer_size]))
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
-                    print(gr)
                     kmer_presence = graph.graph.lookup(kmer)[colour]
-                    if kmer_presence:
-                        presence.append("1")
-                    else:
-                        presence.append("0")
-                print("".join(presence))
+                    sys.stdout.write(str(int(kmer_presence)))
         else:
             result = {}
             start = time.time()
