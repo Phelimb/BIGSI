@@ -44,14 +44,17 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             samples = graph.sample_to_colour_lookup.keys()
             print(" ".join(['>', gene_name]))
             print(seq)
-            for colour in range(graph.get_num_colours()):
-                sample = graph.colour_to_sample_lookup.get(colour)
+            result = graph.search(seq, threshold=threshold)
+
+            for sample in result.keys():
+                colour = graph.sample_to_colour_lookup.get(sample)
                 print(
                     " ".join(['>', gene_name, sample, "kmer-%i coverage" % graph.kmer_size]))
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
                     kmer_presence = graph.graph.lookup(kmer)[colour]
                     sys.stdout.write(str(int(kmer_presence)))
+                sys.stdout.write('\n')
         else:
             result = {}
             start = time.time()
