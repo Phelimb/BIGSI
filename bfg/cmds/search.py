@@ -50,7 +50,8 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
                     " ".join(['>', gene_name, sample, "kmer-%i coverage" % graph.kmer_size]))
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
-                    kmer_presence = graph.lookup(kmer)[colour]
+                    print(gr)
+                    kmer_presence = graph.graph.lookup(kmer)[colour]
                     if kmer_presence:
                         presence.append("1")
                     else:
