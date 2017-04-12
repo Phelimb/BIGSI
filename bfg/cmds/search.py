@@ -13,6 +13,7 @@ import sys
 logger = logging.getLogger(__name__)
 from bfg.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
+import operator
 
 
 def per(i):
@@ -45,11 +46,13 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             print(" ".join(['>', gene_name]))
             print(seq)
             result = graph.search(seq, threshold=threshold)
-
-            for sample in result.keys():
-                colour = graph.sample_to_colour_lookup.get(sample)
+            result = sorted(
+                x.items(), key=operator.itemgetter(1), reverse=True)
+            for sample, percent in result:
+                percent = round(percent * 100, 2)
+                colour = int(graph.sample_to_colour_lookup.get(sample))
                 print(
-                    " ".join(['>', gene_name, sample, "kmer-%i coverage" % graph.kmer_size]))
+                    " ".join(['>', gene_name, sample, "kmer-%i coverage %f" % (graph.kmer_size, percent)]))
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
                     kmer_presence = graph.graph.lookup(kmer)[colour]
