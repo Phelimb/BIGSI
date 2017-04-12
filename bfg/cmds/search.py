@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 from bfg.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 import operator
+from bfg.utils import convert_query_kmer
 
 
 def per(i):
@@ -55,7 +56,8 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
                     " ".join(['>', gene_name, sample, "kmer-%i coverage %f" % (graph.kmer_size, percent)]))
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
-                    kmer_presence = graph.graph.lookup(kmer)[colour]
+                    kmer_presence = graph.graph.lookup(
+                        convert_query_kmer(kmer))[colour]
                     sys.stdout.write(str(int(kmer_presence)))
                 sys.stdout.write('\n')
         else:
