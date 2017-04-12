@@ -135,7 +135,7 @@ class bfg(object):
             return "--kmers or --seqfile must be provided"
         graph = get_graph()
         bf = bloom(outfile=outfile, kmers=kmers,
-                   kmer_file=seqfile, graph)
+                   kmer_file=seqfile, graph=graph)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
