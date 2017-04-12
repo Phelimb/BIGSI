@@ -75,11 +75,11 @@ def do_cprofile(func):
 API = hug.API('atlas')
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 5, 'mode': 'c'}},
+DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 1, 'mode': 'c'}},
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
-def get_graph(bdb_db_filename=None, cachesize=5, mode='c'):
+def get_graph(bdb_db_filename=None, cachesize=1, mode='c', kmer_size=31):
     logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
@@ -89,11 +89,11 @@ def get_graph(bdb_db_filename=None, cachesize=5, mode='c'):
             return DEFAULT_GRAPH
         else:
             GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                          bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+                          bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
     else:
         GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
                                                  "credis": CREDIS}},
-                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
     return GRAPH
 
 
@@ -133,8 +133,9 @@ class bfg(object):
             kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
+        graph = get_graph()
         bf = bloom(outfile=outfile, kmers=kmers,
-                   seqfile=seqfile, bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+                   kmer_file=seqfile, graph)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
@@ -174,7 +175,8 @@ class bfg(object):
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
                pipe_in: hug.types.smart_boolean=False,
-               cachesize: hug.types.number=4):
+               cachesize: hug.types.number=4,
+               kmer_size: hug.types.number=31):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -188,11 +190,11 @@ class bfg(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r'), output_format=output_format, pipe=pipe_out)
+                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size), output_format=output_format, pipe=pipe_out)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r'), output_format=output_format, pipe=pipe_out)
+                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size), output_format=output_format, pipe=pipe_out)
 
         if not pipe_out:
             return result
