@@ -1,11 +1,11 @@
 # Bloom filter graph [BFG]
-[![Build Status](https://travis-ci.org/Phelimb/bfg.svg)](https://travis-ci.org/Phelimb/bfg)
+[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)
 
 # Launch
 
 First, clone the repository. 
 
-	git clone --recursive https://github.com/Phelimb/bfg.git
+	git clone --recursive https://github.com/Phelimb/cbg.git
 	
 ## With docker
 
@@ -15,7 +15,7 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 
 ## Without docker
-	cd bfg
+	cd cbg
 
 	virtualenv-3.4 venv
 	source venv/bin/activate
@@ -39,20 +39,20 @@ This step can be parallelised over samples.
 
 ## From cortex graph
 
-	bfg bloom --outfile seq1.bloom --ctx seq1.ctx 
+	cbg bloom --outfile seq1.bloom --ctx seq1.ctx 
 
 ## From sequence file 
 
-	bfg bloom --outfile seq1.bloom --seqfile seq1.fastq
+	cbg bloom --outfile seq1.bloom --seqfile seq1.fastq
 
 ## With GNU parallel. 
 	
-	parallel -j 10 bfg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
+	parallel -j 10 cbg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
 
 # Query for sequence
 
-	bfg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	bfg search -f seq.fasta
+	cbg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
+	cbg search -f seq.fasta
 
 # Search for variant alleles
 
@@ -64,9 +64,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./bfg/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./cbg/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bfg/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./cbg/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:

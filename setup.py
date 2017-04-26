@@ -6,26 +6,26 @@ with open('requirements.txt') as f:
 from Cython.Build import cythonize
 
 setup(
-    name='bfg',
+    name='cbg',
     version='0.0.1',
     packages=[
-        'bfg',
-        'bfg.cmds',
-        'bfg.utils',
-        'bfg.graph',
-        'bfg.sketch',
-        'bfg.tasks',
-        'bfg.storage',
-        'bfg.storage.graph',
+        'cbg',
+        'cbg.cmds',
+        'cbg.utils',
+        'cbg.graph',
+        'cbg.sketch',
+        'cbg.tasks',
+        'cbg.storage',
+        'cbg.storage.graph',
     ],
     license='MIT',
-    url='http://github.com/phelimb/bfg',
+    url='http://github.com/phelimb/cbg',
     description='.',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-    ext_modules=cythonize("bfg/utils/fncts.pyx"),
+    ext_modules=cythonize("cbg/utils/fncts.pyx"),
     install_requires=required[3:],
     entry_points={
         'console_scripts': [
-            'bfg = bfg.__main__:main',
+            'cbg = cbg.__main__:main',
         ]})

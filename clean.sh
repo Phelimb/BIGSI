@@ -1,4 +1,4 @@
-rm -rf bfg/__pycache__/
-rm -rf bfg/*/__pycache__/
-rm -rf bfg/*/*/__pycache__/
-rm -rf bfg/*/*/*/__pycache__/
+rm -rf cbg/__pycache__/
+rm -rf cbg/*/__pycache__/
+rm -rf cbg/*/*/__pycache__/
+rm -rf cbg/*/*/*/__pycache__/

@@ -1,1 +1,0 @@
-from bfg.graph.probabilistic import ProbabilisticMultiColourDeBruijnGraph

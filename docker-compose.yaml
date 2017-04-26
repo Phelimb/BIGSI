@@ -2,7 +2,7 @@ version: '2'
 
 services:
   main:
-    image: phelimb/bfg
+    image: phelimb/cbg
     ports:
       - "5000:5000"      
       - "8000:8000"      
@@ -19,7 +19,7 @@ services:
     network_mode: "host"
 
   worker:
-    image: phelimb/bfg
+    image: phelimb/cbg
     environment:
         - BROKER_IP=$BROKER_IP
         - CELERY=1      
