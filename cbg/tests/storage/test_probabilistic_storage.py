@@ -14,7 +14,7 @@ from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
 from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
-from cbg.storage.graph.probabilistic import ProbabilisticLevelDBStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 from cbg.utils import seq_to_kmers
 
 import os

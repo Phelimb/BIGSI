@@ -1,4 +1,4 @@
-# Bloom filter graph [BFG]
+# Coloured Bloom Graphs [CBG]
 [![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)
 
 # Launch

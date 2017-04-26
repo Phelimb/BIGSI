@@ -80,10 +80,10 @@ DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAM
 
 
 def get_graph(bdb_db_filename=None, cachesize=1, mode='c', kmer_size=31):
-    logger.info("Loading graph with %s storage." % (STORAGE))
+    # logger.info("Loading graph with %s storage." % (STORAGE))
 
     if STORAGE == "berkeleydb":
-        logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
+        # logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
         if bdb_db_filename is None:
             bdb_db_filename = BDB_DB_FILENAME
             return DEFAULT_GRAPH
@@ -145,26 +145,6 @@ class cbg(object):
         else:
             samples = bloomfilters
         return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile))
-
-    @hug.object.cli
-    @hug.object.post('/merge')
-    def merge(self, build_results: hug.types.multiple, indexes: hug.types.multiple = []):
-        sizes = []
-        uncompressed_graphs = []
-        cols_list = []
-        for build_result in build_results:
-            with open(build_result, 'r') as inf:
-                metadata = json.load(inf)
-                sizes.append(metadata.get('shape'))
-                uncompressed_graphs.append(metadata.get('uncompressed_graphs'))
-                cols_list.append(metadata.get('cols'))
-                if not indexes:
-                    indexes = list(
-                        metadata.get('uncompressed_graphs').keys())
-        indexes = [int(i) for i in indexes]
-        return json.dumps(merge(graph=get_graph(), uncompressed_graphs=uncompressed_graphs,
-                                indexes=indexes,
-                                cols_list=cols_list))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
