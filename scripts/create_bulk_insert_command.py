@@ -8,6 +8,6 @@ def main(N):
 
     for i in range(N):
         port = 7000+i
-        base_cmd = "docker exec bfg_redis%i_1 bash -c 'cat /data/mobius/iqbal/redis_cmds/*/%i.txt | redis-cli --pipe -p %i '&" % (
+        base_cmd = "docker exec cbg_redis%i_1 bash -c 'cat /data/mobius/iqbal/redis_cmds/*/%i.txt | redis-cli --pipe -p %i '&" % (
             i+1, port, port)
         print(base_cmd)

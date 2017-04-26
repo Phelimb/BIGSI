@@ -1,11 +1,11 @@
-# Bloom filter graph [BFG]
-[![Build Status](https://travis-ci.org/Phelimb/bfg.svg)](https://travis-ci.org/Phelimb/bfg)
+# Coloured Bloom Graphs [CBG]
+[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)
 
 # Launch
 
 First, clone the repository. 
 
-	git clone --recursive https://github.com/Phelimb/bfg.git
+	git clone --recursive https://github.com/Phelimb/cbg.git
 	
 ## With docker
 
@@ -15,7 +15,7 @@ Docker installation -  reccommended (install [docker toolbox](https://www.docker
 
 
 ## Without docker
-	cd bfg
+	cd cbg
 
 	virtualenv-3.4 venv
 	source venv/bin/activate
@@ -39,20 +39,20 @@ This step can be parallelised over samples.
 
 ## From cortex graph
 
-	bfg bloom --outfile seq1.bloom --ctx seq1.ctx 
+	cbg bloom --outfile seq1.bloom --ctx seq1.ctx 
 
 ## From sequence file 
 
-	bfg bloom --outfile seq1.bloom --seqfile seq1.fastq
+	cbg bloom --outfile seq1.bloom --seqfile seq1.fastq
 
 ## With GNU parallel. 
 	
-	parallel -j 10 bfg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
+	parallel -j 10 cbg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
 
 # Query for sequence
 
-	bfg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	bfg search -f seq.fasta
+	cbg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
+	cbg search -f seq.fasta
 
 # Search for variant alleles
 
@@ -64,9 +64,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./bfg/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./cbg/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bfg/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./cbg/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:
@@ -116,6 +116,35 @@ However, if my minimum expected query size is 40 bps using the same parameters w
 	brew install berkeley-db4
 
 	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+
+## Accessing underlying bitmatrix
+
+To iterate through the rows in the bitmatrix you can use this simple python3 script:
+
+`python3 script.py db`
+
+	"""
+	script.py  - Iterate through the BloomFilterMatrix rows
+	"""
+	
+	import sys
+	import bsddb3.db as db
+	import bitarray
+	def main():
+	    infile = sys.argv[1]
+	
+	    in_db = db.DB()
+	    in_db.set_cachesize(4,0)
+	    in_db.open(infile, flags=db.DB_RDONLY)
+	
+	    for i in range(25*10**6):
+	        key = str.encode(str(i))
+	        val=bitarray.bitarray()
+	        val.frombytes(in_db[key])
+	        print(i,val)
+	    in_db.close()
+	
+	main()
 
 
 

@@ -13,7 +13,7 @@ scripts/test_upload.py
 .env_prod
 *.pk
 *nodes.conf
-bfg.egg-info/
+cbg.egg-info/
 .coverage
 .hypothesis/
 dist/
@@ -24,8 +24,8 @@ venv
 *~
 *.pyc
 ._*
-bfg/utils.c
-bfg/utils.so
+cbg/utils.c
+cbg/utils.so
 *.fasta
 *.json
 *.txt
@@ -34,7 +34,7 @@ bfg/utils.so
 .cache
 
 
-bfg/utils.cpython-35m-darwin.so
+cbg/utils.cpython-35m-darwin.so
 cortex-py/
 db
 docker-compose1.yaml
@@ -49,9 +49,9 @@ remcdbg/
 scripts/probablistic.py
 
 *#
-bfg/demo.sh
-bfg/utils/*.c
-bfg/utils/*.so
+cbg/demo.sh
+cbg/utils/*.c
+cbg/utils/*.so
 db2/
 redis-cluster/redis_tmp.conf
 scripts/benchmark_dumps.py
