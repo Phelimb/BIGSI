@@ -57,6 +57,7 @@ from cbg.cmds.rowjoin import rowjoin
 # from cbg.cmds.jaccard_index import jaccard_index
 from cbg.utils.cortex import GraphReader
 import cProfile
+from cbg.version import __version__
 
 
 def do_cprofile(func):
@@ -72,7 +73,7 @@ def do_cprofile(func):
     return profiled_func
 
 
-API = hug.API('atlas')
+API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 1, 'mode': 'c'}},
@@ -103,7 +104,7 @@ def extract_kmers_from_ctx(ctx):
         yield i.kmer.canonical_value
 
 
-@hug.object(name='atlas', version='0.0.1', api=API)
+@hug.object(name='cbg', version='0.1.1', api=API)
 @hug.object.urls('/', requires=())
 class cbg(object):
 

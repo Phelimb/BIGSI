@@ -7,10 +7,11 @@ from Cython.Build import cythonize
 
 setup(
     name='cbg',
-    version='0.1.1.dev1',
+    version='0.1.2.dev1',
     packages=[
         'cbg',
         'cbg.cmds',
+        'cbg.version',
         'cbg.utils',
         'cbg.graph',
         'cbg.sketch',
