@@ -11,7 +11,6 @@ setup(
     packages=[
         'cbg',
         'cbg.cmds',
-        'cbg.version',
         'cbg.utils',
         'cbg.graph',
         'cbg.sketch',
