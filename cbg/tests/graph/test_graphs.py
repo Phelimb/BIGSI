@@ -82,16 +82,16 @@ def test_insert_lookup_kmers(Graph, store, sample, seq, binary_kmers):
     mc.delete_all()
 
 
-@given(Graph=ST_GRAPH, store=ST_STORAGE, kmer=ST_KMER, binary_kmers=ST_BINARY_KMERS)
-def test_insert_get_kmer(Graph, store, kmer, binary_kmers):
-    mc = Graph(
-        binary_kmers=binary_kmers, storage=store, bloom_filter_size=100)
-    mc.delete_all()
-    mc.insert(kmer, "1")
-    assert [v for v in mc._get_kmer_colours(kmer).values()] == [[0]]
-    mc.insert(kmer, "2")
-    assert [v for v in mc._get_kmer_colours(kmer).values()] == [[0, 1]]
-    mc.delete_all()
+# ## TODO update for insert to take bloomfilter
+# @given(Graph=ST_GRAPH, store=ST_STORAGE, kmer=ST_KMER, binary_kmers=ST_BINARY_KMERS)
+# def test_insert_get_kmer(Graph, store, kmer):
+#     mc = Graph(storage=store, bloom_filter_size=100)
+#     mc.delete_all()
+#     mc.insert(kmer, "1") ## insert 
+#     assert [v for v in mc._get_kmer_colours(kmer).values()] == [[0]]
+#     mc.insert(kmer, "2")
+#     assert [v for v in mc._get_kmer_colours(kmer).values()] == [[0, 1]]
+#     mc.delete_all()
 
 
 @given(Graph=ST_GRAPH, kmer=ST_KMER, store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
@@ -136,23 +136,23 @@ def test_query_kmers(Graph, x, store, binary_kmers):
     mc.delete_all()
 
 
-# @given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
-#        store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
-# def test_query_kmers2(Graph, x, store, binary_kmers):
-#     k1, k2, k3, k4, k5 = x
-#     mc = Graph(
-#         binary_kmers=binary_kmers, storage=store, bloom_filter_size=100)
-#     mc.delete_all()
+@given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
+       store=ST_STORAGE, binary_kmers=ST_BINARY_KMERS)
+def test_query_kmers2(Graph, x, store, binary_kmers):
+    k1, k2, k3, k4, k5 = x
+    mc = Graph(
+        binary_kmers=binary_kmers, storage=store, bloom_filter_size=100)
+    mc.delete_all()
 
-#     bloom1 = mc.bloom([k1, k2])
-#     bloom2 = mc.bloom([k1, k3])
-#     bloom3 = mc.bloom([k4, k3])
-#     mc.build([bloom1, bloom2, bloom3], ['1234', '1235', '1236'])
+    bloom1 = mc.bloom([k1, k2])
+    bloom2 = mc.bloom([k1, k3])
+    bloom3 = mc.bloom([k4, k3])
+    mc.build([bloom1, bloom2, bloom3], ['1234', '1235', '1236'])
 
-#     assert mc.get_num_colours() == 3
-#     mc.num_colours = mc.get_num_colours()
-#     assert mc._search_kmers_threshold_1(
-#         [k1, k2]) == mc._search_kmers_threshold_not_1([k1, k2], threshold=1)
-#     assert mc._search_kmers_threshold_1(
-#         [k1, k3]) == mc._search_kmers_threshold_not_1([k1, k3], threshold=1)
-#     mc.delete_all()
+    assert mc.get_num_colours() == 3
+    mc.num_colours = mc.get_num_colours()
+    assert mc._search_kmers_threshold_1(
+        [k1, k2]) == mc._search_kmers_threshold_not_1([k1, k2], threshold=1)
+    assert mc._search_kmers_threshold_1(
+        [k1, k3]) == mc._search_kmers_threshold_not_1([k1, k3], threshold=1)
+    mc.delete_all()

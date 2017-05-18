@@ -80,21 +80,23 @@ DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAM
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
-def get_graph(bdb_db_filename=None, cachesize=1, mode='c', kmer_size=31):
+def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):
+    if bloom_filter_size is None:
+        bloom_filter_size = BFSIZE
     # logger.info("Loading graph with %s storage." % (STORAGE))
 
-    if STORAGE == "berkeleydb":
-        # logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
-        if bdb_db_filename is None:
-            bdb_db_filename = BDB_DB_FILENAME
-            return DEFAULT_GRAPH
-        else:
-            GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                          bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+    # if STORAGE == "berkeleydb":
+    logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
+    if bdb_db_filename is None:
+        bdb_db_filename = BDB_DB_FILENAME
+        return DEFAULT_GRAPH
     else:
-        GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                                 "credis": CREDIS}},
-                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
+                      bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+    # else:
+    #     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+    #                                              "credis": CREDIS}},
+    #                   bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
     return GRAPH
 
 
@@ -140,12 +142,15 @@ class cbg(object):
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple, samples: hug.types.multiple = []):
+    def build(self, outfile: hug.types.text,
+              bloomfilters: hug.types.multiple,
+              samples: hug.types.multiple = [], 
+              bloom_filter_size=None):
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
             samples = bloomfilters
-        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile))
+        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile, bloom_filter_size=bloom_filter_size))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",

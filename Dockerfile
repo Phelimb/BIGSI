@@ -19,8 +19,13 @@ RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
 # Clone rocksdb
 # RUN cd /tmp && git clone https://github.com/facebook/rocksdb.git && cd rocksdb && make clean && make
 
+# Install mccortex
+RUN git clone --recursive https://github.com/mcveanlab/mccortex
+WORKDIR /usr/src/app/mccortex
+RUN make all
+WORKDIR /usr/src/app
 
-
+## Install cbg
 COPY . /usr/src/app
 RUN pip install cython
 RUN  pip install --no-cache-dir -r requirements.txt
@@ -29,7 +34,6 @@ RUN  pip install --no-cache-dir -r requirements.txt
 WORKDIR /usr/src/app
 RUN python setup.py install
 RUN sh clean.sh
-RUN python setup.py build_ext --inplace
+RUN python setup.py install
 
-EXPOSE 8000
-CMD uwsgi --processes 4 --http 0.0.0.0:8000 --wsgi-file /usr/src/app/cbg/__main__.py --callable __hug_wsgi__
+CMD cbg --help
