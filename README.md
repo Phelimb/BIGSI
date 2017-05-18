@@ -1,7 +1,7 @@
 # Coloured Bloom Graphs [CBG]
 <!--[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)-->
 
-### Quickstart with docker
+# Quickstart with docker
 
 	docker pull phelimb/cbg
 	docker run phelimb/cbg cbg --help
@@ -21,14 +21,39 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
-### Build the combined graph
+#### Build the combined graph
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
 
-### Query the graph
+#### Query the graph
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 	
 
-#### Construct the bloom filters
+
+# Installing without docker
+
+#### Install requirement berkeley-db
+
+	brew install berkeley-db4
+	pip install cython
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+
+For unix, see [Dockerfile](Dockerfile). 
+
+#### Install CBG
+
+	git clone https://github.com/Phelimb/cbg.git
+	python setup.py install 
+
+## Quickstart
+
+## Prepare the data
+
+Requires [mccortex](github.com/mcveanlab/mccortex). 
+
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+
+#### Construct the bloom filters (b=1000 only for test, set to ~25000000 for 5MB genome)
 
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
@@ -40,43 +65,8 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 ### Query the graph
 	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
-## Installing without docker
-
-First, clone the repository. 
-
-## Install requirement berkeley-db
-
-	brew install berkeley-db4
-	pip install cython
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
 	
-
-## Install cbg
-	pip install cbg
-
-
-# Build bloomfilters
-
-This step can be parallelised over samples. 
-
-## From cortex graph
-
-	cbg bloom --outfile seq1.bloom --ctx seq1.ctx 
-
-## From sequence file 
-
-	cbg bloom --outfile seq1.bloom --seqfile seq1.fastq
-
-## With GNU parallel. 
-	
-	parallel -j 10 cbg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
-
-# Query for sequence
-
-	cbg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	cbg search -f seq.fasta
-
-# Search for variant alleles
+## Search for variant alleles
 
 You'll need to install atlas-var e.g.
 

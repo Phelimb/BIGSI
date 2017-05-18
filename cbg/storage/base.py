@@ -1,7 +1,7 @@
 import redis
 import sys
 import os
-from rediscluster import StrictRedisCluster
+# from rediscluster import StrictRedisCluster
 from cbg.utils import hash_key
 from cbg.utils import chunks
 from cbg.bitvector import BitArray
@@ -192,126 +192,126 @@ def proto(line):
     return result
 
 
-class RedisBitArrayStorage(BaseRedisStorage):
+# class RedisBitArrayStorage(BaseRedisStorage):
 
-    def __init__(self, config):
-        super().__init__()
-        if not redis:
-            raise ImportError("redis-py is required to use Redis as storage.")
-        self.name = 'redis'
-        self.redis_cluster = True
-        startup_nodes = []
-        self.max_connections = 1000
-        for host, port, db in config['conn']:
-            startup_nodes.append({"host": host, "port": port, "db": db})
-        self.storage = StrictRedisCluster(
-            startup_nodes=startup_nodes, max_connections=self.max_connections)
-        self.max_bitset = 1000000
-        self.cluster_info = self.get_cluster_info()
-        self.cluster_slots = self.get_cluster_slots()
-        self.slot_to_connection = self._init_slot_to_connection()
-        self.credis = config.get('credis', True)
+#     def __init__(self, config):
+#         super().__init__()
+#         if not redis:
+#             raise ImportError("redis-py is required to use Redis as storage.")
+#         self.name = 'redis'
+#         self.redis_cluster = True
+#         startup_nodes = []
+#         self.max_connections = 1000
+#         for host, port, db in config['conn']:
+#             startup_nodes.append({"host": host, "port": port, "db": db})
+#         self.storage = StrictRedisCluster(
+#             startup_nodes=startup_nodes, max_connections=self.max_connections)
+#         self.max_bitset = 1000000
+#         self.cluster_info = self.get_cluster_info()
+#         self.cluster_slots = self.get_cluster_slots()
+#         self.slot_to_connection = self._init_slot_to_connection()
+#         self.credis = config.get('credis', True)
 
-    def _init_connections(self):
-        conns = {}
-        for i, j in self.cluster_slots.items():
-            host = j.get('master')[0]
-            port = j.get('master')[1]
-            conns[port] = Connection(host=host, port=port)
-        return conns
+#     def _init_connections(self):
+#         conns = {}
+#         for i, j in self.cluster_slots.items():
+#             host = j.get('master')[0]
+#             port = j.get('master')[1]
+#             conns[port] = Connection(host=host, port=port)
+#         return conns
 
-    def _get_key_slot(self, key, method="python"):
-        if method == "python":
-            return crc16.crc16xmodem(str.encode(str(key))) % 16384
-        else:
-            return self.storage.cluster_keyslot(key)
+#     def _get_key_slot(self, key, method="python"):
+#         if method == "python":
+#             return crc16.crc16xmodem(str.encode(str(key))) % 16384
+#         else:
+#             return self.storage.cluster_keyslot(key)
 
-    def _get_key_connection(self, key):
-        slot = self._get_key_slot(key)
-        connection = self._get_connection_of_slot(slot)
-        return connection
+#     def _get_key_connection(self, key):
+#         slot = self._get_key_slot(key)
+#         connection = self._get_connection_of_slot(slot)
+#         return connection
 
-    def _get_connection_of_slot(self, slot):
-        return self.slot_to_connection[slot]
+#     def _get_connection_of_slot(self, slot):
+#         return self.slot_to_connection[slot]
 
-    def _init_slot_to_connection(self):
-        slot_to_connection = {}
-        for slot in range(16384):
-            for i, j in self.cluster_slots.items():
-                if i[0] <= slot <= i[1]:
-                    slot_to_connection[slot] = j.get('master')
-        return slot_to_connection
+#     def _init_slot_to_connection(self):
+#         slot_to_connection = {}
+#         for slot in range(16384):
+#             for i, j in self.cluster_slots.items():
+#                 if i[0] <= slot <= i[1]:
+#                     slot_to_connection[slot] = j.get('master')
+#         return slot_to_connection
 
-    def get_cluster_info(self):
-        return self.storage.cluster_info()
+#     def get_cluster_info(self):
+#         return self.storage.cluster_info()
 
-    def get_cluster_slots(self):
-        return self.storage.cluster_slots()
+#     def get_cluster_slots(self):
+#         return self.storage.cluster_slots()
 
-    def __setitem__(self, key, val):
-        self.storage.set(key, val)
+#     def __setitem__(self, key, val):
+#         self.storage.set(key, val)
 
-    def __getitem__(self, key):
-        return self.storage.get(key)
+#     def __getitem__(self, key):
+#         return self.storage.get(key)
 
-    def setbit(self, index, colour, bit):
-        self.storage.setbit(index, colour, bit)
+#     def setbit(self, index, colour, bit):
+#         self.storage.setbit(index, colour, bit)
 
-    def getbit(self, index, colour):
-        return self.storage.getbit(index, colour)
+#     def getbit(self, index, colour):
+#         return self.storage.getbit(index, colour)
 
-    def setbits(self, indexes, colour, bit):
-        return self._massive_setbits(indexes, colour, bit)
+#     def setbits(self, indexes, colour, bit):
+#         return self._massive_setbits(indexes, colour, bit)
 
-    def _massive_setbits(self, indexes, colour, bit):
-        if indexes:
-            indexes = list(set(indexes))
-            logger.debug("Setting %i bits" % len(indexes))
-            logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
+#     def _massive_setbits(self, indexes, colour, bit):
+#         if indexes:
+#             indexes = list(set(indexes))
+#             logger.debug("Setting %i bits" % len(indexes))
+#             logger.debug("Range %i-%i" % (min(indexes), max(indexes)))
 
-            if self.credis:
-                self.port_to_connections = self._init_connections()
-                port_to_commands = {}
-                for i, index in enumerate(indexes):
-                    port = self._get_key_connection(index)[1]
-                    try:
-                        port_to_commands[port].append(
-                            ("SETBIT", index, colour, bit))
-                    except KeyError:
-                        port_to_commands[port] = [
-                            ("SETBIT", index, colour, bit)]
-                    average_cmds = i / len(port_to_commands)
-                    if average_cmds % 1000 == 0 and average_cmds > 0:
-                        for port, commands in port_to_commands.items():
-                            conn = self.port_to_connections[port]
-                            if commands:
-                                conn.execute_pipeline(*commands)
-                                port_to_commands[port] = []
-                for port, commands in port_to_commands.items():
-                    conn = self.port_to_connections[port]
-                    if commands:
-                        conn.execute_pipeline(*commands)
-            else:
-                start = time.time()
-                for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
-                    self._setbits(_indexes, colour, bit)
-                    logger.debug("%i processed in %i seconds" %
-                                 ((i+1)*self.max_bitset, time.time()-start))
-                end = time.time()
-                logger.debug("finished setting %i bits in %i seconds" %
-                             (len(indexes), end-start))
+#             if self.credis:
+#                 self.port_to_connections = self._init_connections()
+#                 port_to_commands = {}
+#                 for i, index in enumerate(indexes):
+#                     port = self._get_key_connection(index)[1]
+#                     try:
+#                         port_to_commands[port].append(
+#                             ("SETBIT", index, colour, bit))
+#                     except KeyError:
+#                         port_to_commands[port] = [
+#                             ("SETBIT", index, colour, bit)]
+#                     average_cmds = i / len(port_to_commands)
+#                     if average_cmds % 1000 == 0 and average_cmds > 0:
+#                         for port, commands in port_to_commands.items():
+#                             conn = self.port_to_connections[port]
+#                             if commands:
+#                                 conn.execute_pipeline(*commands)
+#                                 port_to_commands[port] = []
+#                 for port, commands in port_to_commands.items():
+#                     conn = self.port_to_connections[port]
+#                     if commands:
+#                         conn.execute_pipeline(*commands)
+#             else:
+#                 start = time.time()
+#                 for i, _indexes in enumerate(chunks(indexes, self.max_bitset)):
+#                     self._setbits(_indexes, colour, bit)
+#                     logger.debug("%i processed in %i seconds" %
+#                                  ((i+1)*self.max_bitset, time.time()-start))
+#                 end = time.time()
+#                 logger.debug("finished setting %i bits in %i seconds" %
+#                              (len(indexes), end-start))
 
-    def _setbits(self, indexes, colour, bit):
-        logger.debug("Using redis-cluster pipeline")
-        pipe = self.storage.pipeline()
-        [pipe.setbit(i, colour, bit) for i in indexes]
-        return pipe.execute()
+#     def _setbits(self, indexes, colour, bit):
+#         logger.debug("Using redis-cluster pipeline")
+#         pipe = self.storage.pipeline()
+#         [pipe.setbit(i, colour, bit) for i in indexes]
+#         return pipe.execute()
 
-    def getbits(self, indexes, colour):
-        pipe = self.storage.pipeline()
-        for i in indexes:
-            pipe.getbit(i, colour)
-        return pipe.execute()
+#     def getbits(self, indexes, colour):
+#         pipe = self.storage.pipeline()
+#         for i in indexes:
+#             pipe.getbit(i, colour)
+#         return pipe.execute()
 
 
 class RedisHashStorage(BaseRedisStorage):
