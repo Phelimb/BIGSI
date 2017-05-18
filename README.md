@@ -41,7 +41,8 @@ For unix, see [Dockerfile](Dockerfile).
 
 #### Install CBG
 
-	pip install cbg
+	git clone https://github.com/Phelimb/cbg.git
+	python setup.py install 
 
 ## Quickstart
 
@@ -52,7 +53,7 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
 	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
-#### Construct the bloom filters
+#### Construct the bloom filters (b=1000 only for test, set to ~25000000 for 5MB genome)
 
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
