@@ -64,7 +64,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         # self.min_hash = MinHashHashSet()
         self.bloom_filter_size = self.metadata.get('bloom_filter_size')
         self.num_hashes = self.metadata.get('num_hashes')
-        if self.bloom_filter_size is not None:
+        if self.bloom_filter_size:
             self.bloom_filter_size = int(
                 self.bloom_filter_size)
             self.num_hashes = int(self.num_hashes)
@@ -79,7 +79,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.bloom_filter_size = bloom_filter_size
             self.num_hashes = num_hashes
         self.graph.set_bloom_filter_size(self.bloom_filter_size)
-        logger.debug("init with bfsize %i" % self.bloom_filter_size)        
+        logger.debug("init with bfsize %s" % str(self.bloom_filter_size)        )
         self.graph.set_num_hashes(self.num_hashes)
 
     def build(self, bloomfilters, samples):

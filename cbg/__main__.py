@@ -44,11 +44,11 @@ else:
         CONN_CONFIG.append((hostname, port, 2))
 from cbg.cmds.insert import insert
 from cbg.cmds.search import search
-from cbg.cmds.stats import stats
+# from cbg.cmds.stats import stats
 from cbg.cmds.samples import samples
 # from cbg.cmds.dump import dump
 # from cbg.cmds.load import load
-# from cbg.cmds.delete import delete
+from cbg.cmds.delete import delete
 from cbg.cmds.bloom import bloom
 from cbg.cmds.build import build
 from cbg.cmds.merge import merge
@@ -126,7 +126,10 @@ class cbg(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None, bloom_filter_size=None, kmer_size=31):
+    def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None,
+                     bloom_filter_size=BFSIZE, kmer_size=31):
+        if bloom_filter_size is not None:
+            bloom_filter_size = int(bloom_filter_size)
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. cbg insert ERR1010211.ctx
@@ -137,7 +140,7 @@ class cbg(object):
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
         graph = Graph(storage={'berkeleydb': {'filename': db}},
-                      bloom_filter_size=int(bloom_filter_size),
+                      bloom_filter_size=bloom_filter_size,
                       num_hashes=NUM_HASHES, kmer_size=kmer_size)
         bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=seqfile, graph=graph)
@@ -195,10 +198,10 @@ class cbg(object):
     def delete(self, db: hug.types.text=None):
         return delete(graph=get_graph(bdb_db_filename=db))
 
-    @hug.object.cli
-    @hug.object.get('/graph', output_format=hug.output_format.json)
-    def stats(self):
-        return stats(graph=get_graph())
+    # @hug.object.cli
+    # @hug.object.get('/graph', output_format=hug.output_format.json)
+    # def stats(self):
+    #     return stats(graph=get_graph())
 
     @hug.object.cli
     @hug.object.get('/samples', output_format=hug.output_format.json)
