@@ -1,7 +1,7 @@
 import redis
 from cbg.utils import chunks
 import mmh3
-from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 import logging
 logging.basicConfig()
 
