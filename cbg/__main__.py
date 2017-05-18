@@ -57,6 +57,7 @@ from cbg.cmds.rowjoin import rowjoin
 # from cbg.cmds.jaccard_index import jaccard_index
 from cbg.utils.cortex import GraphReader
 import cProfile
+from cbg.version import __version__
 
 
 def do_cprofile(func):
@@ -72,28 +73,30 @@ def do_cprofile(func):
     return profiled_func
 
 
-API = hug.API('atlas')
+API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 1, 'mode': 'c'}},
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
-def get_graph(bdb_db_filename=None, cachesize=1, mode='c', kmer_size=31):
+def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):
+    if bdb_db_filename is None:
+        bdb_db_filename = BDB_DB_FILENAME
     # logger.info("Loading graph with %s storage." % (STORAGE))
 
-    if STORAGE == "berkeleydb":
-        # logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
-        if bdb_db_filename is None:
-            bdb_db_filename = BDB_DB_FILENAME
-            return DEFAULT_GRAPH
-        else:
-            GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                          bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+    # if STORAGE == "berkeleydb":
+    logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
+    if bdb_db_filename is None:
+        bdb_db_filename = BDB_DB_FILENAME
+        return DEFAULT_GRAPH
     else:
-        GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-                                                 "credis": CREDIS}},
-                      bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
+                      bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+    # else:
+    #     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
+    #                                              "credis": CREDIS}},
+    #                   bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
     return GRAPH
 
 
@@ -103,7 +106,7 @@ def extract_kmers_from_ctx(ctx):
         yield i.kmer.canonical_value
 
 
-@hug.object(name='atlas', version='0.0.1', api=API)
+@hug.object(name='cbg', version='0.1.1', api=API)
 @hug.object.urls('/', requires=())
 class cbg(object):
 
@@ -123,7 +126,7 @@ class cbg(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, kmers=None, seqfile=None, ctx=None):
+    def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None, bloom_filter_size=None, kmer_size=31):
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. cbg insert ERR1010211.ctx
@@ -133,22 +136,30 @@ class cbg(object):
             kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
-        graph = get_graph()
+        graph = Graph(storage={'berkeleydb': {'filename': db}},
+                      bloom_filter_size=int(bloom_filter_size),
+                      num_hashes=NUM_HASHES, kmer_size=kmer_size)
         bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=seqfile, graph=graph)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, outfile: hug.types.text, bloomfilters: hug.types.multiple, samples: hug.types.multiple = []):
+    def build(self, outfile: hug.types.text,
+              bloomfilters: hug.types.multiple,
+              samples: hug.types.multiple = [], 
+              bloom_filter_size=None):
+        if bloom_filter_size is not None:
+            bloom_filter_size = int(bloom_filter_size)
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
             samples = bloomfilters
-        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile))
+        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile, bloom_filter_size=bloom_filter_size))
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
-                    output_format=hug.output_format.json)
+                    output_format=hug.output_format.json,
+                    response_headers={"Access-Control-Allow-Origin": "*"})
     # @do_cprofile
     def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,

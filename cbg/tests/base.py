@@ -37,4 +37,4 @@ ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)
 ST_PERSISTANT_STORAGE = st.sampled_from(PERSISTANT_STORAGES)
 
 BINARY_KMERS_OR_NOT = [True, False]
-ST_BINARY_KMERS = st.sampled_from(BINARY_KMERS_OR_NOT)
+ST_BINARY_KMERS = st.just(False)#st.sampled_from(BINARY_KMERS_OR_NOT)

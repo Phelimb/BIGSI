@@ -1,37 +1,59 @@
 # Coloured Bloom Graphs [CBG]
-[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)
+<!--[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)-->
 
-# Launch
+### Quickstart with docker
+
+	docker pull phelimb/cbg
+	docker run phelimb/cbg cbg --help
+	
+### Preparing your data
+
+CBG using single colour graphs to construct the coloured graph. 
+Use [mccortex](https://github.com/mcveanlab/mccortex) to build. 
+	
+	PWD=`pwd`
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+
+### Building a CBG
+
+#### Construct the bloom filters
+
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
+### Build the combined graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
+
+### Query the graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	
+
+#### Construct the bloom filters
+
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
+	
+### Build the combined graph
+
+	cbg build test-data/test.cbg test-data/test1.bloom test-data/test2.bloom -b 1000
+
+### Query the graph
+	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+
+## Installing without docker
 
 First, clone the repository. 
 
-	git clone --recursive https://github.com/Phelimb/cbg.git
-	
-## With docker
+## Install requirement berkeley-db
 
-Docker installation -  reccommended (install [docker toolbox](https://www.docker.com/products/docker-toolbox) first). 
-
-	docker-compose pull && docker-compose up -d
-
-
-## Without docker
-	cd cbg
-
-	virtualenv-3.4 venv
-	source venv/bin/activate
-
+	brew install berkeley-db4
 	pip install cython
-	pip install -r requirements.txt
-	python setup.py install
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+	
 
-## If you're using the berkeley-db storage (recommended) you need to run:
+## Install cbg
+	pip install cbg
 
-	export DATA_DIR="./"
-	export BFSIZE=25000000
-	export NUM_HASHES=3
-	export STORAGE=berkeley-db
-
-# Usage
 
 # Build bloomfilters
 
@@ -111,12 +133,7 @@ However, if my minimum expected query size is 40 bps using the same parameters w
 	
 	N * m bits 
 
-## installing berkeleydb on mac
-
-	brew install berkeley-db4
-
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
-
+<!--
 ## Accessing underlying bitmatrix
 
 To iterate through the rows in the bitmatrix you can use this simple python3 script:
@@ -146,5 +163,5 @@ To iterate through the rows in the bitmatrix you can use this simple python3 scr
 	
 	main()
 
-
+-->
 

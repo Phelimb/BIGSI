@@ -36,24 +36,25 @@ def load_bloomfilter(f):
         bloomfilter.fromfile(inf)
     return np.array(bloomfilter)
 
-
+import string
 def test_build_cmd():
-    response = hug.test.delete(cbg.__main__, '', {})
+    f = '/tmp/data'    
+    response = hug.test.delete(cbg.__main__, '', {'db':f})
     N = 3
     bloomfilter_filepaths = ['cbg/tests/data/test_kmers.bloom']*N
-    samples = ['a', 'b', 'c']
-    print(samples)
-    f = '/tmp/data'
+    samples = []
+    for i in range(N):
+        samples.append(''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
     response = hug.test.post(
-        cbg.__main__, 'build', {'bloomfilters': bloomfilter_filepaths, 'outfile': f, 'samples': samples})
+        cbg.__main__, 'build', {'bloomfilters': bloomfilter_filepaths,
+         'outfile': f, 'samples': samples, 'bloom_filter_size':1000})
     # TODO fix below
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-    # response = hug.test.get(cbg.__main__, 'search', {'seq': seq})
-    # print(response.data)
-    # assert response.data.get(seq).get(
-    #     'results').get('0') == 1.0
-    # response = hug.test.delete(
-    #     cbg.__main__, '', {})
+    response = hug.test.get(cbg.__main__, 'search', {'db':f,'seq': seq})
+    print(response.data)
+    assert response.data.get(seq).get('results')
+    response = hug.test.delete(
+        cbg.__main__, '', {'db':f,})
 
 
 # TODO, insert takes a bloom filters

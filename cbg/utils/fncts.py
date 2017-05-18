@@ -1,7 +1,6 @@
 import hashlib
 import struct
 import sys
-import psutil
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel('INFO')
