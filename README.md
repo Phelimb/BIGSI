@@ -1,6 +1,8 @@
 # Coloured Bloom Graphs [CBG]
 <!--[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)-->
 
+CBG can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
+
 # Quickstart with docker
 
 	docker pull phelimb/cbg
@@ -41,8 +43,7 @@ For unix, see [Dockerfile](Dockerfile).
 
 #### Install CBG
 
-	git clone https://github.com/Phelimb/cbg.git
-	python setup.py install 
+	pip install cbg
 
 ## Quickstart
 
@@ -53,7 +54,7 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
 	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
-#### Construct the bloom filters (b=1000 only for test, set to ~25000000 for 5MB genome)
+#### Construct the bloom filters
 
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
 	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom

@@ -122,6 +122,7 @@ def test_query_kmers(Graph, x, store, binary_kmers):
     bloom1 = mc.bloom([k1, k2])
     bloom2 = mc.bloom([k1, k3])
     bloom3 = mc.bloom([k4, k3])
+    mc.delete_all()
 
     mc.build([bloom1, bloom2, bloom3], ['1234', '1235', '1236'])
 
