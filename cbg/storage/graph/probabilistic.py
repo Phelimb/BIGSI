@@ -2,7 +2,7 @@ from cbg.storage.base import BaseStorage
 from cbg.storage.graph.base import BaseGraphStorage
 from cbg.storage import InMemoryStorage
 from cbg.storage import RedisHashStorage
-from cbg.storage import RedisBitArrayStorage
+# from cbg.storage import RedisBitArrayStorage
 from cbg.storage import SimpleRedisStorage
 from cbg.storage import BerkeleyDBStorage
 from cbg.utils import hash_key
@@ -227,68 +227,68 @@ class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
         return self.get_row(index).getbit(colour)
 
 
-class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
+# class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
 
-    def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
-        super().__init__(config, bloom_filter_size, num_hashes)
-        self.name = 'probabilistic-redis'
+#     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
+#         super().__init__(config, bloom_filter_size, num_hashes)
+#         self.name = 'probabilistic-redis'
 
-    def get_rows(self, indexes):
-        indexes = [i for i in indexes]
-        bas = []
-        rows = self._get_raw_rows(indexes)
-        for r in rows:
-            b = BitArray()
-            if r is None:
-                r = b''
-            b.frombytes(r)
-            bas.append(b)
-        return bas
+#     def get_rows(self, indexes):
+#         indexes = [i for i in indexes]
+#         bas = []
+#         rows = self._get_raw_rows(indexes)
+#         for r in rows:
+#             b = BitArray()
+#             if r is None:
+#                 r = b''
+#             b.frombytes(r)
+#             bas.append(b)
+#         return bas
 
-    def _get_raw_rows(self, indexes):
-        names = [self.get_name(i) for i in indexes]
-        return self.storage.hget(names, indexes, partition_arg=1)
+#     def _get_raw_rows(self, indexes):
+#         names = [self.get_name(i) for i in indexes]
+#         return self.storage.hget(names, indexes, partition_arg=1)
 
-    def setbit(self, index, colour, bit):
-        r = self.get_row(index)
-        r.setbit(colour, bit)
-        self.set_row(index, r)
+#     def setbit(self, index, colour, bit):
+#         r = self.get_row(index)
+#         r.setbit(colour, bit)
+#         self.set_row(index, r)
 
-    def getbit(self, index, colour):
-        return self.get_row(index).getbit(colour)
+#     def getbit(self, index, colour):
+#         return self.get_row(index).getbit(colour)
 
 
-class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
+# class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
 
-    def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
-        super().__init__(config, bloom_filter_size, num_hashes)
-        self.name = 'probabilistic-redis'
+#     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
+#         super().__init__(config, bloom_filter_size, num_hashes)
+#         self.name = 'probabilistic-redis'
 
-    def get_rows(self, indexes):
-        indexes = list(indexes)
-        bas = []
-        rows = self._get_raw_rows(indexes)
-        for r in rows:
-            b = BitArray()
-            if r is None:
-                b.append(False)
-            else:
-                b.frombytes(r)
-            bas.append(b)
-        return bas
+#     def get_rows(self, indexes):
+#         indexes = list(indexes)
+#         bas = []
+#         rows = self._get_raw_rows(indexes)
+#         for r in rows:
+#             b = BitArray()
+#             if r is None:
+#                 b.append(False)
+#             else:
+#                 b.frombytes(r)
+#             bas.append(b)
+#         return bas
 
-    def _get_raw_rows(self, indexes):
-        pipe = self.storage.pipeline()
-        for i in indexes:
-            pipe.get(i)
-        raw_rows = pipe.execute()
-        return raw_rows
+#     def _get_raw_rows(self, indexes):
+#         pipe = self.storage.pipeline()
+#         for i in indexes:
+#             pipe.get(i)
+#         raw_rows = pipe.execute()
+#         return raw_rows
 
-    def items(self):
-        for i, r in enumerate(self._get_raw_rows(range(self.bloomfilter.size))):
-            if r is None:
-                r = b''
-            yield (i, r)
+#     def items(self):
+#         for i, r in enumerate(self._get_raw_rows(range(self.bloomfilter.size))):
+#             if r is None:
+#                 r = b''
+#             yield (i, r)
 
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):

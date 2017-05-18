@@ -46,9 +46,9 @@ from cbg.cmds.insert import insert
 from cbg.cmds.search import search
 from cbg.cmds.stats import stats
 from cbg.cmds.samples import samples
-from cbg.cmds.dump import dump
-from cbg.cmds.load import load
-from cbg.cmds.delete import delete
+# from cbg.cmds.dump import dump
+# from cbg.cmds.load import load
+# from cbg.cmds.delete import delete
 from cbg.cmds.bloom import bloom
 from cbg.cmds.build import build
 from cbg.cmds.merge import merge
@@ -205,17 +205,17 @@ class cbg(object):
     def samples(self, sample_name: hug.types.text=None, db: hug.types.text=None, delete: hug.types.smart_boolean=False):
         return samples(sample_name, graph=get_graph(bdb_db_filename=db), delete=delete)
 
-    @hug.object.cli
-    @hug.object.post('/dump', output_format=hug.output_format.json)
-    def dump(self, filepath):
-        r = dump(graph=get_graph(), file=filepath)
-        return r
+    # @hug.object.cli
+    # @hug.object.post('/dump', output_format=hug.output_format.json)
+    # def dump(self, filepath):
+    #     r = dump(graph=get_graph(), file=filepath)
+    #     return r
 
-    @hug.object.cli
-    @hug.object.post('/load', output_format=hug.output_format.json)
-    def load(self, filepath):
-        r = load(graph=get_graph(), file=filepath)
-        return r
+    # @hug.object.cli
+    # @hug.object.post('/load', output_format=hug.output_format.json)
+    # def load(self, filepath):
+    #     r = load(graph=get_graph(), file=filepath)
+    #     return r
 
 
 def main():

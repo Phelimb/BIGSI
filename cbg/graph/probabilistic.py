@@ -26,8 +26,8 @@ from cbg.bytearray import ByteArray
 
 
 from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
-from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
-from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 
 from cbg.storage import InMemoryStorage
