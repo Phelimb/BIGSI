@@ -127,11 +127,11 @@ def test_query_kmers(Graph, x, store, binary_kmers):
 
     assert mc.get_num_colours() == 3
     mc.num_colours = mc.get_num_colours()
-    assert mc._search([k1, k2], threshold=0.5) == {
+    assert mc._search([k1, k2], threshold=0.4) == {
         '1234': 1, '1235': 0.5}
     assert mc._search([k1, k2]) == {
         '1234': 1}
-    assert mc._search([k1, k3], threshold=0.5) == {
+    assert mc._search([k1, k3], threshold=0.4) == {
         '1234': 0.5, '1235': 1, '1236': 0.5}
     mc.delete_all()
 
