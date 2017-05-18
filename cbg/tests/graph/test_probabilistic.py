@@ -21,15 +21,15 @@ from cbg.utils import seq_to_kmers
 # Add test for insert, lookup.
 
 
-@given(storage=ST_STORAGE, binary_kmers=ST_STORAGE, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
-def test_get_bloomfilter(storage, binary_kmers, sample, seq):
-    kmers = list(seq_to_kmers(seq))
-    mc = Graph(
-        binary_kmers=binary_kmers, storage=storage, bloom_filter_size=100)
-    mc.delete_all()
-    mc.insert(kmers, sample)
-    bf = mc.get_bloom_filter(sample)
-    assert bf.length() == mc.graph.bloomfilter.size
+# @given(storage=ST_STORAGE, binary_kmers=ST_STORAGE, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
+# def test_get_bloomfilter(storage, binary_kmers, sample, seq):
+#     kmers = list(seq_to_kmers(seq))
+#     mc = Graph(
+#         binary_kmers=binary_kmers, storage=storage, bloom_filter_size=100)
+#     mc.delete_all()
+#     mc.insert(kmers, sample)
+#     bf = mc.get_bloom_filter(sample)
+#     assert bf.length() == mc.graph.bloomfilter.size
 
 ## TODO - fix test
 # @given(kmer=ST_KMER, store1=ST_STORAGE, store2=ST_STORAGE,
