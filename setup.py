@@ -7,7 +7,7 @@ from Cython.Build import cythonize
 
 setup(
     name='cbg',
-    version='0.1.2.dev1',
+    version='0.1.3.dev1',
     packages=[
         'cbg',
         'cbg.cmds',

@@ -3,8 +3,8 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
 
+## Install berkeleydb
 ENV BERKELEY_VERSION 4.8.30
-
 # Download, configure and install BerkeleyDB
 RUN wget -P /tmp http://download.oracle.com/berkeley-db/db-"${BERKELEY_VERSION}".tar.gz && \
     tar -xf /tmp/db-"${BERKELEY_VERSION}".tar.gz -C /tmp && \
