@@ -11,23 +11,34 @@
 CBG using single colour graphs to construct the coloured graph. 
 Use [mccortex](https://github.com/mcveanlab/mccortex) to build. 
 	
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.ctx /data/test1.ctx
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.ctx /data/test2.ctx
+	PWD=`pwd`
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
 ### Building a CBG
 
 #### Construct the bloom filters
 
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg cbg bloom -c /data/test1.ctx /data/test1.bloom
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg cbg bloom -c /data/test1.ctx /data/test2.bloom
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
+### Build the combined graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
+
+### Query the graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	
+
+#### Construct the bloom filters
+
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
 	
 ### Build the combined graph
 
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom
+	cbg build test-data/test.cbg test-data/test1.bloom test-data/test2.bloom -b 1000
 
 ### Query the graph
-	docker run -v /Users/phelimb/Documents/git/cbg/example-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
-	
+	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 ## Installing without docker
 

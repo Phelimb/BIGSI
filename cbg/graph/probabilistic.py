@@ -69,10 +69,10 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 self.bloom_filter_size)
             self.num_hashes = int(self.num_hashes)
             logger.debug("BF_SIZE %i " % self.bloom_filter_size)
-            if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
-                raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i.
-                                        You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
-                                 (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
+            # if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
+            #     raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i.
+            #                             You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
+            #                      (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
         else:
             self.metadata['bloom_filter_size'] = bloom_filter_size
             self.metadata['num_hashes'] = num_hashes
@@ -211,7 +211,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         tmp = Counter()
         lkmers = 0
         for kmer, ba in self._get_kmers_colours(kmers):
-            print(kmer, ba)
             if lkmers == 0:
                 cumsum = np.array(ba, dtype='i4')
             else:

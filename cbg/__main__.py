@@ -81,8 +81,8 @@ DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAM
 
 
 def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):
-    if bloom_filter_size is None:
-        bloom_filter_size = BFSIZE
+    if bdb_db_filename is None:
+        bdb_db_filename = BDB_DB_FILENAME
     # logger.info("Loading graph with %s storage." % (STORAGE))
 
     # if STORAGE == "berkeleydb":
@@ -126,7 +126,7 @@ class cbg(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, kmers=None, seqfile=None, ctx=None):
+    def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None, bloom_filter_size=None, kmer_size=31):
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. cbg insert ERR1010211.ctx
@@ -136,7 +136,9 @@ class cbg(object):
             kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
-        graph = get_graph()
+        graph = Graph(storage={'berkeleydb': {'filename': db}},
+                      bloom_filter_size=int(bloom_filter_size),
+                      num_hashes=NUM_HASHES, kmer_size=kmer_size)
         bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=seqfile, graph=graph)
 
@@ -146,6 +148,8 @@ class cbg(object):
               bloomfilters: hug.types.multiple,
               samples: hug.types.multiple = [], 
               bloom_filter_size=None):
+        if bloom_filter_size is not None:
+            bloom_filter_size = int(bloom_filter_size)
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
