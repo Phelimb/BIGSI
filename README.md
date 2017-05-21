@@ -1,60 +1,73 @@
-# Bloom filter graph [BFG]
-[![Build Status](https://travis-ci.org/Phelimb/bfg.svg)](https://travis-ci.org/Phelimb/bfg)
+# Coloured Bloom Graphs [CBG]
+<!--[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)-->
 
-# Launch
+CBG can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
 
-First, clone the repository. 
+# Quickstart with docker
 
-	git clone --recursive https://github.com/Phelimb/bfg.git
+	docker pull phelimb/cbg
+	docker run phelimb/cbg cbg --help
 	
-## With docker
+### Preparing your data
 
-Docker installation -  reccommended (install [docker toolbox](https://www.docker.com/products/docker-toolbox) first). 
+CBG using single colour graphs to construct the coloured graph. 
+Use [mccortex](https://github.com/mcveanlab/mccortex) to build. 
+	
+	PWD=`pwd`
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
-	docker-compose pull && docker-compose up -d
+### Building a CBG
+
+#### Construct the bloom filters
+
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
+#### Build the combined graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
+
+#### Query the graph
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	
 
 
-## Without docker
-	cd bfg
+# Installing without docker
 
-	virtualenv-3.4 venv
-	source venv/bin/activate
+#### Install requirement berkeley-db
 
+	brew install berkeley-db4
 	pip install cython
-	pip install -r requirements.txt
-	python setup.py install
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
 
-## If you're using the berkeley-db storage (recommended) you need to run:
+For unix, see [Dockerfile](Dockerfile). 
 
-	export DATA_DIR="./"
-	export BFSIZE=25000000
-	export NUM_HASHES=3
-	export STORAGE=berkeley-db
+#### Install CBG
 
-# Usage
+	pip install cbg
 
-# Build bloomfilters
+## Quickstart
 
-This step can be parallelised over samples. 
+## Prepare the data
 
-## From cortex graph
+Requires [mccortex](github.com/mcveanlab/mccortex). 
 
-	bfg bloom --outfile seq1.bloom --ctx seq1.ctx 
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
-## From sequence file 
+#### Construct the bloom filters
 
-	bfg bloom --outfile seq1.bloom --seqfile seq1.fastq
-
-## With GNU parallel. 
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
 	
-	parallel -j 10 bfg bloom --outfile {}.bloom --seqfile {} :::: seqfilelist.txt
+### Build the combined graph
 
-# Query for sequence
+	cbg build test-data/test.cbg test-data/test1.bloom test-data/test2.bloom -b 1000
 
-	bfg search -s CACCAAATGCAGCGCATGGCTGGCGTGAAAA
-	bfg search -f seq.fasta
+### Query the graph
+	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
-# Search for variant alleles
+	
+## Search for variant alleles
 
 You'll need to install atlas-var e.g.
 
@@ -64,9 +77,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./bfg/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./cbg/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bfg/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./cbg/__main__.py search - --pipe_in -o tsv
 
 
 # Parameter choices:
@@ -111,12 +124,7 @@ However, if my minimum expected query size is 40 bps using the same parameters w
 	
 	N * m bits 
 
-## installing berkeleydb on mac
-
-	brew install berkeley-db4
-
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
-
+<!--
 ## Accessing underlying bitmatrix
 
 To iterate through the rows in the bitmatrix you can use this simple python3 script:
@@ -146,5 +154,5 @@ To iterate through the rows in the bitmatrix you can use this simple python3 scr
 	
 	main()
 
-
+-->
 

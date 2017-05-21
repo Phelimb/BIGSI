@@ -1,1 +1,1 @@
-docker build  -t phelimb/bfg .
+docker build  -t phelimb/cbg .
