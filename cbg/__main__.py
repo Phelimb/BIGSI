@@ -76,7 +76,8 @@ def do_cprofile(func):
 API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 1, 'mode': 'c'}},
+CACHESIZE = int(os.environ.get("CACHESIZE", 1))
+DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': CACHESIZE, 'mode': 'c'}},
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
