@@ -219,10 +219,11 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         kmers = list(kmers)
         result = self._search_kmers_threshold_not_1_without_scoring(
             kmers, threshold)
+        kmer_lookups = [self.graph.lookup(kmer) for kmer in kmers]
         for sample, percent in result.items():
             colour = int(self.sample_to_colour_lookup.get(sample))
-            s = "".join([str(int(self.graph.lookup(kmer)[colour]))
-                         for kmer in kmers])
+            s = "".join([str(int(kmer_lookups[i][colour]))
+                         for i in range(len(kmers))])
             out[sample] = self.scorer.score(s)
             out[sample]["percent_kmer_found"] = percent
         return out
