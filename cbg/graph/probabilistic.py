@@ -209,6 +209,25 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             return self._search_kmers_threshold_not_1(kmers, threshold=threshold, score=score)
 
     def _search_kmers_threshold_not_1(self, kmers, threshold, score):
+        if score:
+            return self._search_kmers_threshold_not_1_with_scoring(kmers, threshold)
+        else:
+            return self._search_kmers_threshold_not_1_without_scoring(kmers, threshold)
+
+    def _search_kmers_threshold_not_1_with_scoring(self, kmers, threshold):
+        out = {}
+        kmers = list(kmers)
+        result = self._search_kmers_threshold_not_1_without_scoring(
+            kmers, threshold)
+        for sample, percent in result.items():
+            colour = int(self.sample_to_colour_lookup.get(sample))
+            s = "".join([str(int(self.graph.lookup(kmer)[colour]))
+                         for kmer in kmers])
+            out[sample] = self.scorer.score(s)
+            out[sample]["percent_kmer_found"] = percent
+        return out
+
+    def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         lkmers = 0
@@ -227,7 +246,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if res >= threshold:
                 sample = colours_to_sample_dict.get(i, i)
                 if sample != "DELETED":
-                    out[sample] = res
+                    out[sample] = 100*res
         return out
 
     def _search_kmers_threshold_1(self, kmers, score=True):

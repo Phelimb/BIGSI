@@ -54,9 +54,14 @@ def test_build_cmd():
     # TODO fix below
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
     response = hug.test.get(cbg.__main__, 'search', {'db': f, 'seq': seq})
+    assert response.data.get(seq).get('results')
+    assert "score" in list(response.data.get(seq).get('results').values())[0]
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
+    response = hug.test.get(cbg.__main__, 'search', {
+                            'db': f, 'seq': seq, 'threshold': 0.1})
     print(response.data)
     assert response.data.get(seq).get('results')
-    assert "score" in response.data.get(seq).get('results').values()
+    assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(
         cbg.__main__, '', {'db': f, })
 

@@ -6,6 +6,8 @@ import copy
 
 def remove_short_ones(s):
     ba = bitarray(s)
+    if len(ba) < 3:
+        return ba.to01()
     ba2 = ba[1:]
     ba2.append(1)
     ba3 = ba2[1:]
