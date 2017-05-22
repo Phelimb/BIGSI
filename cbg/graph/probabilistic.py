@@ -252,13 +252,15 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _search_kmers_threshold_1(self, kmers, score=True):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
+        kmers = list(kmers)
         ba = self.graph.lookup_all_present(
             kmers)
         out = {}
         for c in ba.colours():
             sample = self.get_sample_from_colour(c)
             if sample != "DELETED":
-                out[sample] = self.scorer.score("1"*(len(ba)+self.kmer_size-1))
+                out[sample] = self.scorer.score(
+                    "1"*(len(kmers)+self.kmer_size-1))  # Fix!
                 out[sample]["percent_kmer_found"] = 100
         return out
 
