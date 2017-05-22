@@ -25,18 +25,19 @@ from cbg.decorators import convert_kmers_to_canonical
 from cbg.bytearray import ByteArray
 
 
-from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 # from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
 # from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 
-from cbg.storage import InMemoryStorage
-from cbg.storage import SimpleRedisStorage
+# from cbg.storage import InMemoryStorage
+# from cbg.storage import SimpleRedisStorage
 from cbg.storage import BerkeleyDBStorage
 from cbg.sketch import HyperLogLogJaccardIndex
 from cbg.sketch import MinHashHashSet
 from cbg.utils import DEFAULT_LOGGING_LEVEL
 from cbg.matrix import transpose
+from cbg.scoring import Scorer
 from bitarray import bitarray
 import logging
 logging.basicConfig()
@@ -79,11 +80,12 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.bloom_filter_size = bloom_filter_size
             self.num_hashes = num_hashes
         self.graph.set_bloom_filter_size(self.bloom_filter_size)
-        logger.debug("init with bfsize %s" % str(self.bloom_filter_size)        )
+        logger.debug("init with bfsize %s" % str(self.bloom_filter_size))
         self.graph.set_num_hashes(self.num_hashes)
+        self.scorer = Scorer(self.get_num_colours())
 
     def build(self, bloomfilters, samples):
-        bloom_filter_size=len(bloomfilters[0])
+        bloom_filter_size = len(bloomfilters[0])
         assert len(bloomfilters) == len(samples)
         [self._add_sample(s) for s in samples]
         cbg = transpose(bloomfilters)
@@ -91,7 +93,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if (i % self.bloom_filter_size/100) == 0:
                 logger.debug("%i of %i" % (i, self.bloom_filter_size))
             self.graph[i] = ba.tobytes()
-        ## Set the bloomfilter size
+        # Set the bloomfilter size
         self.graph.set_bloom_filter_size(bloom_filter_size)
         self.sync()
 
@@ -107,8 +109,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         colour = self._add_sample(sample)
         self._insert(bloom_filter, colour)
 
-    def search(self, seq, threshold=1):
-        return self._search(seq_to_kmers(seq, self.kmer_size), threshold=threshold)
+    def search(self, seq, threshold=1, score=True):
+        return self._search(seq_to_kmers(seq, self.kmer_size), threshold=threshold, score=score)
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
@@ -182,12 +184,12 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             ba = self.graph.lookup(kmer)
             yield kmer, ba
 
-    def _search(self, kmers, threshold=1):
+    def _search(self, kmers, threshold=1, score=True):
         """Return sample names where this kmer is present"""
         if isinstance(kmers, str):
             return self._search_kmer(kmers)
         else:
-            return self._search_kmers(kmers, threshold=threshold)
+            return self._search_kmers(kmers, threshold=threshold, score=score)
 
     @convert_kmers_to_canonical
     def _search_kmer(self, kmer, canonical=False):
@@ -200,13 +202,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         return out
 
     @convert_kmers_to_canonical
-    def _search_kmers(self, kmers, threshold=1):
+    def _search_kmers(self, kmers, threshold=1, score=True):
         if threshold == 1:
-            return self._search_kmers_threshold_1(kmers)
+            return self._search_kmers_threshold_1(kmers, score=score)
         else:
-            return self._search_kmers_threshold_not_1(kmers, threshold=threshold)
+            return self._search_kmers_threshold_not_1(kmers, threshold=threshold, score=score)
 
-    def _search_kmers_threshold_not_1(self, kmers, threshold):
+    def _search_kmers_threshold_not_1(self, kmers, threshold, score):
         colours_to_sample_dict = self.colours_to_sample_dict()
         tmp = Counter()
         lkmers = 0
@@ -228,7 +230,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                     out[sample] = res
         return out
 
-    def _search_kmers_threshold_1(self, kmers):
+    def _search_kmers_threshold_1(self, kmers, score=True):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
         ba = self.graph.lookup_all_present(
             kmers)
@@ -236,7 +238,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         for c in ba.colours():
             sample = self.get_sample_from_colour(c)
             if sample != "DELETED":
-                out[sample] = 1.0
+                out[sample] = self.scorer.score("1"*(len(ba)+self.kmer_size-1))
+                out[sample]["percent_kmer_found"] = 100
         return out
 
     @convert_kmers_to_canonical
@@ -256,32 +259,32 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
     def _choose_storage(self, storage_config):
 
-    #     if 'dict' in storage_config:
-    #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-    #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-    #         self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
-    #         self.metadata = InMemoryStorage(storage_config['dict'])
-    #     elif 'redis' in storage_config:
-    #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-    #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-    #         self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
-    #         self.metadata = SimpleRedisStorage(
-    #             {'conn': [('127.0.0.1', 6379, 0)]})
-    #     elif 'redis-cluster' in storage_config:
-    #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-    #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-    #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-    #         self.graph = ProbabilisticRedisBitArrayStorage(
-    #             storage_config['redis-cluster'])
-    #         self.metadata = SimpleRedisStorage(
-    #             {'conn': [('127.0.0.1', 6379, 0)]})
+        #     if 'dict' in storage_config:
+        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
+        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
+        #         self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
+        #         self.metadata = InMemoryStorage(storage_config['dict'])
+        #     elif 'redis' in storage_config:
+        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
+        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
+        #         self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
+        #         self.metadata = SimpleRedisStorage(
+        #             {'conn': [('127.0.0.1', 6379, 0)]})
+        #     elif 'redis-cluster' in storage_config:
+        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
+        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
+        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
+        #         self.graph = ProbabilisticRedisBitArrayStorage(
+        #             storage_config['redis-cluster'])
+        #         self.metadata = SimpleRedisStorage(
+        #             {'conn': [('127.0.0.1', 6379, 0)]})
 
-    #     elif 'berkeleydb' in storage_config:
+        #     elif 'berkeleydb' in storage_config:
         filename = storage_config['berkeleydb']['filename']
         self.sample_to_colour_lookup = BerkeleyDBStorage(
             config={'decode': 'utf-8', 'filename': filename + 'sample_to_colour_lookup'})
@@ -351,7 +354,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.sample_to_colour_lookup.storage.close()
             self.colour_to_sample_lookup.storage.close()
             self.graph.storage.close()
-            self.metadata.storage.close()            
+            self.metadata.storage.close()
 
     def delete_all(self):
         self.sample_to_colour_lookup.delete_all()
@@ -359,4 +362,3 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         self.graph.delete_all()
         self.metadata.delete_all()
         self.sync()
-

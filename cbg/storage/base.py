@@ -64,49 +64,49 @@ class BaseStorage(object):
             self[k] = v
 
 
-class InMemoryStorage(BaseStorage):
+# class InMemoryStorage(BaseStorage):
 
-    def __init__(self, config):
-        self.name = 'dict'
-        self.storage = dict()
+#     def __init__(self, config):
+#         self.name = 'dict'
+#         self.storage = dict()
 
-    def __setitem__(self, key, val):
-        """ Set `val` at `key`, note that the `val` must be a string. """
-        self.storage.__setitem__(key, val)
+#     def __setitem__(self, key, val):
+#         """ Set `val` at `key`, note that the `val` must be a string. """
+#         self.storage.__setitem__(key, val)
 
-    def __getitem__(self, key):
-        """ Return `val` at `key`, note that the `val` must be a string. """
-        return self.storage.__getitem__(key)
+#     def __getitem__(self, key):
+#         """ Return `val` at `key`, note that the `val` must be a string. """
+#         return self.storage.__getitem__(key)
 
-    def incr(self, key):
-        if self.get(key) is None:
-            self[key] = 0
-        v = self.get(key)
-        v += 1
-        self[key] = v
+#     def incr(self, key):
+#         if self.get(key) is None:
+#             self[key] = 0
+#         v = self.get(key)
+#         v += 1
+#         self[key] = v
 
-    def delete_all(self):
-        self.storage = dict()
+#     def delete_all(self):
+#         self.storage = dict()
 
-    def keys(self):
-        """ Returns a list of binary hashes that are used as dict keys. """
-        return self.storage.keys()
+#     def keys(self):
+#         """ Returns a list of binary hashes that are used as dict keys. """
+#         return self.storage.keys()
 
-    def count_keys(self):
-        return len(self.storage)
+#     def count_keys(self):
+#         return len(self.storage)
 
-    def values(self):
-        return self.storage.values()
+#     def values(self):
+#         return self.storage.values()
 
-    def items(self):
-        return self.storage.items()
+#     def items(self):
+#         return self.storage.items()
 
-    def getmemoryusage(self):
-        d = self.storage
-        size = getsizeof(d)
-        size += sum(map(getsizeof, d.values())) + \
-            sum(map(getsizeof, d.keys()))
-        return size
+#     def getmemoryusage(self):
+#         d = self.storage
+#         size = getsizeof(d)
+#         size += sum(map(getsizeof, d.values())) + \
+#             sum(map(getsizeof, d.keys()))
+#         return size
 
 
 class BaseRedisStorage(BaseStorage):
@@ -140,48 +140,48 @@ class BaseRedisStorage(BaseStorage):
         return self.storage.calculate_memory()
 
 
-class SimpleRedisStorage(BaseRedisStorage):
+# class SimpleRedisStorage(BaseRedisStorage):
 
-    def __init__(self, config, key=None):
-        super().__init__()
-        if not redis:
-            raise ImportError("redis-py is required to use Redis as storage.")
-        self.name = 'redis'
-        host, port, db = config['conn'][0]
-        self.storage = redis.StrictRedis(
-            host=host, port=port, db=int(db))
-        self.hash_key = key
+#     def __init__(self, config, key=None):
+#         super().__init__()
+#         if not redis:
+#             raise ImportError("redis-py is required to use Redis as storage.")
+#         self.name = 'redis'
+#         host, port, db = config['conn'][0]
+#         self.storage = redis.StrictRedis(
+#             host=host, port=port, db=int(db))
+#         self.hash_key = key
 
-    def keys(self, pattern="*"):
-        if self.hash_key:
-            for key in self.storage.hkeys(self.hash_key):
-                yield key.decode('utf-8')
-        else:
-            return self.storage.keys(pattern)
+#     def keys(self, pattern="*"):
+#         if self.hash_key:
+#             for key in self.storage.hkeys(self.hash_key):
+#                 yield key.decode('utf-8')
+#         else:
+#             return self.storage.keys(pattern)
 
-    def __setitem__(self, key, val):
-        if self.hash_key:
-            self.storage.hset(self.hash_key, key, val)
-        else:
-            self.storage.set(key, val)
+#     def __setitem__(self, key, val):
+#         if self.hash_key:
+#             self.storage.hset(self.hash_key, key, val)
+#         else:
+#             self.storage.set(key, val)
 
-    def __getitem__(self, key):
-        if self.hash_key:
-            v = self.storage.hget(self.hash_key, key)
-            if isinstance(v, bytes):
-                return v.decode('utf-8')
-            else:
-                return v
-        else:
-            return self.storage.get(key)
+#     def __getitem__(self, key):
+#         if self.hash_key:
+#             v = self.storage.hget(self.hash_key, key)
+#             if isinstance(v, bytes):
+#                 return v.decode('utf-8')
+#             else:
+#                 return v
+#         else:
+#             return self.storage.get(key)
 
-    def items(self):
-        if self.hash_key:
-            for i, j in self.storage.hgetall(self.hash_key).items():
-                yield (i.decode('utf-8'), j.decode('utf-8'))
-        else:
-            for i in self.storage.keys():
-                yield (i, self[i])
+#     def items(self):
+#         if self.hash_key:
+#             for i, j in self.storage.hgetall(self.hash_key).items():
+#                 yield (i.decode('utf-8'), j.decode('utf-8'))
+#         else:
+#             for i in self.storage.keys():
+#                 yield (i, self[i])
 
 
 def proto(line):
