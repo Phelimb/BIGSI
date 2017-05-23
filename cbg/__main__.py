@@ -76,7 +76,8 @@ def do_cprofile(func):
 API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
-DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': 1, 'mode': 'c'}},
+CACHESIZE = int(os.environ.get("CACHESIZE", 1))
+DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': CACHESIZE, 'mode': 'c'}},
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
@@ -96,7 +97,8 @@ def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c
     # else:
     #     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
     #                                              "credis": CREDIS}},
-    #                   bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
+    # bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES,
+    # kmer_size=kmer_size)
     return GRAPH
 
 
@@ -127,7 +129,7 @@ class cbg(object):
     @hug.object.cli
     @hug.object.post('/bloom')
     def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None,
-                     bloom_filter_size=BFSIZE, kmer_size=31):
+              bloom_filter_size=BFSIZE, kmer_size=31):
         if bloom_filter_size is not None:
             bloom_filter_size = int(bloom_filter_size)
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
@@ -149,7 +151,7 @@ class cbg(object):
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, outfile: hug.types.text,
               bloomfilters: hug.types.multiple,
-              samples: hug.types.multiple = [], 
+              samples: hug.types.multiple = [],
               bloom_filter_size=None):
         if bloom_filter_size is not None:
             bloom_filter_size = int(bloom_filter_size)
@@ -170,7 +172,8 @@ class cbg(object):
                pipe_out: hug.types.smart_boolean=False,
                pipe_in: hug.types.smart_boolean=False,
                cachesize: hug.types.number=4,
-               kmer_size: hug.types.number=31):
+               kmer_size: hug.types.number=31,
+               score: hug.types.smart_boolean=True):
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -184,11 +187,17 @@ class cbg(object):
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size), output_format=output_format, pipe=pipe_out)
+                seq=None, fasta_file=fp, threshold=threshold,
+                graph=get_graph(
+                    bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size),
+                output_format=output_format, pipe=pipe_out, score=score)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold, graph=get_graph(bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size), output_format=output_format, pipe=pipe_out)
+                            fasta_file=seqfile, threshold=threshold,
+                            graph=get_graph(
+                                bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size),
+                            output_format=output_format, pipe=pipe_out, score=score)
 
         if not pipe_out:
             return result

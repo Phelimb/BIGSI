@@ -1,9 +1,9 @@
 from cbg.storage.base import BaseStorage
 from cbg.storage.graph.base import BaseGraphStorage
-from cbg.storage import InMemoryStorage
-from cbg.storage import RedisHashStorage
+# from cbg.storage import InMemoryStorage
+# from cbg.storage import RedisHashStorage
 # from cbg.storage import RedisBitArrayStorage
-from cbg.storage import SimpleRedisStorage
+# from cbg.storage import SimpleRedisStorage
 from cbg.storage import BerkeleyDBStorage
 from cbg.utils import hash_key
 from cbg.bytearray import ByteArray
@@ -208,23 +208,23 @@ class BaseProbabilisticStorage(BaseStorage):
             self[i] = infile.read(record_size)
 
 
-class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
+# class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
 
-    def __init__(self, config={'dict', None}, bloom_filter_size=100000, num_hashes=3):
-        super().__init__(config, bloom_filter_size, num_hashes)
-        self.name = 'probabilistic-inmemory'
+#     def __init__(self, config={'dict', None}, bloom_filter_size=100000, num_hashes=3):
+#         super().__init__(config, bloom_filter_size, num_hashes)
+#         self.name = 'probabilistic-inmemory'
 
-    def setbits(self, indexes, colour, bit):
-        for index in indexes:
-            self.setbit(index, colour, bit)
+#     def setbits(self, indexes, colour, bit):
+#         for index in indexes:
+#             self.setbit(index, colour, bit)
 
-    def setbit(self, index, colour, bit):
-        r = self.get_row(index)
-        r.setbit(colour, bit)
-        self.set_row(index, r)
+#     def setbit(self, index, colour, bit):
+#         r = self.get_row(index)
+#         r.setbit(colour, bit)
+#         self.set_row(index, r)
 
-    def getbit(self, index, colour):
-        return self.get_row(index).getbit(colour)
+#     def getbit(self, index, colour):
+#         return self.get_row(index).getbit(colour)
 
 
 # class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
