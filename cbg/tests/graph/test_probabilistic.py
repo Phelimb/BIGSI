@@ -1,5 +1,5 @@
 """Tests that are unique to Probabilistic Graphs"""
-from cbg import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg import CBG as Graph
 from cbg.tests.base import ST_KMER
 from cbg.tests.base import ST_SEQ
 from cbg.tests.base import ST_SAMPLE_NAME

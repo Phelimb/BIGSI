@@ -21,7 +21,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 import hug
 import tempfile
-from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg.graph import CBG as Graph
 
 BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
@@ -77,8 +77,7 @@ API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 CACHESIZE = int(os.environ.get("CACHESIZE", 1))
-DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': CACHESIZE, 'mode': 'c'}},
-                              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
+# DEFAULT_GRAPH = GRAPH = Graph(BDB_DB_FILENAME)
 
 
 def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):

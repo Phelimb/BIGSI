@@ -10,7 +10,7 @@ import hypothesis
 from hypothesis import given
 from hypothesis import settings
 import hypothesis.strategies as st
-from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
+# from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
 # from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
 # from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage

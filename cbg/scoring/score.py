@@ -93,9 +93,10 @@ class Scorer():
         score_dict["length"] = seq_len
         score_dict["evalue"] = self.evalue(score_dict["score"], seq_len)
         score_dict["pvalue"] = self.pvalue(score_dict["evalue"])
-        score_dict["log_evalue"] = self.log_evalue(
-            score_dict["score"], seq_len)
-        score_dict["log_pvalue"] = self.log_pvalue(score_dict["log_evalue"])
+        score_dict["log_evalue"] = round(self.log_evalue(
+            score_dict["score"], seq_len), 2)
+        score_dict["log_pvalue"] = round(
+            self.log_pvalue(score_dict["log_evalue"]), 2)
         return score_dict
 
     def bitscore(self, s):
@@ -116,13 +117,18 @@ class Scorer():
 
     def log_evalue(self, score, n):
         m = self.DB_SIZE
+        if m == 0:
+            m = 1
         l = self.LAMBDA_UNGAPPED
         k = self.K_UNGAPPED
         return round(np.log10(k*m*n) - l*score, 2)
 
     def log_pvalue(self, log_evalue):
         evalue = 10**log_evalue
-        logp = np.log10(1-np.exp(-evalue))
+        if 1-np.exp(-evalue) > 0:
+            logp = np.log10(1-np.exp(-evalue))
+        else:
+            logp = -np.inf
         if logp == -np.inf:
             return round(log_evalue, 2)
         else:
