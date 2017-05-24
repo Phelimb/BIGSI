@@ -459,20 +459,20 @@ class BerkeleyDBCollectionStorage(BaseStorage):
 
 class BerkeleyDBStorage(BaseStorage):
 
-    def __init__(self, config):
-        if 'filename' not in config:
+    def __init__(self, filename=None, mode="c", cachesize=4, decode=None):
+        if filename is None:
             raise ValueError(
-                "You must supply a 'filename' in your config%s" % config)
-        self.db_file = config['filename']
-        self.mode = config.get('mode', 'c')
-        self.cachesize = config.get('cachesize', 4)
+                "You must supply a 'filename'")
+        self.db_file = filename
+        self.mode = mode
+        self.cachesize = cachesize
         try:
             self.storage = hashopen(
                 self.db_file, flag=self.mode, cachesize=self.cachesize)
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
-        self.decode = config.get('decode', None)
+        self.decode = decode
 
     def incr(self, key):
         if self.get(key) is None:
@@ -542,7 +542,6 @@ class BerkeleyDBStorage(BaseStorage):
 
     def getmemoryusage(self):
         return 0
+
     def sync(self):
-        self.storage.sync()        
-
-
+        self.storage.sync()
