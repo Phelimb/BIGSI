@@ -19,7 +19,7 @@ import os
        bloom_filter_size=ST_BLOOM_FILTER_SIZE,
        num_hashes=ST_NUM_HASHES)
 def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
-    storage = ProbabilisticBerkeleyDBStorage(filename="./db-cbg/db",
+    storage = ProbabilisticBerkeleyDBStorage(filename="db",
                                              bloom_filter_size=bloom_filter_size,
                                              num_hashes=num_hashes)
     storage.bloom_filter_size = bloom_filter_size
@@ -34,18 +34,18 @@ def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
        bloom_filter_size=ST_BLOOM_FILTER_SIZE,
        num_hashes=ST_NUM_HASHES)
 def test_update_contains(colour, elements, bloom_filter_size,  num_hashes):
-    storage = ProbabilisticBerkeleyDBStorage(filename="./db-cbg/db",
+    storage = ProbabilisticBerkeleyDBStorage(filename="db",
                                              bloom_filter_size=bloom_filter_size,
                                              num_hashes=num_hashes)
 
-    elements = list(seq_to_kmers(elements))
+    elements = list(seq_to_kmers(elements, 31))
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
-    storage.delete_all()
 
     storage.bloomfilter.update(elements, colour)
     for k in elements:
         assert storage.bloomfilter.contains(k, colour)
+    storage.delete_all()
 
 # TODO fix this test. Not sure if we should allow updates without
 # appending a new column

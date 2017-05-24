@@ -68,22 +68,22 @@ class CBG(object):
         self.db = db
         try:
             self.metadata = BerkeleyDBStorage(
-                config={'decode': 'utf-8', 'filename': os.path.join(self.db, "metadata")})
-        except bsddb3.db.DBNoSuchFileError:
+                filename=os.path.join(self.db, "metadata"), decode='utf-8')
+        except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             raise ValueError(
                 "Cannot find a CBG at %s. Run `cbg init` or CBG.create()" % db)
         else:
             self.sample_to_colour_lookup = BerkeleyDBStorage(
-                config={'decode': 'utf-8', 'filename': os.path.join(self.db, "sample_to_colour_lookup")})
+                filename=os.path.join(self.db, "sample_to_colour_lookup"), decode='utf-8')
             self.colour_to_sample_lookup = BerkeleyDBStorage(
-                config={'decode': 'utf-8', 'filename': os.path.join(self.db, "sample_to_colour_lookup")})
-
+                filename=os.path.join(self.db, "colour_to_sample_lookup"), decode='utf-8')
             self.bloom_filter_size = int(self.metadata['bloom_filter_size'])
             self.num_hashes = int(self.metadata['num_hashes'])
             self.kmer_size = int(self.metadata['kmer_size'])
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = ProbabilisticBerkeleyDBStorage(
-                {'filename': os.path.join(self.db, "graph")}, bloom_filter_size=self.bloom_filter_size, num_hashes=self.num_hashes)
+            self.graph = ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
+                                                        bloom_filter_size=self.bloom_filter_size,
+                                                        num_hashes=self.num_hashes)
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
@@ -106,7 +106,7 @@ class CBG(object):
             logger.info("Initialising CBG at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
             metadata = BerkeleyDBStorage(
-                config={'decode': 'utf-8', 'filename': metadata_filepath})
+                decode='utf-8', filename=metadata_filepath)
             metadata["bloom_filter_size"] = m
             metadata["num_hashes"] = h
             metadata["kmer_size"] = k
@@ -119,9 +119,10 @@ class CBG(object):
         [self._add_sample(s) for s in samples]
         cbg = transpose(bloomfilters)
         for i, ba in enumerate(cbg):
-            if (i % self.bloom_filter_size/100) == 0:
-                logger.debug("%i of %i" % (i, self.bloom_filter_size))
+            if (i % (self.bloom_filter_size/10)) == 0:
+                logger.info("%i of %i" % (i, self.bloom_filter_size))
             self.graph[i] = ba.tobytes()
+        self.sync()
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):
@@ -173,10 +174,13 @@ class CBG(object):
             logger.debug("Inserting bloomfilter into colour %i" % colour)
             self.graph.insert(bloomfilter, int(colour))
 
+    def colours(self, kmer):
+        return {kmer: self._colours(kmer)}
+
     @convert_kmers_to_canonical
-    def colours(self, kmer, canonical=False):
+    def _colours(self, kmer, canonical=False):
         colour_presence_boolean_array = self.graph.lookup(kmer)
-        return {kmer: colour_presence_boolean_array.colours()}
+        return colour_presence_boolean_array.colours()
 
     def _get_kmers_colours(self, kmers):
         for kmer in kmers:

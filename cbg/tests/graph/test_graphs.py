@@ -29,7 +29,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 @given(Graph=ST_GRAPH)
 def test_create(Graph):
-    cbg = Graph.create()
+    cbg = Graph.create(m=100)
     assert cbg.kmer_size == 31
     assert os.path.isdir("db-cbg")
     cbg.delete_all()
@@ -39,7 +39,7 @@ def test_create(Graph):
 def test_force_create(Graph):
     cbg = Graph.create()
     with pytest.raises(FileExistsError):
-        Graph.create()
+        Graph.create(m=100)
     cbg = Graph.create(force=True)
     assert cbg.kmer_size == 31
     assert os.path.isdir("db-cbg")
@@ -97,7 +97,7 @@ def test_insert_lookup_kmers(Graph, sample, seq, k, m, h):
 
 # TODO update for insert to take bloomfilter
 @given(Graph=ST_GRAPH, kmer=ST_KMER)
-@example(Graph=CBG, kmer='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+# @example(Graph=CBG, kmer='ATAAAAAAAAAAAAAAAAAAAAAAAAAAATT')
 def test_insert_get_kmer(Graph, kmer):
     cbg = Graph.create(m=100, force=True)
     bloom = cbg.bloom([kmer])

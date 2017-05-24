@@ -8,7 +8,7 @@ from cbg.tests.base import ST_SEQ
 from cbg.tests.base import ST_KMER
 from cbg.tests.base import ST_SAMPLE_NAME
 from cbg.tests.base import ST_GRAPH
-from cbg.tests.base import ST_STORAGE
+from cbg import CBG
 import hypothesis.strategies as st
 from hypothesis import given
 import random
@@ -17,11 +17,15 @@ from cbg.utils import seq_to_kmers
 from bitarray import bitarray
 import numpy as np
 
+Graph = CBG.create(m=100, force=True)
+
 
 def test_bloom_cmd():
     f = '/tmp/test_kmers.bloom'
     response = hug.test.post(
-        cbg.__main__, 'bloom', {'ctx': 'cbg/tests/data/test_kmers.ctx', 'outfile': f})
+        cbg.__main__, 'bloom', {'db': Graph.db,
+                                'ctx': 'cbg/tests/data/test_kmers.ctx',
+                                'outfile': f})
     a = bitarray()
     with open(f, 'rb') as inf:
         a.fromfile(inf)
@@ -40,8 +44,9 @@ import string
 
 
 def test_build_cmd():
-    f = '/tmp/data'
+    f = Graph.db
     response = hug.test.delete(cbg.__main__, '', {'db': f})
+    response = hug.test.post(cbg.__main__, 'init', {'db': f, 'm': 1000})
     N = 3
     bloomfilter_filepaths = ['cbg/tests/data/test_kmers.bloom']*N
     samples = []
@@ -49,8 +54,9 @@ def test_build_cmd():
         samples.append(''.join(random.choice(
             string.ascii_uppercase + string.digits) for _ in range(6)))
     response = hug.test.post(
-        cbg.__main__, 'build', {'bloomfilters': bloomfilter_filepaths,
-                                'outfile': f, 'samples': samples, 'bloom_filter_size': 1000})
+        cbg.__main__, 'build', {'db': f,
+                                'bloomfilters': bloomfilter_filepaths,
+                                'samples': samples})
     # TODO fix below
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
     response = hug.test.get(cbg.__main__, 'search', {'db': f, 'seq': seq})
@@ -59,7 +65,6 @@ def test_build_cmd():
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
     response = hug.test.get(cbg.__main__, 'search', {
                             'db': f, 'seq': seq, 'threshold': 0.1})
-    print(response.data)
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(

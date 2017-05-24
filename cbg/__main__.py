@@ -21,7 +21,7 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 import hug
 import tempfile
-from cbg.graph import CBG as Graph
+from cbg.graph import CBG
 
 BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
@@ -80,25 +80,7 @@ CACHESIZE = int(os.environ.get("CACHESIZE", 1))
 # DEFAULT_GRAPH = GRAPH = Graph(BDB_DB_FILENAME)
 
 
-def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):
-    if bdb_db_filename is None:
-        bdb_db_filename = BDB_DB_FILENAME
-    # logger.info("Loading graph with %s storage." % (STORAGE))
-
-    # if STORAGE == "berkeleydb":
-    logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
-    if bdb_db_filename is None:
-        bdb_db_filename = BDB_DB_FILENAME
-        return DEFAULT_GRAPH
-    else:
-        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                      bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
-    # else:
-    #     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-    #                                              "credis": CREDIS}},
-    # bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES,
-    # kmer_size=kmer_size)
-    return GRAPH
+DEFUALT_DB_DIRECTORY = "./db-cbg/"
 
 
 def extract_kmers_from_ctx(ctx):
@@ -110,6 +92,12 @@ def extract_kmers_from_ctx(ctx):
 @hug.object(name='cbg', version='0.1.1', api=API)
 @hug.object.urls('/', requires=())
 class cbg(object):
+
+    @hug.object.cli
+    @hug.object.post('/init', output_format=hug.output_format.json)
+    def init(self, db, k=31, m=25*10**6, h=3, force=False):
+        cbg = CBG.create(db=db, k=k, m=m, h=h, force=force)
+        return {'k': k, 'm': m, 'h': h, 'db': db}
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
@@ -127,10 +115,8 @@ class cbg(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, db="./db", kmers=None, seqfile=None, ctx=None,
-              bloom_filter_size=BFSIZE, kmer_size=31):
-        if bloom_filter_size is not None:
-            bloom_filter_size = int(bloom_filter_size)
+    def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None):
+        cbg = CBG(db)
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. cbg insert ERR1010211.ctx
@@ -140,39 +126,34 @@ class cbg(object):
             kmers = extract_kmers_from_ctx(ctx)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
-        graph = Graph(storage={'berkeleydb': {'filename': db}},
-                      bloom_filter_size=bloom_filter_size,
-                      num_hashes=NUM_HASHES, kmer_size=kmer_size)
-        bf = bloom(outfile=outfile, kmers=kmers,
-                   kmer_file=seqfile, graph=graph)
+        bf = bloom(outfile=outfile, kmers=kmers, kmer_file=seqfile, graph=cbg)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, outfile: hug.types.text,
+    def build(self, db: hug.types.text,
               bloomfilters: hug.types.multiple,
-              samples: hug.types.multiple = [],
-              bloom_filter_size=None):
-        if bloom_filter_size is not None:
-            bloom_filter_size = int(bloom_filter_size)
+              samples: hug.types.multiple = []):
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
             samples = bloomfilters
-        return build(bloomfilter_filepaths=bloomfilters, samples=samples, graph=get_graph(bdb_db_filename=outfile, bloom_filter_size=bloom_filter_size))
+        return build(graph=CBG(db), bloomfilter_filepaths=bloomfilters, samples=samples)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
                     output_format=hug.output_format.json,
                     response_headers={"Access-Control-Allow-Origin": "*"})
     # @do_cprofile
-    def search(self, db: hug.types.text=None, seq: hug.types.text=None, seqfile: hug.types.text=None,
+    def search(self, db: hug.types.text=None,
+               seq: hug.types.text=None,
+               seqfile: hug.types.text=None,
                threshold: hug.types.float_number=1.0,
                output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
                pipe_out: hug.types.smart_boolean=False,
                pipe_in: hug.types.smart_boolean=False,
                cachesize: hug.types.number=4,
-               kmer_size: hug.types.number=31,
                score: hug.types.smart_boolean=True):
+        cbg = CBG(db, cachesize=cachesize)
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -187,16 +168,19 @@ class cbg(object):
                     openfile.write(line)
             result = search(
                 seq=None, fasta_file=fp, threshold=threshold,
-                graph=get_graph(
-                    bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size),
-                output_format=output_format, pipe=pipe_out, score=score)
+                graph=cbg,
+                output_format=output_format,
+                pipe=pipe_out,
+                score=score)
 
         else:
             result = search(seq=seq,
-                            fasta_file=seqfile, threshold=threshold,
-                            graph=get_graph(
-                                bdb_db_filename=db, cachesize=cachesize, mode='r', kmer_size=kmer_size),
-                            output_format=output_format, pipe=pipe_out, score=score)
+                            fasta_file=seqfile,
+                            threshold=threshold,
+                            graph=cbg,
+                            output_format=output_format,
+                            pipe=pipe_out,
+                            score=score)
 
         if not pipe_out:
             return result
@@ -204,7 +188,12 @@ class cbg(object):
     @hug.object.cli
     @hug.object.delete('/', output_format=hug.output_format.json)
     def delete(self, db: hug.types.text=None):
-        return delete(graph=get_graph(bdb_db_filename=db))
+        try:
+            cbg = CBG(db)
+        except ValueError:
+            pass
+        else:
+            return delete(cbg)
 
     # @hug.object.cli
     # @hug.object.get('/graph', output_format=hug.output_format.json)
