@@ -3,6 +3,48 @@
 
 CBG can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
 
+
+# Installing without docker
+
+cbg has a docker image that bundles mccortex, berkeley DB and CBG in one image. Skip to `Quickstart with docker` for an easier install.. 
+
+#### Install requirement berkeley-db
+
+	brew install berkeley-db4
+	pip install cython
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+
+For berkeley-db install on unix, see [Dockerfile](Dockerfile). 
+
+#### Install CBG
+
+	pip install cbg
+
+## Quickstart
+
+## Prepare the data
+
+Requires [mccortex](github.com/mcveanlab/mccortex). 
+
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+
+#### Construct the bloom filters
+
+	cbg init test-data/db --k 21 --m 1000 --h 3
+
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
+	
+### Build the combined graph
+
+	cbg build test-data/db test-data/test1.bloom test-data/test2.bloom
+
+### Query the graph
+	cbg search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+
+	
+
 # Quickstart with docker
 
 	docker pull phelimb/cbg
@@ -33,45 +75,7 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 	
 
 
-# Installing without docker
-
-#### Install requirement berkeley-db
-
-	brew install berkeley-db4
-	pip install cython
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
-
-For unix, see [Dockerfile](Dockerfile). 
-
-#### Install CBG
-
-	pip install cbg
-
-## Quickstart
-
-## Prepare the data
-
-Requires [mccortex](github.com/mcveanlab/mccortex). 
-
-	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
-
-#### Construct the bloom filters
-
-	cbg init test-data/db --k 21 --m 1000 --h 3
-
-	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
-	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
-	
-### Build the combined graph
-
-	cbg build test-data/db test-data/test1.bloom test-data/test2.bloom
-
-### Query the graph
-	cbg search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
-
-	
-## Search for variant alleles
+# Search for variant alleles
 
 You'll need to install atlas-var e.g.
 
