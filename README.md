@@ -93,7 +93,7 @@ e.g.
 # Parameter choices:
 
 
-## How do I decide on bloom filter size and number of hashes when building an atlas? 
+## How do I decide on bloom filter size and number of hashes when building a CBG? 
 
 ### Short answer:
 
@@ -101,7 +101,7 @@ Use an onli\ne calculator to determine the bloom filter size (m) and number hash
 
 e.g. for a Ecoli sequence set I'd expect ~5million unique kmers so I'd set m=30,000,00 and h = 4. (see [http://hur.st/bloomfilter?n=5000000&p=0.05](http://hur.st/bloomfilter?n=5000000&p=0.05))
 
-The resulting disk/memory size of the atlas will be:
+The resulting disk/memory size of the graph will be:
 
 	~ N * m bits 
 	
