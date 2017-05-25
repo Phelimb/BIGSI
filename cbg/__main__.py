@@ -56,6 +56,7 @@ from cbg.cmds.rowjoin import rowjoin
 # from cbg.cmds.bitcount import bitcount
 # from cbg.cmds.jaccard_index import jaccard_index
 from cbg.utils.cortex import GraphReader
+from cbg.utils import seq_to_kmers
 import cProfile
 from cbg.version import __version__
 
@@ -83,10 +84,11 @@ CACHESIZE = int(os.environ.get("CACHESIZE", 1))
 DEFUALT_DB_DIRECTORY = "./db-cbg/"
 
 
-def extract_kmers_from_ctx(ctx):
+def extract_kmers_from_ctx(ctx, k):
     gr = GraphReader(ctx)
     for i in gr:
-        yield i.kmer.canonical_value
+        for kmer in seq_to_kmers(i.kmer.canonical_value, k):
+            yield kmer
 
 
 @hug.object(name='cbg', version='0.1.1', api=API)
@@ -123,7 +125,7 @@ class cbg(object):
 
         """
         if ctx:
-            kmers = extract_kmers_from_ctx(ctx)
+            kmers = extract_kmers_from_ctx(ctx, cbg.kmer_size)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
         bf = bloom(outfile=outfile, kmers=kmers, kmer_file=seqfile, graph=cbg)

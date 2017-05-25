@@ -21,10 +21,12 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 
 #### Construct the bloom filters
 
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg  init /data/test.cbg --k 21 --m 1000 --h 3
+
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test2.bloom	
 #### Build the combined graph
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom
 
 #### Query the graph
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
@@ -56,15 +58,17 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 
 #### Construct the bloom filters
 
-	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
-	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
+	cbg init test-data/db --k 21 --m 1000 --h 3
+
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
 	
 ### Build the combined graph
 
-	cbg build test-data/test.cbg test-data/test1.bloom test-data/test2.bloom -b 1000
+	cbg build test-data/db test-data/test1.bloom test-data/test2.bloom
 
 ### Query the graph
-	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	cbg search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 	
 ## Search for variant alleles
