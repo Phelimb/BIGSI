@@ -68,22 +68,22 @@ class CBG(object):
         self.db = db
         try:
             self.metadata = BerkeleyDBStorage(
-                filename=os.path.join(self.db, "metadata"), decode='utf-8')
+                filename=os.path.join(self.db, "metadata"))
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             raise ValueError(
                 "Cannot find a CBG at %s. Run `cbg init` or CBG.create()" % db)
         else:
-            self.sample_to_colour_lookup = BerkeleyDBStorage(
-                filename=os.path.join(self.db, "sample_to_colour_lookup"), decode='utf-8')
-            self.colour_to_sample_lookup = BerkeleyDBStorage(
-                filename=os.path.join(self.db, "colour_to_sample_lookup"), decode='utf-8')
-            self.bloom_filter_size = int(self.metadata['bloom_filter_size'])
-            self.num_hashes = int(self.metadata['num_hashes'])
-            self.kmer_size = int(self.metadata['kmer_size'])
+            self.bloom_filter_size = int.from_bytes(
+                self.metadata['bloom_filter_size'], 'big')
+            self.num_hashes = int.from_bytes(
+                self.metadata['num_hashes'], 'big')
+            self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
             self.scorer = Scorer(self.get_num_colours())
             self.graph = ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
                                                         bloom_filter_size=self.bloom_filter_size,
                                                         num_hashes=self.num_hashes)
+            self.colour_to_sample_cache = self.metadata_hgetall(
+                "colours")
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
@@ -105,8 +105,7 @@ class CBG(object):
         else:
             logger.info("Initialising CBG at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
-            metadata = BerkeleyDBStorage(
-                decode='utf-8', filename=metadata_filepath)
+            metadata = BerkeleyDBStorage(filename=metadata_filepath)
             metadata["bloom_filter_size"] = m
             metadata["num_hashes"] = h
             metadata["kmer_size"] = k
@@ -158,12 +157,59 @@ class CBG(object):
     def lookup_raw(self, kmer):
         return self._lookup_raw(kmer)
 
+    def metadata_set(self, metadata_key, value):
+        self.metadata[metadata_key] = pickle.dumps(value)
+
+    def metadata_hgetall(self, metadata_key):
+        return pickle.loads(self.metadata.get(metadata_key, pickle.dumps({})))
+
+    def metadata_hget(self, metadata_key, key):
+        return self.metadata_hgetall(metadata_key).get(key)
+
+    def add_sample_metadata(self, sample, key, value, overwrite=False):
+        metadata_key = "ss_%s" % sample
+        self.metadata_hset(metadata_key, key, value, overwrite=overwrite)
+
+    def lookup_sample_metadata(self, sample):
+        metadata_key = "ss_%s" % sample
+        return self.metadata_hgetall(metadata_key)
+
+    def metadata_hset(self, metadata_key, key, value, overwrite=False):
+        metadata_values = self.metadata_hgetall(metadata_key)
+        if key in metadata_values and not overwrite:
+            raise ValueError("%s is already in the metadata of %s with value %s " % (
+                key, metadata_key, metadata_values[key]))
+        else:
+            metadata_values[key] = value
+            self.metadata_set(metadata_key, metadata_values)
+
+    def set_colour(self, colour, sample, overwrite=False):
+        colour = int(colour)
+        self.metadata_hset("colours", colour, sample)
+        self.colour_to_sample_cache[colour] = sample
+
+    def sample_to_colour(self, sample):
+        return self.lookup_sample_metadata(sample).get('colour')
+
+    def colour_to_sample(self, colour):
+        return self.colour_to_sample_cache.get(int(colour))
+
+    def delete_sample(self, sample_name):
+        try:
+            colour = self.sample_to_colour(sample_name)
+        except:
+            raise ValueError("Can't find sample %s" % sample_name)
+        else:
+            self.set_colour(colour, "DELETED")
+            self.delete_sample(sample_name)
+            del self.metadata_hgetall[sample_name]
+
     @convert_kmers_to_canonical
     def _lookup_raw(self, kmer, canonical=False):
         return self.graph.lookup(kmer).tobytes()
 
     def get_bloom_filter(self, sample):
-        colour = self.get_colour_from_sample(sample)
+        colour = self.sample_to_colour(sample)
         return self.graph.get_bloom_filter(colour)
 
     def create_bloom_filter(self, kmers):
@@ -197,9 +243,8 @@ class CBG(object):
     @convert_kmers_to_canonical
     def _search_kmer(self, kmer, canonical=False):
         out = {}
-        colours_to_sample_dict = self.colours_to_sample_dict()
         for colour in self.colours(kmer, canonical=True):
-            sample = colours_to_sample_dict.get(colour, 'missing')
+            sample = self.colour_to_sample_cache.get(colour, 'missing')
             if sample != "DELETED":
                 out[sample] = 1.0
         return out
@@ -221,19 +266,18 @@ class CBG(object):
         out = {}
         kmers = list(kmers)
         result = self._search_kmers_threshold_not_1_without_scoring(
-            kmers, threshold)
+            kmers, threshold, convert_colours=False)
         kmer_lookups = [self.graph.lookup(kmer) for kmer in kmers]
-        for sample, r in result.items():
+        for colour, r in result.items():
             percent = r["percent_kmers_found"]
-            colour = int(self.sample_to_colour_lookup.get(sample))
             s = "".join([str(int(kmer_lookups[i][colour]))
                          for i in range(len(kmers))])
+            sample = self.colour_to_sample_cache.get(colour, 0)
             out[sample] = self.scorer.score(s)
             out[sample]["percent_kmers_found"] = percent
         return out
 
-    def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold):
-        colours_to_sample_dict = self.colours_to_sample_dict()
+    def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold, convert_colours=True):
         tmp = Counter()
         lkmers = 0
         for kmer, ba in self._get_kmers_colours(kmers):
@@ -249,7 +293,10 @@ class CBG(object):
         for i, f in enumerate(cumsum):
             res = f/lkmers
             if res >= threshold:
-                sample = colours_to_sample_dict.get(i, i)
+                if convert_colours:
+                    sample = self.colour_to_sample_cache.get(i, i)
+                else:
+                    sample = i
                 if sample != "DELETED":
                     out[sample] = {}
                     out[sample]["percent_kmers_found"] = 100*res
@@ -262,7 +309,7 @@ class CBG(object):
             kmers)
         out = {}
         for c in ba.colours():
-            sample = self.get_sample_from_colour(c)
+            sample = self.colour_to_sample(c)
             if sample != "DELETED":
                 out[sample] = self.scorer.score(
                     "1"*(len(kmers)+self.kmer_size-1))  # Fix!
@@ -273,29 +320,20 @@ class CBG(object):
     def _lookup(self, kmer, canonical=False):
         assert not isinstance(kmer, list)
         num_colours = self.get_num_colours()
-        colour_to_sample = self.colours_to_sample_dict()
         colour_presence_boolean_array = self.graph.lookup(
             kmer)
         samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
             if present:
-                samples_present.append(colour_to_sample.get(i, "unknown"))
+                samples_present.append(
+                    self.colour_to_sample_cache.get(i, "unknown"))
             if i > num_colours:
                 break
         return samples_present
 
-    def delete_sample(self, sample_name):
-        try:
-            colour = int(self.get_colour_from_sample(sample_name))
-        except:
-            raise ValueError("Can't find sample %s" % sample_name)
-        else:
-            self.colour_to_sample_lookup[colour] = "DELETED"
-            del self.sample_to_colour_lookup[sample_name]
-
     def _add_sample(self, sample_name):
         logger.debug("Adding sample %s" % sample_name)
-        existing_index = self.get_colour_from_sample(sample_name)
+        existing_index = self.sample_to_colour(sample_name)
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
         else:
@@ -304,47 +342,24 @@ class CBG(object):
                 colour = 0
             else:
                 colour = int(colour)
-            self.sample_to_colour_lookup[sample_name] = colour
-            self.colour_to_sample_lookup[colour] = sample_name
+            self.add_sample_metadata(sample_name, 'colour', colour)
+            self.set_colour(colour, sample_name)
             self.metadata.incr('num_colours')
             return colour
 
-    def get_colour_from_sample(self, sample_name):
-        c = self.sample_to_colour_lookup.get(sample_name)
-        if c is not None:
-            return int(c)
-        else:
-            return c
-
-    def get_sample_from_colour(self, colour):
-        return self.colour_to_sample_lookup.get(int(colour))
-
     def get_num_colours(self):
         try:
-            return int(self.metadata.get('num_colours'))
+            return int.from_bytes(
+                self.metadata.get('num_colours'), 'big')
         except TypeError:
             return 0
 
-    def colours_to_sample_dict(self):
-        return self.colour_to_sample_lookup
-
     def sync(self):
         if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
-            self.sample_to_colour_lookup.storage.sync()
-            self.colour_to_sample_lookup.storage.sync()
             self.graph.storage.sync()
             self.metadata.storage.sync()
 
-    # def close(self):
-    #     if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
-    #         self.sample_to_colour_lookup.storage.close()
-    #         self.colour_to_sample_lookup.storage.close()
-    #         self.graph.storage.close()
-    #         self.metadata.storage.close()
-
     def delete_all(self):
-        self.sample_to_colour_lookup.delete_all()
-        self.colour_to_sample_lookup.delete_all()
         self.graph.delete_all()
         self.metadata.delete_all()
         os.rmdir(self.db)

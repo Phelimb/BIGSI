@@ -459,7 +459,7 @@ class BerkeleyDBCollectionStorage(BaseStorage):
 
 class BerkeleyDBStorage(BaseStorage):
 
-    def __init__(self, filename=None, mode="c", cachesize=4, decode=None):
+    def __init__(self, filename=None, mode="c", cachesize=4, decode=None, store_int_as_string=False):
         if filename is None:
             raise ValueError(
                 "You must supply a 'filename'")
@@ -477,7 +477,8 @@ class BerkeleyDBStorage(BaseStorage):
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v = int(self.get(key))
+        v = int.from_bytes(
+            self.get(key), 'big')
         v += 1
         self[key] = v
 
@@ -498,22 +499,18 @@ class BerkeleyDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = str.encode(str(key))
-            # key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(4, byteorder='big')
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
-            val = str.encode(str(val))
+            val = (val).to_bytes(4, byteorder='big')
         self.storage[key] = val
-        if self.decode:
-            self.storage.sync()
 
     def __getitem__(self, key):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = str.encode(str(key))
-            # key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(4, byteorder='big')
         v = self.storage[key]
         if self.decode:
             return v.decode(self.decode)

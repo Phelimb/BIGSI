@@ -78,34 +78,6 @@ API = hug.API('cbg-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 CACHESIZE = int(os.environ.get("CACHESIZE", 1))
-<<<<<<< HEAD
-DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAME, 'cachesize': CACHESIZE, 'mode': 'c'}},
-                              bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
-
-
-def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=CACHESIZE, mode='c', kmer_size=31):
-    if bdb_db_filename is None:
-        bdb_db_filename = BDB_DB_FILENAME
-    # logger.info("Loading graph with %s storage." % (STORAGE))
-
-    # if STORAGE == "berkeleydb":
-    logger.info("Using Berkeley DB - %s" % (bdb_db_filename))
-    if bdb_db_filename is None:
-        bdb_db_filename = BDB_DB_FILENAME
-        return DEFAULT_GRAPH
-    else:
-        GRAPH = Graph(storage={'berkeleydb': {'filename': bdb_db_filename, 'cachesize': cachesize, 'mode': mode}},
-                      bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES, kmer_size=kmer_size)
-    # else:
-    #     GRAPH = Graph(storage={'redis-cluster': {"conn": CONN_CONFIG,
-    #                                              "credis": CREDIS}},
-    # bloom_filter_size=bloom_filter_size, num_hashes=NUM_HASHES,
-    # kmer_size=kmer_size)
-    return GRAPH
-
-
-def extract_kmers_from_ctx(ctx):
-=======
 # DEFAULT_GRAPH = GRAPH = Graph(BDB_DB_FILENAME)
 
 
@@ -113,7 +85,6 @@ DEFUALT_DB_DIRECTORY = "./db-cbg/"
 
 
 def extract_kmers_from_ctx(ctx, k):
->>>>>>> f01642c77840a667923931221648dbcf15cc7da2
     gr = GraphReader(ctx)
     for i in gr:
         for kmer in seq_to_kmers(i.kmer.canonical_value, k):
