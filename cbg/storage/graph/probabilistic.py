@@ -146,8 +146,8 @@ class BloomFilterMatrix:
 
 class BaseProbabilisticStorage(BaseStorage):
 
-    def __init__(self, config, bloom_filter_size, num_hashes):
-        super().__init__(config)
+    def __init__(self, bloom_filter_size, num_hashes, **kwargs):
+        super().__init__(**kwargs)
         self.bloomfilter = BloomFilterMatrix(
             size=bloom_filter_size, num_hashes=num_hashes, storage=self)
 
@@ -183,7 +183,7 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def get_row(self, index):
         b = BitArray()
-        b.frombytes(self[index])
+        b.frombytes(self.get(index, b''))
         return b
 
     def get_rows(self, indexes):
@@ -208,93 +208,12 @@ class BaseProbabilisticStorage(BaseStorage):
             self[i] = infile.read(record_size)
 
 
-# class ProbabilisticInMemoryStorage(BaseProbabilisticStorage, InMemoryStorage):
-
-#     def __init__(self, config={'dict', None}, bloom_filter_size=100000, num_hashes=3):
-#         super().__init__(config, bloom_filter_size, num_hashes)
-#         self.name = 'probabilistic-inmemory'
-
-#     def setbits(self, indexes, colour, bit):
-#         for index in indexes:
-#             self.setbit(index, colour, bit)
-
-#     def setbit(self, index, colour, bit):
-#         r = self.get_row(index)
-#         r.setbit(colour, bit)
-#         self.set_row(index, r)
-
-#     def getbit(self, index, colour):
-#         return self.get_row(index).getbit(colour)
-
-
-# class ProbabilisticRedisHashStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
-
-#     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
-#         super().__init__(config, bloom_filter_size, num_hashes)
-#         self.name = 'probabilistic-redis'
-
-#     def get_rows(self, indexes):
-#         indexes = [i for i in indexes]
-#         bas = []
-#         rows = self._get_raw_rows(indexes)
-#         for r in rows:
-#             b = BitArray()
-#             if r is None:
-#                 r = b''
-#             b.frombytes(r)
-#             bas.append(b)
-#         return bas
-
-#     def _get_raw_rows(self, indexes):
-#         names = [self.get_name(i) for i in indexes]
-#         return self.storage.hget(names, indexes, partition_arg=1)
-
-#     def setbit(self, index, colour, bit):
-#         r = self.get_row(index)
-#         r.setbit(colour, bit)
-#         self.set_row(index, r)
-
-#     def getbit(self, index, colour):
-#         return self.get_row(index).getbit(colour)
-
-
-# class ProbabilisticRedisBitArrayStorage(BaseProbabilisticStorage, RedisBitArrayStorage):
-
-#     def __init__(self, config={"conn": [('localhost', 6379)]}, bloom_filter_size=1000000, num_hashes=3):
-#         super().__init__(config, bloom_filter_size, num_hashes)
-#         self.name = 'probabilistic-redis'
-
-#     def get_rows(self, indexes):
-#         indexes = list(indexes)
-#         bas = []
-#         rows = self._get_raw_rows(indexes)
-#         for r in rows:
-#             b = BitArray()
-#             if r is None:
-#                 b.append(False)
-#             else:
-#                 b.frombytes(r)
-#             bas.append(b)
-#         return bas
-
-#     def _get_raw_rows(self, indexes):
-#         pipe = self.storage.pipeline()
-#         for i in indexes:
-#             pipe.get(i)
-#         raw_rows = pipe.execute()
-#         return raw_rows
-
-#     def items(self):
-#         for i, r in enumerate(self._get_raw_rows(range(self.bloomfilter.size))):
-#             if r is None:
-#                 r = b''
-#             yield (i, r)
-
-
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
 
-    def __init__(self, config={'filename': './db'}, bloom_filter_size=1000000, num_hashes=3):
-        super().__init__(config, bloom_filter_size, num_hashes)
+    def __init__(self, filename, bloom_filter_size, num_hashes, mode="c", cachesize=4, decode=None):
+        super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
+                         num_hashes=num_hashes, mode=mode,
+                         cachesize=cachesize, decode=decode)
         self.name = 'probabilistic-bsddb'
 
     def setbits(self, indexes, colour, bit):

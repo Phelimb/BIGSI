@@ -25,13 +25,9 @@ from cbg.decorators import convert_kmers_to_canonical
 from cbg.bytearray import ByteArray
 
 
-# from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
-# from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
-# from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
 
-# from cbg.storage import InMemoryStorage
-# from cbg.storage import SimpleRedisStorage
+
 from cbg.storage import BerkeleyDBStorage
 from cbg.sketch import HyperLogLogJaccardIndex
 from cbg.sketch import MinHashHashSet
@@ -53,36 +49,69 @@ def load_bloomfilter(f):
         bloomfilter.fromfile(inf)
     return bloomfilter
 
+# TODO - parameters should be set once and then read from metadata
+# bloom, search commands should only need to point to the DB and
+# parameters are read from there
 
-class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
+# TODO
+# create class method to init the `cbg init` - CBG().create(m=,n,)
+# test if init without creating first returns error
+# cbg init fails if directory already exists
+import os
+import bsddb3
+DEFUALT_DB_DIRECTORY = "./db-cbg/"
 
-    def __init__(self, kmer_size=31, binary_kmers=True, storage={'berkeleydb': {'filename': 'db', 'cachesize': 1}},
-                 bloom_filter_size=25000000, num_hashes=3):
-        super().__init__(kmer_size=kmer_size, binary_kmers=binary_kmers,
-                         storage=storage)
-        self.storage = storage
-        # self.hll_sketch = HyperLogLogJaccardIndex()
-        # self.min_hash = MinHashHashSet()
-        self.bloom_filter_size = self.metadata.get('bloom_filter_size')
-        self.num_hashes = self.metadata.get('num_hashes')
-        if self.bloom_filter_size:
-            self.bloom_filter_size = int(
-                self.bloom_filter_size)
-            self.num_hashes = int(self.num_hashes)
-            logger.debug("BF_SIZE %i " % self.bloom_filter_size)
-            # if self.get_num_colours() > 0 and (bloom_filter_size != self.bloom_filter_size or num_hashes != self.num_hashes):
-            #     raise ValueError("""This pre existing graph has settings - BFSIZE=%i;NUM_HASHES=%i.
-            #                             You cannot insert or query data using BFSIZE=%i;NUM_HASHES=%i""" %
-            #                      (self.bloom_filter_size, self.num_hashes, bloom_filter_size, num_hashes))
+
+class CBG(object):
+
+    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1):
+        self.db = db
+        try:
+            self.metadata = BerkeleyDBStorage(
+                filename=os.path.join(self.db, "metadata"), decode='utf-8')
+        except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
+            raise ValueError(
+                "Cannot find a CBG at %s. Run `cbg init` or CBG.create()" % db)
         else:
-            self.metadata['bloom_filter_size'] = bloom_filter_size
-            self.metadata['num_hashes'] = num_hashes
-            self.bloom_filter_size = bloom_filter_size
-            self.num_hashes = num_hashes
-        self.graph.set_bloom_filter_size(self.bloom_filter_size)
-        logger.debug("init with bfsize %s" % str(self.bloom_filter_size))
-        self.graph.set_num_hashes(self.num_hashes)
-        self.scorer = Scorer(self.get_num_colours())
+            self.sample_to_colour_lookup = BerkeleyDBStorage(
+                filename=os.path.join(self.db, "sample_to_colour_lookup"), decode='utf-8')
+            self.colour_to_sample_lookup = BerkeleyDBStorage(
+                filename=os.path.join(self.db, "colour_to_sample_lookup"), decode='utf-8')
+            self.bloom_filter_size = int(self.metadata['bloom_filter_size'])
+            self.num_hashes = int(self.metadata['num_hashes'])
+            self.kmer_size = int(self.metadata['kmer_size'])
+            self.scorer = Scorer(self.get_num_colours())
+            self.graph = ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
+                                                        bloom_filter_size=self.bloom_filter_size,
+                                                        num_hashes=self.num_hashes)
+
+    @classmethod
+    def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
+        # Initialises a CBG
+        # m: bloom_filter_size
+        # h: number of hash functions
+        # directory - where to store the cbg
+        try:
+            os.mkdir(db)
+        except FileExistsError:
+            if force:
+                logger.info("Clearing and recreating %s" % db)
+                cls(db).delete_all()
+                return cls.create(db=db, k=k, m=m, h=h,
+                                  cachesize=cachesize, force=False)
+            raise FileExistsError(
+                "A CBG already exists at %s. Run with --force or CBG.create(force=True) to recreate." % db)
+
+        else:
+            logger.info("Initialising CBG at %s" % db)
+            metadata_filepath = os.path.join(db, "metadata")
+            metadata = BerkeleyDBStorage(
+                decode='utf-8', filename=metadata_filepath)
+            metadata["bloom_filter_size"] = m
+            metadata["num_hashes"] = h
+            metadata["kmer_size"] = k
+            metadata.sync()
+            return cls(db=db, cachesize=cachesize)
 
     def build(self, bloomfilters, samples):
         bloom_filter_size = len(bloomfilters[0])
@@ -90,15 +119,14 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         [self._add_sample(s) for s in samples]
         cbg = transpose(bloomfilters)
         for i, ba in enumerate(cbg):
-            if (i % self.bloom_filter_size/100) == 0:
-                logger.debug("%i of %i" % (i, self.bloom_filter_size))
+            if (i % (self.bloom_filter_size/10)) == 0:
+                logger.info("%i of %i" % (i, self.bloom_filter_size))
             self.graph[i] = ba.tobytes()
-        # Set the bloomfilter size
-        self.graph.set_bloom_filter_size(bloom_filter_size)
         self.sync()
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):
+        logger.info("Building bloom filter")
         return self.graph.bloomfilter.create(kmers)
 
     def insert(self, bloom_filter, sample):
@@ -107,6 +135,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
            sample can not already exist in the graph
         """
         colour = self._add_sample(sample)
+        logger.info("Inserting sample %s into colour %i" % (sample, colour))
         self._insert(bloom_filter, colour)
 
     def search(self, seq, threshold=1, score=True):
@@ -126,6 +155,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
 
         return out
 
+    def lookup_raw(self, kmer):
+        return self._lookup_raw(kmer)
+
+    @convert_kmers_to_canonical
+    def _lookup_raw(self, kmer, canonical=False):
+        return self.graph.lookup(kmer).tobytes()
+
     def get_bloom_filter(self, sample):
         colour = self.get_colour_from_sample(sample)
         return self.graph.get_bloom_filter(colour)
@@ -133,51 +169,18 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def create_bloom_filter(self, kmers):
         return self.graph.create_bloom_filter(kmers)
 
-    def count_kmers(self, *samples):
-        colours = [self.get_colour_from_sample(s) for s in samples]
-        return self.hll_sketch.count(*colours)
-
-    def dump(self, fp):
-
-        dump = {}
-        dump['version'] = __version__
-        dump['metadata'] = self.metadata.dumps()
-        dump['sample_to_colour_lookup'] = self.sample_to_colour_lookup.dumps()
-        dump['colour_to_sample_lookup'] = self.colour_to_sample_lookup.dumps()
-        dump['bloom_filter_size'] = self.graph.bloomfilter.size
-        dump['num_hashes'] = self.graph.bloomfilter.num_hashes
-        with open(fp+".meta", 'wb') as outfile:
-            pickle.dump(dump, outfile)
-
-        with open(fp+".graph", 'wb') as outfile:
-            self.graph.dump(outfile, self.get_num_colours())
-
-    def load(self, fp):
-        with open(fp+".meta", 'rb') as infile:
-            dump = pickle.load(infile)
-        if not dump['version'] == __version__:
-            logger.warning(
-                "You're loading a graph generated by atlas-seq %s. Your version is %s. This may cause compatibility issues." % (dump['version'], __version__))
-        self.metadata.loads(dump['metadata'])
-        self.sample_to_colour_lookup.loads(dump['sample_to_colour_lookup'])
-        self.colour_to_sample_lookup.loads(dump['colour_to_sample_lookup'])
-        self.bloom_filter_size = dump['bloom_filter_size']
-        self.num_hashes = dump['num_hashes']
-        self.graph.set_bloom_filter_size(self.bloom_filter_size)
-        self.graph.set_num_hashes(self.num_hashes)
-        with open(fp+".graph", 'rb') as infile:
-            self.graph.load(infile, self.get_num_colours())
-
     def _insert(self, bloomfilter, colour):
         if bloomfilter:
-            logger.debug("Inserting BF")
+            logger.debug("Inserting bloomfilter into colour %i" % colour)
             self.graph.insert(bloomfilter, int(colour))
 
+    def colours(self, kmer):
+        return {kmer: self._colours(kmer)}
+
     @convert_kmers_to_canonical
-    def _get_kmer_colours(self, kmer, canonical=False):
-        colour_presence_boolean_array = self.graph.lookup(
-            kmer)
-        return {kmer: colour_presence_boolean_array.colours()}
+    def _colours(self, kmer, canonical=False):
+        colour_presence_boolean_array = self.graph.lookup(kmer)
+        return colour_presence_boolean_array.colours()
 
     def _get_kmers_colours(self, kmers):
         for kmer in kmers:
@@ -195,7 +198,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
     def _search_kmer(self, kmer, canonical=False):
         out = {}
         colours_to_sample_dict = self.colours_to_sample_dict()
-        for colour in self._get_kmer_colours(kmer, canonical=True):
+        for colour in self.colours(kmer, canonical=True):
             sample = colours_to_sample_dict.get(colour, 'missing')
             if sample != "DELETED":
                 out[sample] = 1.0
@@ -220,12 +223,13 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
         result = self._search_kmers_threshold_not_1_without_scoring(
             kmers, threshold)
         kmer_lookups = [self.graph.lookup(kmer) for kmer in kmers]
-        for sample, percent in result.items():
+        for sample, r in result.items():
+            percent = r["percent_kmers_found"]
             colour = int(self.sample_to_colour_lookup.get(sample))
             s = "".join([str(int(kmer_lookups[i][colour]))
                          for i in range(len(kmers))])
             out[sample] = self.scorer.score(s)
-            out[sample]["percent_kmer_found"] = percent
+            out[sample]["percent_kmers_found"] = percent
         return out
 
     def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold):
@@ -247,7 +251,8 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if res >= threshold:
                 sample = colours_to_sample_dict.get(i, i)
                 if sample != "DELETED":
-                    out[sample] = 100*res
+                    out[sample] = {}
+                    out[sample]["percent_kmers_found"] = 100*res
         return out
 
     def _search_kmers_threshold_1(self, kmers, score=True):
@@ -261,7 +266,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             if sample != "DELETED":
                 out[sample] = self.scorer.score(
                     "1"*(len(kmers)+self.kmer_size-1))  # Fix!
-                out[sample]["percent_kmer_found"] = 100
+                out[sample]["percent_kmers_found"] = 100
         return out
 
     @convert_kmers_to_canonical
@@ -279,47 +284,6 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
                 break
         return samples_present
 
-    def _choose_storage(self, storage_config):
-
-        #     if 'dict' in storage_config:
-        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-        #         self.graph = ProbabilisticInMemoryStorage(storage_config['dict'])
-        #         self.metadata = InMemoryStorage(storage_config['dict'])
-        #     elif 'redis' in storage_config:
-        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-        #         self.graph = ProbabilisticRedisHashStorage(storage_config['redis'])
-        #         self.metadata = SimpleRedisStorage(
-        #             {'conn': [('127.0.0.1', 6379, 0)]})
-        #     elif 'redis-cluster' in storage_config:
-        #         self.sample_to_colour_lookup = SimpleRedisStorage(key="sample_to_colour",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 1)]})
-        #         self.colour_to_sample_lookup = SimpleRedisStorage(key="colour_to_sample",
-        #                                                           config={'conn': [('127.0.0.1', 6379, 2)]})
-        #         self.graph = ProbabilisticRedisBitArrayStorage(
-        #             storage_config['redis-cluster'])
-        #         self.metadata = SimpleRedisStorage(
-        #             {'conn': [('127.0.0.1', 6379, 0)]})
-
-        #     elif 'berkeleydb' in storage_config:
-        filename = storage_config['berkeleydb']['filename']
-        self.sample_to_colour_lookup = BerkeleyDBStorage(
-            config={'decode': 'utf-8', 'filename': filename + 'sample_to_colour_lookup'})
-        self.colour_to_sample_lookup = BerkeleyDBStorage(
-            config={'decode': 'utf-8', 'filename': filename + 'colour_to_sample_lookup'})
-        self.graph = ProbabilisticBerkeleyDBStorage(
-            storage_config['berkeleydb'])
-        self.metadata = BerkeleyDBStorage(
-            config={'decode': 'utf-8', 'filename': filename + 'metadata'})
-    #     else:
-    #         raise ValueError(
-    #             "Only in-memory dictionary, berkeleydb and redis are supported.")
-
     def delete_sample(self, sample_name):
         try:
             colour = int(self.get_colour_from_sample(sample_name))
@@ -330,7 +294,7 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             del self.sample_to_colour_lookup[sample_name]
 
     def _add_sample(self, sample_name):
-        logger.debug("Adding %s" % sample_name)
+        logger.debug("Adding sample %s" % sample_name)
         existing_index = self.get_colour_from_sample(sample_name)
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
@@ -371,16 +335,16 @@ class ProbabilisticMultiColourDeBruijnGraph(BaseGraph):
             self.graph.storage.sync()
             self.metadata.storage.sync()
 
-    def close(self):
-        if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
-            self.sample_to_colour_lookup.storage.close()
-            self.colour_to_sample_lookup.storage.close()
-            self.graph.storage.close()
-            self.metadata.storage.close()
+    # def close(self):
+    #     if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
+    #         self.sample_to_colour_lookup.storage.close()
+    #         self.colour_to_sample_lookup.storage.close()
+    #         self.graph.storage.close()
+    #         self.metadata.storage.close()
 
     def delete_all(self):
         self.sample_to_colour_lookup.delete_all()
         self.colour_to_sample_lookup.delete_all()
         self.graph.delete_all()
         self.metadata.delete_all()
-        self.sync()
+        os.rmdir(self.db)

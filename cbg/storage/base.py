@@ -459,20 +459,20 @@ class BerkeleyDBCollectionStorage(BaseStorage):
 
 class BerkeleyDBStorage(BaseStorage):
 
-    def __init__(self, config):
-        if 'filename' not in config:
+    def __init__(self, filename=None, mode="c", cachesize=4, decode=None):
+        if filename is None:
             raise ValueError(
-                "You must supply a 'filename' in your config%s" % config)
-        self.db_file = config['filename']
-        self.mode = config.get('mode', 'c')
-        self.cachesize = config.get('cachesize', 4)
+                "You must supply a 'filename'")
+        self.db_file = filename
+        self.mode = mode
+        self.cachesize = cachesize
         try:
             self.storage = hashopen(
                 self.db_file, flag=self.mode, cachesize=self.cachesize)
         except AttributeError:
             raise ValueError(
                 "Please install bsddb3 to use berkeley DB storage")
-        self.decode = config.get('decode', None)
+        self.decode = decode
 
     def incr(self, key):
         if self.get(key) is None:
@@ -535,81 +535,13 @@ class BerkeleyDBStorage(BaseStorage):
 
     def delete_all(self):
         self.storage.close()
-        os.remove(self.db_file)
-        self.storage = hashopen(self.db_file)
+        try:
+            os.remove(self.db_file)
+        except FileNotFoundError:
+            pass
 
     def getmemoryusage(self):
         return 0
 
-
-class LevelDBStorage(BaseStorage):
-
-    def __init__(self, config):
-        if 'filename' not in config:
-            raise ValueError(
-                "You must supply a 'filename' in your config%s" % config)
-        self.db_file = config['filename']
-        try:
-            self.storage = leveldb.DB(
-                self.db_file.encode(), create_if_missing=True)
-        except AttributeError:
-            raise ValueError(
-                "Please install leveldb to use level DB storage")
-
-    def incr(self, key):
-        if self.get(key) is None:
-            self[key] = 0
-        v = int(self.get(key))
-        v += 1
-        self[key] = v
-
-    def keys(self):
-        return self.storage.keys()
-
-    def items(self):
-        for i in self.storage.keys():
-            yield (i.decode('utf-8'), self[i].decode('utf-8'))
-
-    def count_keys(self):
-        return len(self.keys())
-
-    def __setitem__(self, key, val):
-        if isinstance(key, str):
-            key = str.encode(key)
-        elif isinstance(key, int):
-            key = str.encode(str(key))
-        if isinstance(val, str):
-            val = str.encode(val)
-        elif isinstance(val, int):
-            val = str.encode(str(val))
-        self.storage.put(key, val)
-
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            key = str.encode(key)
-        elif isinstance(key, int):
-            key = str.encode(str(key))
-        return self.storage.get(key)
-
-    def get(self, key, default=None):
-        if isinstance(key, str):
-            key = str.encode(key)
-        elif isinstance(key, int):
-            key = str.encode(str(key))
-        try:
-            v = self[key]
-            if v is None:
-                return default
-            else:
-                return v
-        except KeyError:
-            return default
-
-    def delete_all(self):
-        self.storage.close()
-        shutil.rmtree(self.db_file)
-        self.storage = leveldb.DB(
-            self.db_file.encode(), create_if_missing=True)
-
-    def getmemoryusage(self):
-        return 0
+    def sync(self):
+        self.storage.sync()

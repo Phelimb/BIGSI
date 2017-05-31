@@ -3,6 +3,48 @@
 
 CBG can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
 
+
+# Installing without docker
+
+cbg has a docker image that bundles mccortex, berkeley DB and CBG in one image. Skip to `Quickstart with docker` for an easier install.. 
+
+#### Install requirement berkeley-db
+
+	brew install berkeley-db4
+	pip install cython
+	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
+
+For berkeley-db install on unix, see [Dockerfile](Dockerfile). 
+
+#### Install CBG
+
+	pip install cbg
+
+## Quickstart
+
+## Prepare the data
+
+Requires [mccortex](github.com/mcveanlab/mccortex). 
+
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+
+#### Construct the bloom filters
+
+	cbg init test-data/db --k 21 --m 1000 --h 3
+
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
+	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
+	
+### Build the combined graph
+
+	cbg build test-data/db test-data/test1.bloom test-data/test2.bloom
+
+### Query the graph
+	cbg search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+
+	
+
 # Quickstart with docker
 
 	docker pull phelimb/cbg
@@ -21,53 +63,19 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 
 #### Construct the bloom filters
 
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test1.bloom	
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -b 1000 -c /data/test1.ctx /data/test2.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg  init /data/test.cbg --k 21 --m 1000 --h 3
+
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test2.bloom	
 #### Build the combined graph
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom -b 1000
+	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom
 
 #### Query the graph
 	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 	
 
 
-# Installing without docker
-
-#### Install requirement berkeley-db
-
-	brew install berkeley-db4
-	pip install cython
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
-
-For unix, see [Dockerfile](Dockerfile). 
-
-#### Install CBG
-
-	pip install cbg
-
-## Quickstart
-
-## Prepare the data
-
-Requires [mccortex](github.com/mcveanlab/mccortex). 
-
-	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
-
-#### Construct the bloom filters
-
-	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test1.bloom
-	cbg bloom --db test-data/test.cbg -b 1000 -c test-data/test1.ctx test-data/test2.bloom
-	
-### Build the combined graph
-
-	cbg build test-data/test.cbg test-data/test1.bloom test-data/test2.bloom -b 1000
-
-### Query the graph
-	cbg search --db test-data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
-
-	
-## Search for variant alleles
+# Search for variant alleles
 
 You'll need to install atlas-var e.g.
 
@@ -101,7 +109,7 @@ e.g.
 # Parameter choices:
 
 
-## How do I decide on bloom filter size and number of hashes when building an atlas? 
+## How do I decide on bloom filter size and number of hashes when building a CBG? 
 
 ### Short answer:
 
@@ -109,7 +117,7 @@ Use an onli\ne calculator to determine the bloom filter size (m) and number hash
 
 e.g. for a Ecoli sequence set I'd expect ~5million unique kmers so I'd set m=30,000,00 and h = 4. (see [http://hur.st/bloomfilter?n=5000000&p=0.05](http://hur.st/bloomfilter?n=5000000&p=0.05))
 
-The resulting disk/memory size of the atlas will be:
+The resulting disk/memory size of the graph will be:
 
 	~ N * m bits 
 	

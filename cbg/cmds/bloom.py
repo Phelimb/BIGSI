@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg.graph import CBG as Graph
 import os.path
 import logging
 import json

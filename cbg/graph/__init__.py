@@ -1,1 +1,1 @@
-from cbg.graph.probabilistic import ProbabilisticMultiColourDeBruijnGraph
+from cbg.graph.probabilistic import CBG
