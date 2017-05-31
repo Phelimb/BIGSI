@@ -81,7 +81,7 @@ DEFAULT_GRAPH = GRAPH = Graph(storage={'berkeleydb': {'filename': BDB_DB_FILENAM
                               bloom_filter_size=BFSIZE, num_hashes=NUM_HASHES)
 
 
-def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=1, mode='c', kmer_size=31):
+def get_graph(bdb_db_filename=None, bloom_filter_size=None, cachesize=CACHESIZE, mode='c', kmer_size=31):
     if bdb_db_filename is None:
         bdb_db_filename = BDB_DB_FILENAME
     # logger.info("Loading graph with %s storage." % (STORAGE))

@@ -81,6 +81,22 @@ e.g.
 
 	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./cbg/__main__.py search - --pipe_in -o tsv
 
+# Low memory builds
+
+If you don't have enough RAM to hold the whole graph in memory you can build in chunks and merge.
+
+e.g.
+
+	ls path/to/bloom/filters/blooms/* | split -l 500
+
+	mkdir -p tmp_cbg/
+	for i in xa*
+	do
+	    cbg init tmp_cbg/"$i" --k 31 --m 25000000 --h 3
+	    cbg build tmp_cbg/"$i" $(cat "$i")
+	done	
+
+	cbg merge merged_cbg tmp_cbg/xa*
 
 # Parameter choices:
 
