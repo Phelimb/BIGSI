@@ -34,7 +34,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
     if pipe:
         if output_format == "tsv":
             start = time.time()
-            result = graph.search(seq, threshold=threshold, score=True)
+            result = graph.search(seq, threshold=threshold, score=score)
             diff = time.time() - start
             if result:
                 for sample_id, percent in result.items():
@@ -46,7 +46,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             samples = graph.sample_to_colour_lookup.keys()
             print(" ".join(['>', gene_name]))
             print(seq)
-            result = graph.search(seq, threshold=threshold, score=True)
+            result = graph.search(seq, threshold=threshold, score=score)
             result = sorted(
                 result.items(), key=operator.itemgetter(1), reverse=True)
             for sample, percent in result:
@@ -64,7 +64,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             result = {}
             start = time.time()
             result['results'] = graph.search(
-                seq, threshold=threshold, score=True)
+                seq, threshold=threshold, score=score)
             diff = time.time() - start
             result['time'] = diff
             print(json.dumps({gene_name: result}))
@@ -72,7 +72,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
         results[gene_name] = {}
         start = time.time()
         results[gene_name]['results'] = graph.search(
-            seq, threshold=threshold, score=True)
+            seq, threshold=threshold, score=score)
         diff = time.time() - start
         results[gene_name]['time'] = diff
     return results
