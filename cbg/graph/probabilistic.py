@@ -138,12 +138,12 @@ class CBG(object):
         self._insert(bloom_filter, colour)
 
     def search(self, seq, threshold=1, score=True):
-        return self._search(seq_to_kmers(seq, self.kmer_size), threshold=threshold, score=score)
+        return self._search(self.seq_to_kmers(seq), threshold=threshold, score=score)
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
         if isinstance(kmers, str) and len(kmers) > self.kmer_size:
-            kmers = seq_to_kmers(kmers, self.kmer_size)
+            kmers = self.seq_to_kmers(kmers)
         out = {}
         if isinstance(kmers, str):
             out[kmers] = self._lookup(kmers)
@@ -156,6 +156,9 @@ class CBG(object):
 
     def lookup_raw(self, kmer):
         return self._lookup_raw(kmer)
+
+    def seq_to_kmers(self, seq):
+        return seq_to_kmers(seq, self.kmer_size)
 
     def metadata_set(self, metadata_key, value):
         self.metadata[metadata_key] = pickle.dumps(value)
@@ -311,8 +314,11 @@ class CBG(object):
         for c in ba.colours():
             sample = self.colour_to_sample(c)
             if sample != "DELETED":
-                out[sample] = self.scorer.score(
-                    "1"*(len(kmers)+self.kmer_size-1))  # Fix!
+                if score:
+                    out[sample] = self.scorer.score(
+                        "1"*(len(kmers)+self.kmer_size-1))  # Fix!
+                else:
+                    out[sample] = {}
                 out[sample]["percent_kmers_found"] = 100
         return out
 

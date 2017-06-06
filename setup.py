@@ -25,7 +25,7 @@ setup(
     description='Coloured Bloom Graphs - Low memory multicolour de Bruijn graphs for indexing large collections of genomes',
     author='Phelim Bradley',
     author_email='wave@phel.im',
-    install_requires=required[3:],
+    install_requires=required[4:],
     entry_points={
         'console_scripts': [
             'cbg = cbg.__main__:main',
