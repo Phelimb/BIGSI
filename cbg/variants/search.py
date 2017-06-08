@@ -21,14 +21,10 @@ class CBGVariantSearch(object):
     def search_for_alleles(self, ref_seqs, alt_seqs):
         results = {"ref": [], "alt": []}
         for ref in ref_seqs:
-            logger.info(ref)
             res = self.cbg.search(ref, score=False)
-            logger.info(str(res))
             results["ref"].extend(res.keys())
         for alt in alt_seqs:
-            logger.info(alt)
             res = self.cbg.search(alt, score=False)
-            logger.info(str(res))
             results["alt"].extend(res.keys())
         return results
 
