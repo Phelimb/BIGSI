@@ -83,7 +83,6 @@ class CBGAminoAcidMutationSearch(CBGVariantSearch):
             for sample, genotype in variant_calls.items():
                 _results[sample] = {"genotype": genotype[
                     "genotype"], "aa_mut": mut.mut, "variant": mut.variant.var_name, "gene": gene}
-        print(results)
         return results
         #     if not mut.mut in mutations:
         #         mutations[mut.mut] = [mut]
