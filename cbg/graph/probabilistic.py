@@ -188,7 +188,7 @@ class CBG(object):
 
     def set_colour(self, colour, sample, overwrite=False):
         colour = int(colour)
-        self.metadata_hset("colours", colour, sample)
+        self.metadata_hset("colours", colour, sample, overwrite=overwrite)
         self.colour_to_sample_cache[colour] = sample
 
     def sample_to_colour(self, sample):
