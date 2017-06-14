@@ -186,13 +186,13 @@ class CBG(object):
 
     def set_colour(self, colour, sample, overwrite=False):
         colour = int(colour)
-        self.metadata_set("colour%i" % colour, sample)
+        self.metadata["colour%i" % colour] = sample
 
     def sample_to_colour(self, sample):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        r = self.metadata_hgetall("colour%i" % int(colour))
+        r = self.metadata["colour%i" % colour].decode('utf-8')
         if r:
             return r
         else:

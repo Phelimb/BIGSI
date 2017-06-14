@@ -53,7 +53,7 @@ def test_add_sample_metadata(Graph, sample):
     colour = cbg._add_sample(sample)
     assert cbg.sample_to_colour(sample) == colour
     assert cbg.colour_to_sample(colour) == sample
-    assert cbg.metadata_hgetall("colour0") == sample
+    # assert cbg.metadata_hgetall("colour0") == sample
     # assert cbg.metadata_hget("colours", colour) == sample
     cbg.delete_all()
 
