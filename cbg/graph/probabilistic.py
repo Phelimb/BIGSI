@@ -192,7 +192,11 @@ class CBG(object):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        return self.metadata_hgetall("colour%i" % colour)
+        r = self.metadata_hgetall("colour%i" % colour)
+        if r:
+            return r
+        else:
+            return str(colour)
 
     def delete_sample(self, sample_name):
         try:
