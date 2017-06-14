@@ -30,7 +30,7 @@ def parse_input(infile):
     # return gene_to_kmers
 
 
-def _search(gene_name, seq, results, threshold, graph, output_format="json", pipe=False, score=True):
+def _search(gene_name, seq, results, threshold, graph, output_format="json", pipe=False, score=False):
     if pipe:
         if output_format == "tsv":
             start = time.time()
@@ -78,7 +78,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
     return results
 
 
-def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False, score=True):
+def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False, score=False):
     if output_format == "tsv":
         print("\t".join(
             ["gene_name", "sample_id", str("kmer_coverage_percent"), str("time")]))

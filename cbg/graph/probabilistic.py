@@ -135,7 +135,7 @@ class CBG(object):
         logger.info("Inserting sample %s into colour %i" % (sample, colour))
         self._insert(bloom_filter, colour)
 
-    def search(self, seq, threshold=1, score=True):
+    def search(self, seq, threshold=1, score=False):
         return self._search(self.seq_to_kmers(seq), threshold=threshold, score=score)
 
     def lookup(self, kmers):
@@ -192,7 +192,7 @@ class CBG(object):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        r = self.metadata_hgetall("colour%i" % colour)
+        r = self.metadata_hgetall("colour%i" % int(colour))
         if r:
             return r
         else:
@@ -237,7 +237,7 @@ class CBG(object):
             ba = self.graph.lookup(kmer)
             yield kmer, ba
 
-    def _search(self, kmers, threshold=1, score=True):
+    def _search(self, kmers, threshold=1, score=False):
         """Return sample names where this kmer is present"""
         if isinstance(kmers, str):
             return self._search_kmer(kmers)
@@ -254,7 +254,7 @@ class CBG(object):
         return out
 
     @convert_kmers_to_canonical
-    def _search_kmers(self, kmers, threshold=1, score=True):
+    def _search_kmers(self, kmers, threshold=1, score=False):
         if threshold == 1:
             return self._search_kmers_threshold_1(kmers, score=score)
         else:
@@ -306,7 +306,7 @@ class CBG(object):
                     out[sample]["percent_kmers_found"] = 100*res
         return out
 
-    def _search_kmers_threshold_1(self, kmers, score=True):
+    def _search_kmers_threshold_1(self, kmers, score=False):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
         kmers = list(kmers)
         ba = self.graph.lookup_all_present(
