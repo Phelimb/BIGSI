@@ -82,8 +82,6 @@ class CBG(object):
             self.graph = ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
                                                         bloom_filter_size=self.bloom_filter_size,
                                                         num_hashes=self.num_hashes)
-            self.colour_to_sample_cache = self.metadata_hgetall(
-                "colours")
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
@@ -188,14 +186,13 @@ class CBG(object):
 
     def set_colour(self, colour, sample, overwrite=False):
         colour = int(colour)
-        self.metadata_hset("colours", colour, sample, overwrite=overwrite)
-        self.colour_to_sample_cache[colour] = sample
+        self.metadata_set("colour%i" % colour, sample)
 
     def sample_to_colour(self, sample):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        return self.colour_to_sample_cache.get(int(colour))
+        return self.metadata_hgetall("colour%i" % colour)
 
     def delete_sample(self, sample_name):
         try:
@@ -247,7 +244,7 @@ class CBG(object):
     def _search_kmer(self, kmer, canonical=False):
         out = {}
         for colour in self.colours(kmer, canonical=True):
-            sample = self.colour_to_sample_cache.get(colour, 'missing')
+            sample = self.colour_to_sample(colour)
             if sample != "DELETED":
                 out[sample] = 1.0
         return out
@@ -275,7 +272,7 @@ class CBG(object):
             percent = r["percent_kmers_found"]
             s = "".join([str(int(kmer_lookups[i][colour]))
                          for i in range(len(kmers))])
-            sample = self.colour_to_sample_cache.get(colour, 0)
+            sample = self.colour_to_sample(colour)
             out[sample] = self.scorer.score(s)
             out[sample]["percent_kmers_found"] = percent
         return out
@@ -297,7 +294,7 @@ class CBG(object):
             res = f/lkmers
             if res >= threshold:
                 if convert_colours:
-                    sample = self.colour_to_sample_cache.get(i, i)
+                    sample = self.colour_to_sample(i)
                 else:
                     sample = i
                 if sample != "DELETED":
@@ -332,7 +329,7 @@ class CBG(object):
         for i, present in enumerate(colour_presence_boolean_array):
             if present:
                 samples_present.append(
-                    self.colour_to_sample_cache.get(i, "unknown"))
+                    self.colour_to_sample(i))
             if i > num_colours:
                 break
         return samples_present
