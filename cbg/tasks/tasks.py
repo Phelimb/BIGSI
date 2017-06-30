@@ -1,5 +1,5 @@
 from celery import Celery
-from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg.graph import CBG as Graph
 import os
 from pyseqfile import Reader
 from cbg.utils import seq_to_kmers

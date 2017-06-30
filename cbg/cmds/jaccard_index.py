@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg.graph import CBG as Graph
 import argparse
 import json
 import logging
@@ -22,7 +22,7 @@ def jaccard_index(graph, s1, s2=None, method="minhash"):
 
 # #! /usr/bin/env python
 # from __future__ import print_function
-# from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+# from cbg.graph import CBG as Graph
 # import argparse
 # import json
 # import pickle

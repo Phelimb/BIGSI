@@ -3,15 +3,8 @@ services:
   - docker
 before_install:
   - docker build -t phelimb/cbg .
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin  
-  - sudo docker-compose pull strictredis redis1 redismanager 
-  - sudo docker-compose up -d
 script:
-  - sudo docker exec -it cbg_redismanager_1 /bin/bash -c 'yes yes | ./redis-trib.rb create --replicas 0 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002'
-  - sudo docker exec cbg_main_1 py.test -v --cov=cbg --cov-config .coveragerc cbg/tests/
+  - sudo docker run phelimb/cbg py.test  -v --cov=cbg --cov-config .coveragerc cbg/tests/
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";

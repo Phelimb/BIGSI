@@ -2,7 +2,7 @@
 from __future__ import print_function
 # from cbg.utils import min_lexo
 from cbg.utils import seq_to_kmers
-from cbg.graph import ProbabilisticMultiColourDeBruijnGraph as Graph
+from cbg.graph import CBG as Graph
 import argparse
 import os.path
 import time
@@ -30,11 +30,11 @@ def parse_input(infile):
     # return gene_to_kmers
 
 
-def _search(gene_name, seq, results, threshold, graph, output_format="json", pipe=False):
+def _search(gene_name, seq, results, threshold, graph, output_format="json", pipe=False, score=False):
     if pipe:
         if output_format == "tsv":
             start = time.time()
-            result = graph.search(seq, threshold=threshold)
+            result = graph.search(seq, threshold=threshold, score=score)
             diff = time.time() - start
             if result:
                 for sample_id, percent in result.items():
@@ -46,7 +46,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             samples = graph.sample_to_colour_lookup.keys()
             print(" ".join(['>', gene_name]))
             print(seq)
-            result = graph.search(seq, threshold=threshold)
+            result = graph.search(seq, threshold=threshold, score=score)
             result = sorted(
                 result.items(), key=operator.itemgetter(1), reverse=True)
             for sample, percent in result:
@@ -63,20 +63,22 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
         else:
             result = {}
             start = time.time()
-            result['results'] = graph.search(seq, threshold=threshold)
+            result['results'] = graph.search(
+                seq, threshold=threshold, score=score)
             diff = time.time() - start
             result['time'] = diff
             print(json.dumps({gene_name: result}))
     else:
         results[gene_name] = {}
         start = time.time()
-        results[gene_name]['results'] = graph.search(seq, threshold=threshold)
+        results[gene_name]['results'] = graph.search(
+            seq, threshold=threshold, score=score)
         diff = time.time() - start
         results[gene_name]['time'] = diff
     return results
 
 
-def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False):
+def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False, score=False):
     if output_format == "tsv":
         print("\t".join(
             ["gene_name", "sample_id", str("kmer_coverage_percent"), str("time")]))
@@ -85,9 +87,9 @@ def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False):
         for gene, seq in parse_input(fasta_file):
             results = _search(
                 gene_name=gene, seq=seq, results=results, threshold=threshold,
-                graph=graph, output_format=output_format, pipe=pipe)
+                graph=graph, output_format=output_format, pipe=pipe, score=score)
     else:
         results = _search(
             gene_name=seq, seq=seq, results=results, threshold=threshold,
-            graph=graph, output_format=output_format, pipe=pipe)
+            graph=graph, output_format=output_format, pipe=pipe, score=score)
     return results

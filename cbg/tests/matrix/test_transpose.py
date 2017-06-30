@@ -22,7 +22,6 @@ def test_transpose(booleans):
     npmatrix = np.array(booleans).transpose()
     bitarrays = create_bitarrays(booleans)
     tbitarrays = transpose(bitarrays)
-    print(bitarrays, tbitarrays)
     for j in range(len(booleans)):
         for i in range(SIZE):
             assert npmatrix[i, j] == tbitarrays[i][j]

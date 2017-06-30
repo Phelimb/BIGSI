@@ -2,62 +2,55 @@ from cbg.tests.base import ST_KMER
 from cbg.tests.base import ST_SEQ
 from cbg.tests.base import ST_SAMPLE_NAME
 from cbg.tests.base import ST_GRAPH
-from cbg.tests.base import ST_BINARY_KMERS
+from cbg.tests.base import ST_BLOOM_FILTER_SIZE
 from cbg.tests.base import ST_SAMPLE_COLOUR
-from cbg.tests.base import REDIS_CLUSTER_STORAGE_CREDIS
-from cbg.tests.base import REDIS_CLUSTER_STORAGE_REDIS
+from cbg.tests.base import ST_NUM_HASHES
 import hypothesis
 from hypothesis import given
 from hypothesis import settings
 import hypothesis.strategies as st
-from cbg.storage.graph.probabilistic import ProbabilisticInMemoryStorage
-# from cbg.storage.graph.probabilistic import ProbabilisticRedisHashStorage
-# from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
-# from cbg.storage.graph.probabilistic import ProbabilisticLevelDBStorage
 from cbg.utils import seq_to_kmers
 
 import os
 
-POSSIBLE_STORAGES = [
-    # ProbabilisticInMemoryStorage(),
-    # ProbabilisticRedisHashStorage(REDIS_STORAGE),
-    # ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_CREDIS),
-    # ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS),
-    ProbabilisticBerkeleyDBStorage({'filename': './db'}),
-]
-ST_STORAGE = st.sampled_from(POSSIBLE_STORAGES)
 
-
-@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, element=ST_KMER,
-       bloom_filter_size=st.integers(10000, 1000000),
-       num_hashes=st.integers(min_value=1, max_value=5))
-def test_add_contains(storage, colour, element, bloom_filter_size,  num_hashes):
+@given(colour=ST_SAMPLE_COLOUR, element=ST_KMER,
+       bloom_filter_size=ST_BLOOM_FILTER_SIZE,
+       num_hashes=ST_NUM_HASHES)
+def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
+    storage = ProbabilisticBerkeleyDBStorage(filename="db",
+                                             bloom_filter_size=bloom_filter_size,
+                                             num_hashes=num_hashes)
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
-    storage.delete_all()
 
     storage.bloomfilter.add(element, colour)
     assert storage.bloomfilter.contains(element, colour)
-    assert not storage.bloomfilter.contains(element + "a", colour)
+    storage.delete_all()
 
 
-@given(storage=ST_STORAGE, colour=ST_SAMPLE_COLOUR, elements=ST_SEQ,
-       bloom_filter_size=st.integers(10000, 1000000),
-       num_hashes=st.integers(min_value=1, max_value=5))
-def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hashes):
-    elements = list(seq_to_kmers(elements))
+@given(colour=ST_SAMPLE_COLOUR, elements=ST_SEQ,
+       bloom_filter_size=ST_BLOOM_FILTER_SIZE,
+       num_hashes=ST_NUM_HASHES)
+def test_update_contains(colour, elements, bloom_filter_size,  num_hashes):
+    storage = ProbabilisticBerkeleyDBStorage(filename="db",
+                                             bloom_filter_size=bloom_filter_size,
+                                             num_hashes=num_hashes)
+
+    elements = list(seq_to_kmers(elements, 31))
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
-    storage.delete_all()
 
     storage.bloomfilter.update(elements, colour)
     for k in elements:
         assert storage.bloomfilter.contains(k, colour)
+    storage.delete_all()
 
-## TODO fix this test. Not sure if we should allow updates without appending a new column
+# TODO fix this test. Not sure if we should allow updates without
+# appending a new column
 
-# @given(storage=ST_STORAGE, colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
+# @given(colour1=ST_SAMPLE_COLOUR, colour2=ST_SAMPLE_COLOUR,
 #        element=ST_KMER,
 #        bloom_filter_size=st.integers(10000, 1000000),
 #        num_hashes=st.integers(min_value=1, max_value=5))
@@ -83,7 +76,7 @@ def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hash
 #         assert storage.bloomfilter.lookup(
 #             element, array_size).getbit(colour2) == True
 
-## TODO fix this test. Not sure if we should allow updates without appending a new column
+# TODO fix this test. Not sure if we should allow updates without appending a new column
 # @given(storage=ST_STORAGE,
 #        elements=st.text(
 #            min_size=31, max_size=100, alphabet=['A', 'T', 'C', 'G']),
@@ -118,10 +111,3 @@ def test_update_contains(storage, colour, elements, bloom_filter_size,  num_hash
 #             colour1) == True for i in range(len(elements))])
 #         assert all([storage.bloomfilter.lookup(elements, array_size)[i].getbit(
 #             colour2) == True for i in range(len(elements))])
-
-
-# @given(key=st.integers(min_value=0))
-# def test_cluster_keyslot(key):
-#     storage = ProbabilisticRedisBitArrayStorage(REDIS_CLUSTER_STORAGE_REDIS)
-#     assert storage._get_key_slot(
-#         key, 'python') == storage._get_key_slot(key, 'redis')
