@@ -155,6 +155,8 @@ class cbg(object):
                pipe_in: hug.types.smart_boolean=False,
                cachesize: hug.types.number=4,
                score: hug.types.smart_boolean=False):
+        if db is None:
+            db = BDB_DB_FILENAME
         cbg = CBG(db, cachesize=cachesize)
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
