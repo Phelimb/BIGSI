@@ -7,7 +7,7 @@ from Cython.Build import cythonize
 
 setup(
     name='bigsi',
-    version='0.1.5',
+    version='0.1.6',
     packages=[
         'bigsi',
         'bigsi.cmds',
@@ -22,7 +22,7 @@ setup(
     keywords='DBG coloured de bruijn graphs sequence search signture files signature index bitsliced',
     license='MIT',
     url='http://github.com/phelimb/bigsi',
-    description='Coloured Bloom Graphs - Low memory multicolour de Bruijn graphs for indexing large collections of genomes',
+    description='BItsliced Genomic Signature Index - Efficient indexing and search in very large collections of WGS data',
     author='Phelim Bradley',
     author_email='wave@phel.im',
     install_requires=required[4:],

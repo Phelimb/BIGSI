@@ -33,7 +33,7 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 
 #### Construct the bloom filters
 
-	bigsi init test-data/db --k 31 --m 1000 --h 3
+	bigsi init test-data/db --k 31 --m 1000 --h 1
 
 	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
 	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
@@ -65,7 +65,7 @@ Use [mccortex](https://github.com/mcveanlab/mccortex) to build.
 
 #### Construct the bloom filters
 
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi  init /data/test.bigsi --k 31 --m 1000 --h 3
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi  init /data/test.bigsi --k 31 --m 1000 --h 1
 
 	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test1.bloom	
 	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test2.bloom	
@@ -102,7 +102,7 @@ e.g.
 	mkdir -p tmp_bigsi/
 	for i in xa*
 	do
-	    bigsi init tmp_bigsi/"$i" --k 31 --m 25000000 --h 3
+	    bigsi init tmp_bigsi/"$i" --k 31 --m 25000000 --h 1
 	    bigsi build tmp_bigsi/"$i" $(cat "$i")
 	done	
 
