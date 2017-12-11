@@ -4,7 +4,7 @@ import hypothesis.strategies as st
 
 import os
 
-from cbg.scoring import Scorer
+from bigsi.scoring import Scorer
 
 
 def test_score():

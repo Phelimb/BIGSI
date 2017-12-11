@@ -1,1 +1,1 @@
-docker build  -t phelimb/cbg .
+docker build  -t phelimb/bigsi .

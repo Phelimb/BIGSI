@@ -1,16 +1,16 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from cbg.graph import CBG as Graph
+from bigsi.graph import BIGSI as Graph
 import os.path
 import logging
 import json
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 from pyseqfile import Reader
-from cbg.utils import seq_to_kmers
-from cbg.storage.graph.probabilistic import BloomFilterMatrix
+from bigsi.utils import seq_to_kmers
+from bigsi.storage.graph.probabilistic import BloomFilterMatrix
 
 
 def kmer_reader(f):

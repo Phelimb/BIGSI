@@ -10,27 +10,27 @@ logger = logging.getLogger(__name__)
 flatten = lambda l: [item for sublist in l for item in sublist]
 
 
-class CBGVariantSearch(object):
+class BIGSIVariantSearch(object):
 
-    def __init__(self, cbg, reference):
-        self.cbg = cbg
+    def __init__(self, bigsi, reference):
+        self.bigsi = bigsi
         self.reference = reference
         self.al = AlleleGenerator(reference_filepath=self.reference,
-                                  kmer=self.cbg.kmer_size)
+                                  kmer=self.bigsi.kmer_size)
 
     def search_for_alleles(self, ref_seqs, alt_seqs):
         results = {"ref": [], "alt": []}
         for ref in ref_seqs:
-            res = self.cbg.search(ref, score=False)
+            res = self.bigsi.search(ref, score=False)
             results["ref"].extend(res.keys())
         for alt in alt_seqs:
-            res = self.cbg.search(alt, score=False)
+            res = self.bigsi.search(alt, score=False)
             results["alt"].extend(res.keys())
         return results
 
     def make_variant_probe_set(self, var):
         return make_variant_probe(
-            self.al, var, self.cbg.kmer_size, DB=None)
+            self.al, var, self.bigsi.kmer_size, DB=None)
 
     def create_variant_probe_set(self, var_name):
         var = Mutation(var_name=var_name, reference=self.reference).variant
@@ -57,10 +57,10 @@ class CBGVariantSearch(object):
         return results
 
 
-class CBGAminoAcidMutationSearch(CBGVariantSearch):
+class BIGSIAminoAcidMutationSearch(BIGSIVariantSearch):
 
-    def __init__(self, cbg, reference, genbank):
-        super(CBGAminoAcidMutationSearch, self).__init__(cbg, reference)
+    def __init__(self, bigsi, reference, genbank):
+        super(BIGSIAminoAcidMutationSearch, self).__init__(bigsi, reference)
         self.genbank = genbank
         self.aa2dna = GeneAminoAcidChangeToDNAVariants(
             self.reference,

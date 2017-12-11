@@ -1,12 +1,12 @@
 from celery import Celery
-from cbg.graph import CBG as Graph
+from bigsi.graph import BIGSI as Graph
 import os
 from pyseqfile import Reader
-from cbg.utils import seq_to_kmers
+from bigsi.utils import seq_to_kmers
 import json
 import logging
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 hostname = os.environ.get("BROKER_IP", "localhost")
 

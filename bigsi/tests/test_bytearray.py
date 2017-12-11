@@ -1,7 +1,7 @@
-# from cbg.tests.base import REDIS_PORT
-# from cbg.tests.base import REDIS_HOST
+# from bigsi.tests.base import REDIS_PORT
+# from bigsi.tests.base import REDIS_HOST
 
-# from cbg.bytearray import ByteArray
+# from bigsi.bytearray import ByteArray
 # from hypothesis import given
 # import hypothesis.strategies as st
 # import redis

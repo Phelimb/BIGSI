@@ -3,7 +3,7 @@ from __future__ import print_function
 import logging
 import json
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 

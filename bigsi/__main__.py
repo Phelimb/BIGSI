@@ -10,18 +10,18 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "..")))
-from cbg.version import __version__
+from bigsi.version import __version__
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
 import hug
 import tempfile
-from cbg.graph import CBG
+from bigsi.graph import BIGSI
 
 BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
@@ -42,23 +42,23 @@ else:
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
-from cbg.cmds.insert import insert
-from cbg.cmds.search import search
-# from cbg.cmds.stats import stats
-from cbg.cmds.samples import samples
-# from cbg.cmds.dump import dump
-# from cbg.cmds.load import load
-from cbg.cmds.delete import delete
-from cbg.cmds.bloom import bloom
-from cbg.cmds.build import build
-from cbg.cmds.merge import merge
-from cbg.cmds.rowjoin import rowjoin
-# from cbg.cmds.bitcount import bitcount
-# from cbg.cmds.jaccard_index import jaccard_index
-from cbg.utils.cortex import GraphReader
-from cbg.utils import seq_to_kmers
+from bigsi.cmds.insert import insert
+from bigsi.cmds.search import search
+# from bigsi.cmds.stats import stats
+from bigsi.cmds.samples import samples
+# from bigsi.cmds.dump import dump
+# from bigsi.cmds.load import load
+from bigsi.cmds.delete import delete
+from bigsi.cmds.bloom import bloom
+from bigsi.cmds.build import build
+from bigsi.cmds.merge import merge
+from bigsi.cmds.rowjoin import rowjoin
+# from bigsi.cmds.bitcount import bitcount
+# from bigsi.cmds.jaccard_index import jaccard_index
+from bigsi.utils.cortex import GraphReader
+from bigsi.utils import seq_to_kmers
 import cProfile
-from cbg.version import __version__
+from bigsi.version import __version__
 
 
 def do_cprofile(func):
@@ -74,14 +74,14 @@ def do_cprofile(func):
     return profiled_func
 
 
-API = hug.API('cbg-%s' % str(__version__))
+API = hug.API('bigsi-%s' % str(__version__))
 STORAGE = os.environ.get("STORAGE", 'berkeleydb')
 BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
 CACHESIZE = int(os.environ.get("CACHESIZE", 1))
 # DEFAULT_GRAPH = GRAPH = Graph(BDB_DB_FILENAME)
 
 
-DEFUALT_DB_DIRECTORY = "./db-cbg/"
+DEFUALT_DB_DIRECTORY = "./db-bigsi/"
 
 
 def extract_kmers_from_ctx(ctx, k):
@@ -91,14 +91,14 @@ def extract_kmers_from_ctx(ctx, k):
             yield kmer
 
 
-@hug.object(name='cbg', version='0.1.1', api=API)
+@hug.object(name='bigsi', version='0.1.1', api=API)
 @hug.object.urls('/', requires=())
-class cbg(object):
+class bigsi(object):
 
     @hug.object.cli
     @hug.object.post('/init', output_format=hug.output_format.json)
     def init(self, db, k=31, m=25*10**6, h=3, force=False):
-        cbg = CBG.create(db=db, k=k, m=m, h=h, force=force)
+        bigsi = BIGSI.create(db=db, k=k, m=m, h=h, force=force)
         return {'k': k, 'm': m, 'h': h, 'db': db}
 
     @hug.object.cli
@@ -106,7 +106,7 @@ class cbg(object):
     def insert(self, bloom_filter):
         """Inserts a bloom filter into the graph
 
-        e.g. cbg insert ERR1010211.bloom
+        e.g. bigsi insert ERR1010211.bloom
 
         """
         graph = get_graph()
@@ -118,17 +118,18 @@ class cbg(object):
     @hug.object.cli
     @hug.object.post('/bloom')
     def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None):
-        cbg = CBG(db)
+        bigsi = BIGSI(db)
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
-        e.g. cbg insert ERR1010211.ctx
+        e.g. bigsi insert ERR1010211.ctx
 
         """
         if ctx:
-            kmers = extract_kmers_from_ctx(ctx, cbg.kmer_size)
+            kmers = extract_kmers_from_ctx(ctx, bigsi.kmer_size)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
-        bf = bloom(outfile=outfile, kmers=kmers, kmer_file=seqfile, graph=cbg)
+        bf = bloom(outfile=outfile, kmers=kmers,
+                   kmer_file=seqfile, graph=bigsi)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
@@ -139,7 +140,7 @@ class cbg(object):
             assert len(samples) == len(bloomfilters)
         else:
             samples = bloomfilters
-        return build(graph=CBG(db), bloomfilter_filepaths=bloomfilters, samples=samples)
+        return build(graph=BIGSI(db), bloomfilter_filepaths=bloomfilters, samples=samples)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
@@ -157,7 +158,7 @@ class cbg(object):
                score: hug.types.smart_boolean=False):
         if db is None:
             db = BDB_DB_FILENAME
-        cbg = CBG(db, cachesize=cachesize)
+        bigsi = BIGSI(db, cachesize=cachesize)
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -172,7 +173,7 @@ class cbg(object):
                     openfile.write(line)
             result = search(
                 seq=None, fasta_file=fp, threshold=threshold,
-                graph=cbg,
+                graph=bigsi,
                 output_format=output_format,
                 pipe=pipe_out,
                 score=score)
@@ -181,7 +182,7 @@ class cbg(object):
             result = search(seq=seq,
                             fasta_file=seqfile,
                             threshold=threshold,
-                            graph=cbg,
+                            graph=bigsi,
                             output_format=output_format,
                             pipe=pipe_out,
                             score=score)
@@ -193,11 +194,11 @@ class cbg(object):
     @hug.object.delete('/', output_format=hug.output_format.json)
     def delete(self, db: hug.types.text=None):
         try:
-            cbg = CBG(db)
+            bigsi = BIGSI(db)
         except ValueError:
             pass
         else:
-            return delete(cbg)
+            return delete(bigsi)
 
     # @hug.object.cli
     # @hug.object.get('/graph', output_format=hug.output_format.json)

@@ -2,29 +2,29 @@ import os
 import hug
 import redis
 
-import cbg.__main__
+import bigsi.__main__
 import json
-from cbg.tests.base import ST_SEQ
-from cbg.tests.base import ST_KMER
-from cbg.tests.base import ST_SAMPLE_NAME
-from cbg.tests.base import ST_GRAPH
-from cbg import CBG
+from bigsi.tests.base import ST_SEQ
+from bigsi.tests.base import ST_KMER
+from bigsi.tests.base import ST_SAMPLE_NAME
+from bigsi.tests.base import ST_GRAPH
+from bigsi import BIGSI
 import hypothesis.strategies as st
 from hypothesis import given
 import random
 import tempfile
-from cbg.utils import seq_to_kmers
+from bigsi.utils import seq_to_kmers
 from bitarray import bitarray
 import numpy as np
 
-Graph = CBG.create(m=100, force=True)
+Graph = BIGSI.create(m=100, force=True)
 
 
 def test_bloom_cmd():
     f = '/tmp/test_kmers.bloom'
     response = hug.test.post(
-        cbg.__main__, 'bloom', {'db': Graph.db,
-                                'ctx': 'cbg/tests/data/test_kmers.ctx',
+        bigsi.__main__, 'bloom', {'db': Graph.db,
+                                'ctx': 'bigsi/tests/data/test_kmers.ctx',
                                 'outfile': f})
     a = bitarray()
     with open(f, 'rb') as inf:
@@ -45,83 +45,83 @@ import string
 
 def test_build_cmd():
     f = Graph.db
-    response = hug.test.delete(cbg.__main__, '', {'db': f})
-    response = hug.test.post(cbg.__main__, 'init', {'db': f, 'm': 1000})
+    response = hug.test.delete(bigsi.__main__, '', {'db': f})
+    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
     N = 3
-    bloomfilter_filepaths = ['cbg/tests/data/test_kmers.bloom']*N
+    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
     samples = []
     for i in range(N):
         samples.append(''.join(random.choice(
             string.ascii_uppercase + string.digits) for _ in range(6)))
     response = hug.test.post(
-        cbg.__main__, 'build', {'db': f,
+        bigsi.__main__, 'build', {'db': f,
                                 'bloomfilters': bloomfilter_filepaths,
                                 'samples': samples})
     # TODO fix below
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-    response = hug.test.get(cbg.__main__, 'search', {'db': f, 'seq': seq})
+    response = hug.test.get(bigsi.__main__, 'search', {'db': f, 'seq': seq})
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
-    response = hug.test.get(cbg.__main__, 'search', {
+    response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, 'threshold': 0.1})
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(
-        cbg.__main__, '', {'db': f, })
+        bigsi.__main__, '', {'db': f, })
 
 
 # TODO, insert takes a bloom filters
 # def test_insert_from_merge_and_search_cmd():
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     response = hug.test.post(
-#         cbg.__main__, 'insert', {'merge_results': 'cbg/tests/data/merge/test_merge_resuts.json', 'force': True})
+#         bigsi.__main__, 'insert', {'merge_results': 'bigsi/tests/data/merge/test_merge_resuts.json', 'force': True})
 #     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-#     response = hug.test.get(cbg.__main__, 'search', {'seq': seq})
+#     response = hug.test.get(bigsi.__main__, 'search', {'seq': seq})
 #     for i in range(1, 6):
 #         assert response.data.get(seq).get(
-#             'results').get('cbg/tests/data/test_kmers.bloom%i' % i) == 1.0
+#             'results').get('bigsi/tests/data/test_kmers.bloom%i' % i) == 1.0
 #     assert response.data.get(seq).get(
-#         'results').get('cbg/tests/data/test_kmers.bloom') == 1.0
+#         'results').get('bigsi/tests/data/test_kmers.bloom') == 1.0
 #     # response = hug.test.delete(
-#     #     cbg.__main__, '', {})
+#     #     bigsi.__main__, '', {})
 
 # TODO, insert takes a bloom filters
 # def test_insert_search_cmd():
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     response = hug.test.post(
-#         cbg.__main__, 'insert', {'kmer_file': 'cbg/tests/data/test_kmers.txt'})
+#         bigsi.__main__, 'insert', {'kmer_file': 'bigsi/tests/data/test_kmers.txt'})
 #     # assert response.data.get('result') == 'success'
 #     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-#     response = hug.test.get(cbg.__main__, 'search', {'seq': seq})
+#     response = hug.test.get(bigsi.__main__, 'search', {'seq': seq})
 #     assert response.data.get(seq).get(
 #         'results').get('test_kmers') == 1.0
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 
 # TODO, insert takes a bloom filters
 # def test_insert_search_cmd_ctx():
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     response = hug.test.post(
-#         cbg.__main__, 'insert', {'ctx': 'cbg/tests/data/test_kmers.ctx'})
+#         bigsi.__main__, 'insert', {'ctx': 'bigsi/tests/data/test_kmers.ctx'})
 #     # assert response.data.get('result') == 'success'
 #     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
 #     response = hug.test.get(
-#         cbg.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
+#         bigsi.__main__, 'search', {'seq': 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'})
 
 #     assert response.data.get(seq).get(
 #         'results').get('test_kmers') == 1.0
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 
 # TODO, insert takes a bloom filters
 # @given(store=ST_STORAGE, sample=ST_SAMPLE_NAME,
@@ -130,18 +130,18 @@ def test_build_cmd():
 #     kmers = list(seq_to_kmers(seq))
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     response = hug.test.post(
-#         cbg.__main__, 'insert', {'sample': sample, 'kmers': kmers})
+#         bigsi.__main__, 'insert', {'sample': sample, 'kmers': kmers})
 #     # assert response.data.get('result') == 'success'
 #     seq = random.choice(kmers)
 #     response = hug.test.get(
-#         cbg.__main__, 'search', {'seq': seq})
+#         bigsi.__main__, 'search', {'seq': seq})
 #     print(response.data)
 #     assert response.data.get(seq).get('results').get(sample) == 1.0
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 
 # TODO, fix this test.
 # def test_dump_load_cmd():
@@ -150,33 +150,33 @@ def test_build_cmd():
 #     sample = "sample1"
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     response = hug.test.post(
-#         cbg.__main__, 'insert', {'sample': sample, 'kmers': kmers})
+#         bigsi.__main__, 'insert', {'sample': sample, 'kmers': kmers})
 
 #     # assert response.data.get('result') == 'success'
 #     # Dump graph
 #     _, fp = tempfile.mkstemp()
 #     response = hug.test.post(
-#         cbg.__main__, 'dump', {'filepath': fp})
+#         bigsi.__main__, 'dump', {'filepath': fp})
 #     assert response.data.get('result') == 'success'
 
 #     # Delete data
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     # Load graph
 #     response = hug.test.post(
-#         cbg.__main__, 'load', {'filepath': fp})
+#         bigsi.__main__, 'load', {'filepath': fp})
 #     assert response.data.get('result') == 'success'
 
 #     # test get
 #     seq = random.choice(kmers)
 #     response = hug.test.get(
-#         cbg.__main__, 'search', {'seq': seq})
+#         bigsi.__main__, 'search', {'seq': seq})
 #     assert response.data.get(seq).get('results').get(sample) == 1.0
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 
 
 # @given(store=ST_STORAGE, samples=st.lists(ST_SAMPLE_NAME, min_size=1, max_size=5),
@@ -185,14 +185,14 @@ def test_build_cmd():
 #     kmers = list(seq_to_kmers(seq))
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     assert not '404' in response.data
 #     for sample in set(samples):
 #         response = hug.test.post(
-#             cbg.__main__, 'insert', {'sample': sample, 'kmers': kmers})
+#             bigsi.__main__, 'insert', {'sample': sample, 'kmers': kmers})
 #         # assert response.data.get('result') == 'success'
 #     response = hug.test.get(
-#         cbg.__main__, 'samples', {})
+#         bigsi.__main__, 'samples', {})
 #     for sample, sample_dict in response.data.items():
 #         assert sample_dict.get("name") in samples
 #         assert sample_dict.get("colour") in range(len(samples))
@@ -200,10 +200,10 @@ def test_build_cmd():
 #         #     len(kmers) <= 0.1
 #     _name = random.choice(samples)
 #     response = hug.test.get(
-#         cbg.__main__, 'samples', {"name": _name})
+#         bigsi.__main__, 'samples', {"name": _name})
 #     assert response.data.get(_name).get("name") == _name
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 
 
 # def chunks(l, n):
@@ -224,19 +224,19 @@ def test_build_cmd():
 #     samples = set(samples)
 #     # Returns a Response object
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})
 #     response = hug.test.get(
-#         cbg.__main__, 'graph', {})
+#         bigsi.__main__, 'graph', {})
 #     # assert response.data.get("kmer_count") == 0
 #     assert not '404' in response.data
 #     for i, sample in enumerate(samples):
 #         response = hug.test.post(
-#             cbg.__main__, 'insert', {'sample': sample, 'kmers': kmersl[i]})
+#             bigsi.__main__, 'insert', {'sample': sample, 'kmers': kmersl[i]})
 #         # assert response.data.get('result') == 'success'
 #     response = hug.test.get(
-#         cbg.__main__, 'graph', {})
+#         bigsi.__main__, 'graph', {})
 #     assert response.data.get("num_samples") == len(samples)
 #     # assert abs(response.data.get(
 #     #     "kmer_count") - len(set(kmers))) <= 5
 #     response = hug.test.delete(
-#         cbg.__main__, '', {})
+#         bigsi.__main__, '', {})

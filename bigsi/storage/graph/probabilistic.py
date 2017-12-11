@@ -1,13 +1,13 @@
-from cbg.storage.base import BaseStorage
-from cbg.storage.graph.base import BaseGraphStorage
-# from cbg.storage import InMemoryStorage
-# from cbg.storage import RedisHashStorage
-# from cbg.storage import RedisBitArrayStorage
-# from cbg.storage import SimpleRedisStorage
-from cbg.storage import BerkeleyDBStorage
-from cbg.utils import hash_key
-from cbg.bytearray import ByteArray
-from cbg.bitvector import BitArray
+from bigsi.storage.base import BaseStorage
+from bigsi.storage.graph.base import BaseGraphStorage
+# from bigsi.storage import InMemoryStorage
+# from bigsi.storage import RedisHashStorage
+# from bigsi.storage import RedisBitArrayStorage
+# from bigsi.storage import SimpleRedisStorage
+from bigsi.storage import BerkeleyDBStorage
+from bigsi.utils import hash_key
+from bigsi.bytearray import ByteArray
+from bigsi.bitvector import BitArray
 from bitarray import bitarray
 import hashlib
 # from bitstring import BitArray
@@ -22,8 +22,8 @@ import time
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
-from cbg.utils import chunks
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import chunks
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 try:

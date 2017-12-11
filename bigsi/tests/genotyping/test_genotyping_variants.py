@@ -1,43 +1,43 @@
 """Tests that are common to graphs"""
-from cbg.tests.base import ST_GRAPH
+from bigsi.tests.base import ST_GRAPH
 from hypothesis import given
-from cbg.variants import CBGVariantSearch
-from cbg.variants import CBGAminoAcidMutationSearch
+from bigsi.variants import BIGSIVariantSearch
+from bigsi.variants import BIGSIAminoAcidMutationSearch
 import hypothesis.strategies as st
-from cbg import CBG
+from bigsi import BIGSI
 
 import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
 @given(Graph=ST_GRAPH, kmer_size=st.integers(min_value=11, max_value=31))
 def test_create_variant_probe_set(Graph, kmer_size):
-    cbg = Graph.create(m=100, k=kmer_size, force=True)
-    variant_search = CBGVariantSearch(cbg)
+    bigsi = Graph.create(m=100, k=kmer_size, force=True)
+    variant_search = BIGSIVariantSearch(bigsi)
     assert variant_search is not None
 
     assert len(variant_search.create_variant_probe_set(
-        "T1C", "cbg/tests/data/ref.fasta").refs[0]) == (2*kmer_size+1)
+        "T1C", "bigsi/tests/data/ref.fasta").refs[0]) == (2*kmer_size+1)
 
 
 @given(Graph=ST_GRAPH)
 def test_search_for_variant(Graph):
     kmer_size = 21
-    cbg = Graph.create(m=100, k=kmer_size, force=True)
-    variant_search = CBGVariantSearch(cbg, "cbg/tests/data/ref.fasta")
+    bigsi = Graph.create(m=100, k=kmer_size, force=True)
+    variant_search = BIGSIVariantSearch(bigsi, "bigsi/tests/data/ref.fasta")
     # Add a the reference seq, the alternate and both as samples
     variant_probe_set = variant_search.create_variant_probe_set(
         "T1C")
     ref = variant_probe_set.refs[0]
     alt = variant_probe_set.alts[0]
-    bloom1 = cbg.bloom(cbg.seq_to_kmers(ref))
-    bloom2 = cbg.bloom(cbg.seq_to_kmers(alt))
-    cbg.insert(bloom1, 'ref')
-    cbg.insert(bloom2, 'alt')
+    bloom1 = bigsi.bloom(bigsi.seq_to_kmers(ref))
+    bloom2 = bigsi.bloom(bigsi.seq_to_kmers(alt))
+    bigsi.insert(bloom1, 'ref')
+    bigsi.insert(bloom2, 'alt')
 
     results = variant_search.search_for_variant("T", 1, "C")
     assert results.get("T1C").get("ref").get("genotype") == "0/0"
@@ -46,9 +46,9 @@ def test_search_for_variant(Graph):
 
 def test_search_for_amino_acid_mutation():
     kmer_size = 21
-    cbg = CBG.create(m=100, k=kmer_size, force=True)
-    variant_search = CBGAminoAcidMutationSearch(
-        cbg, "cbg/tests/data/ref.fasta", "cbg/tests/data/ref.gb")
+    bigsi = BIGSI.create(m=100, k=kmer_size, force=True)
+    variant_search = BIGSIAminoAcidMutationSearch(
+        bigsi, "bigsi/tests/data/ref.fasta", "bigsi/tests/data/ref.gb")
 
     var_name1 = variant_search.aa2dna.get_variant_names("rpoB", "S450X", True)[
         0]
@@ -65,14 +65,14 @@ def test_search_for_amino_acid_mutation():
     alt1 = variant_probe_set1.alts[0]
     ref2 = variant_probe_set2.refs[0]
     alt2 = variant_probe_set2.alts[0]
-    bloom1 = cbg.bloom(cbg.seq_to_kmers(ref1))
-    bloom2 = cbg.bloom(cbg.seq_to_kmers(alt1))
-    bloom3 = cbg.bloom(cbg.seq_to_kmers(ref2))
-    bloom4 = cbg.bloom(cbg.seq_to_kmers(alt2))
-    cbg.insert(bloom1, 'ref1')
-    cbg.insert(bloom2, 'alt1')
-    cbg.insert(bloom3, 'ref2')
-    cbg.insert(bloom4, 'alt2')
+    bloom1 = bigsi.bloom(bigsi.seq_to_kmers(ref1))
+    bloom2 = bigsi.bloom(bigsi.seq_to_kmers(alt1))
+    bloom3 = bigsi.bloom(bigsi.seq_to_kmers(ref2))
+    bloom4 = bigsi.bloom(bigsi.seq_to_kmers(alt2))
+    bigsi.insert(bloom1, 'ref1')
+    bigsi.insert(bloom2, 'alt1')
+    bigsi.insert(bloom3, 'ref2')
+    bigsi.insert(bloom4, 'alt2')
 
     results = variant_search.search_for_amino_acid_variant(
         "rpoB", "S", 450, "X")

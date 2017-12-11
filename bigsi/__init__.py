@@ -1,4 +1,4 @@
-#from cbg import version
-from cbg.utils import *
-from cbg.graph.probabilistic import CBG
+#from bigsi import version
+from bigsi.utils import *
+from bigsi.graph.probabilistic import BIGSI
 #from main import *

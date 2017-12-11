@@ -3,7 +3,7 @@ from __future__ import print_function
 import shutil
 import logging
 logger = logging.getLogger(__name__)
-from cbg.storage.base import BerkeleyDBStorage
+from bigsi.storage.base import BerkeleyDBStorage
 
 
 def rowjoin(partitioned_data, out_db, N=25000000):

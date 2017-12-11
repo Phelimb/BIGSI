@@ -2,7 +2,7 @@ from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
 import numpy as np
-from cbg.matrix import transpose
+from bigsi.matrix import transpose
 from bitarray import bitarray
 
 

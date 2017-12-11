@@ -1,16 +1,16 @@
-from cbg.tests.base import ST_KMER
-from cbg.tests.base import ST_SEQ
-from cbg.tests.base import ST_SAMPLE_NAME
-from cbg.tests.base import ST_GRAPH
-from cbg.tests.base import ST_BLOOM_FILTER_SIZE
-from cbg.tests.base import ST_SAMPLE_COLOUR
-from cbg.tests.base import ST_NUM_HASHES
+from bigsi.tests.base import ST_KMER
+from bigsi.tests.base import ST_SEQ
+from bigsi.tests.base import ST_SAMPLE_NAME
+from bigsi.tests.base import ST_GRAPH
+from bigsi.tests.base import ST_BLOOM_FILTER_SIZE
+from bigsi.tests.base import ST_SAMPLE_COLOUR
+from bigsi.tests.base import ST_NUM_HASHES
 import hypothesis
 from hypothesis import given
 from hypothesis import settings
 import hypothesis.strategies as st
-from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
-from cbg.utils import seq_to_kmers
+from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+from bigsi.utils import seq_to_kmers
 
 import os
 

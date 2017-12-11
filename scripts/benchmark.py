@@ -13,12 +13,12 @@ sys.path.append(
         os.path.join(
             os.path.dirname(__file__),
             "../redis-py")))
-from cbg import ProbabilisticMultiColourDeBruijnGraph as Graph
+from bigsi import ProbabilisticMultiColourDeBruijnGraph as Graph
 
 
 keys = []
 N = 100000
-with open('cbg/tests/data/test_kmers.txt', 'r') as infile:
+with open('bigsi/tests/data/test_kmers.txt', 'r') as infile:
     keys.extend(infile.read().splitlines()[:N]*1000)
 N = len(keys)
 for storage in [

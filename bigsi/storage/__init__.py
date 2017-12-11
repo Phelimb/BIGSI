@@ -1,5 +1,5 @@
-# from cbg.storage.base import InMemoryStorage
-# from cbg.storage.base import RedisHashStorage
-# from cbg.storage.base import RedisBitArrayStorage
-# from cbg.storage.base import SimpleRedisStorage
-from cbg.storage.base import BerkeleyDBStorage
+# from bigsi.storage.base import InMemoryStorage
+# from bigsi.storage.base import RedisHashStorage
+# from bigsi.storage.base import RedisBitArrayStorage
+# from bigsi.storage.base import SimpleRedisStorage
+from bigsi.storage.base import BerkeleyDBStorage

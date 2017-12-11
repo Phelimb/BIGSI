@@ -1,21 +1,21 @@
 """Tests that are unique to Probabilistic Graphs"""
-from cbg import CBG as Graph
-from cbg.tests.base import ST_KMER
-from cbg.tests.base import ST_SEQ
-from cbg.tests.base import ST_SAMPLE_NAME
-from cbg.tests.base import ST_GRAPH
+from bigsi import BIGSI as Graph
+from bigsi.tests.base import ST_KMER
+from bigsi.tests.base import ST_SEQ
+from bigsi.tests.base import ST_SAMPLE_NAME
+from bigsi.tests.base import ST_GRAPH
 import random
-from cbg.utils import make_hash
-from cbg.utils import reverse_comp
+from bigsi.utils import make_hash
+from bigsi.utils import reverse_comp
 from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
-from cbg.bytearray import ByteArray
+from bigsi.bytearray import ByteArray
 import tempfile
 import os
 import redis
-from cbg.utils import seq_to_kmers
-from cbg import CBG
+from bigsi.utils import seq_to_kmers
+from bigsi import BIGSI
 
 # Add test for insert, lookup.
 
@@ -23,8 +23,8 @@ from cbg import CBG
 @given(sample=ST_SAMPLE_NAME, seq=ST_SEQ)
 def test_get_bloomfilter(sample, seq):
     kmers = seq_to_kmers(seq, 31)
-    cbg = CBG.create(m=100, force=True)
-    cbg.insert(cbg.bloom(kmers), sample)
-    bf = cbg.get_bloom_filter(sample)
-    assert bf.length() == cbg.graph.bloomfilter.size
-    cbg.delete_all()
+    bigsi = BIGSI.create(m=100, force=True)
+    bigsi.insert(bigsi.bloom(kmers), sample)
+    bf = bigsi.get_bloom_filter(sample)
+    assert bf.length() == bigsi.graph.bloomfilter.size
+    bigsi.delete_all()

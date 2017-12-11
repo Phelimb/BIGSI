@@ -1,1 +1,1 @@
-from cbg.scoring.score import Scorer
+from bigsi.scoring.score import Scorer

@@ -1,4 +1,4 @@
-rm -rf cbg/__pycache__/
-rm -rf cbg/*/__pycache__/
-rm -rf cbg/*/*/__pycache__/
-rm -rf cbg/*/*/*/__pycache__/
+rm -rf bigsi/__pycache__/
+rm -rf bigsi/*/__pycache__/
+rm -rf bigsi/*/*/__pycache__/
+rm -rf bigsi/*/*/*/__pycache__/

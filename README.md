@@ -1,12 +1,14 @@
-# Coloured Bloom Graphs [CBG]
-<!--[![Build Status](https://travis-ci.org/Phelimb/cbg.svg)](https://travis-ci.org/Phelimb/cbg)-->
+# BItsliced Genomic Signature Index [BIGSI]
+<!--[![Build Status](https://travis-ci.org/Phelimb/bigsi.svg)](https://travis-ci.org/Phelimb/bigsi)-->
 
-CBG can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
+BIGSI can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
+
+This tool was formally named "Coloured Bloom Graph" or "CBG" in reference to the fact that it can be viewed as a coloured probabilistic de Bruijn graph.
 
 
 # Installing without docker
 
-cbg has a docker image that bundles mccortex, berkeley DB and CBG in one image. Skip to `Quickstart with docker` for an easier install.. 
+bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. Skip to `Quickstart with docker` for an easier install.. 
 
 #### Install requirement berkeley-db
 
@@ -16,9 +18,9 @@ cbg has a docker image that bundles mccortex, berkeley DB and CBG in one image. 
 
 For berkeley-db install on unix, see [Dockerfile](Dockerfile). 
 
-#### Install CBG
+#### Install BIGSI
 
-	pip install cbg
+	pip install bigsi
 
 ## Quickstart
 
@@ -31,47 +33,47 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 
 #### Construct the bloom filters
 
-	cbg init test-data/db --k 21 --m 1000 --h 3
+	bigsi init test-data/db --k 31 --m 1000 --h 3
 
-	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
-	cbg bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
+	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
+	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
 	
 ### Build the combined graph
 
-	cbg build test-data/db test-data/test1.bloom test-data/test2.bloom
+	bigsi build test-data/db test-data/test1.bloom test-data/test2.bloom
 
 ### Query the graph
-	cbg search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	bigsi search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 	
 
 # Quickstart with docker
 
-	docker pull phelimb/cbg
-	docker run phelimb/cbg cbg --help
+	docker pull phelimb/bigsi
+	docker run phelimb/bigsi bigsi --help
 	
 ### Preparing your data
 
-CBG using single colour graphs to construct the coloured graph. 
+BIGSI using single colour graphs to construct the coloured graph. 
 Use [mccortex](https://github.com/mcveanlab/mccortex) to build. 
 	
 	PWD=`pwd`
-	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	docker run -v $PWD/test-data:/data phelimb/cbg mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+	docker run -v $PWD/test-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	docker run -v $PWD/test-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
-### Building a CBG
+### Building a BIGSI
 
 #### Construct the bloom filters
 
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg  init /data/test.cbg --k 21 --m 1000 --h 3
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi  init /data/test.bigsi --k 31 --m 1000 --h 3
 
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test1.bloom	
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg bloom --db /data/test.cbg -c /data/test1.ctx /data/test2.bloom	
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test2.bloom	
 #### Build the combined graph
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg build /data/test.cbg /data/test1.bloom /data/test2.bloom
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi build /data/test.bigsi /data/test1.bloom /data/test2.bloom
 
 #### Query the graph
-	docker run -v $PWD/test-data:/data phelimb/cbg cbg search --db /data/test.cbg -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi search --db /data/test.bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 	
 
 
@@ -85,9 +87,9 @@ You can find instructions on how to generate probes for the variants that you wa
 
 e.g.
 	
-	cat example-data/kmers.fasta | ./cbg/__main__.py search --pipe_in -o tsv
+	cat example-data/kmers.fasta | ./bigsi/__main__.py search --pipe_in -o tsv
 
-	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./cbg/__main__.py search - --pipe_in -o tsv
+	atlas-var make-probes -v A1234T ../atlas-var/example-data/NC_000962.3.fasta | ./bigsi/__main__.py search - --pipe_in -o tsv
 
 # Low memory builds
 
@@ -97,19 +99,19 @@ e.g.
 
 	ls path/to/bloom/filters/blooms/* | split -l 500
 
-	mkdir -p tmp_cbg/
+	mkdir -p tmp_bigsi/
 	for i in xa*
 	do
-	    cbg init tmp_cbg/"$i" --k 31 --m 25000000 --h 3
-	    cbg build tmp_cbg/"$i" $(cat "$i")
+	    bigsi init tmp_bigsi/"$i" --k 31 --m 25000000 --h 3
+	    bigsi build tmp_bigsi/"$i" $(cat "$i")
 	done	
 
-	cbg merge merged_cbg tmp_cbg/xa*
+	bigsi merge merged_bigsi tmp_bigsi/xa*
 
 # Parameter choices:
 
 
-## How do I decide on bloom filter size and number of hashes when building a CBG? 
+## How do I decide on bloom filter size and number of hashes when building a BIGSI? 
 
 ### Short answer:
 

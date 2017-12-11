@@ -8,38 +8,38 @@ import json
 import logging
 import pickle
 import numpy as np
-from cbg.graph.base import BaseGraph
-from cbg.utils import seq_to_kmers
+from bigsi.graph.base import BaseGraph
+from bigsi.utils import seq_to_kmers
 
-from cbg.utils import min_lexo
-from cbg.utils import bits
-from cbg.utils import kmer_to_bits
-from cbg.utils import bits_to_kmer
-from cbg.utils import kmer_to_bytes
-from cbg.utils import hash_key
-from cbg.version import __version__
-
-
-from cbg.decorators import convert_kmers_to_canonical
-
-from cbg.bytearray import ByteArray
+from bigsi.utils import min_lexo
+from bigsi.utils import bits
+from bigsi.utils import kmer_to_bits
+from bigsi.utils import bits_to_kmer
+from bigsi.utils import kmer_to_bytes
+from bigsi.utils import hash_key
+from bigsi.version import __version__
 
 
-from cbg.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+from bigsi.decorators import convert_kmers_to_canonical
+
+from bigsi.bytearray import ByteArray
 
 
-from cbg.storage import BerkeleyDBStorage
-from cbg.sketch import HyperLogLogJaccardIndex
-from cbg.sketch import MinHashHashSet
-from cbg.utils import DEFAULT_LOGGING_LEVEL
-from cbg.matrix import transpose
-from cbg.scoring import Scorer
+from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+
+
+from bigsi.storage import BerkeleyDBStorage
+from bigsi.sketch import HyperLogLogJaccardIndex
+from bigsi.sketch import MinHashHashSet
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.matrix import transpose
+from bigsi.scoring import Scorer
 from bitarray import bitarray
 import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
@@ -54,15 +54,15 @@ def load_bloomfilter(f):
 # parameters are read from there
 
 # TODO
-# create class method to init the `cbg init` - CBG().create(m=,n,)
+# create class method to init the `bigsi init` - BIGSI().create(m=,n,)
 # test if init without creating first returns error
-# cbg init fails if directory already exists
+# bigsi init fails if directory already exists
 import os
 import bsddb3
-DEFUALT_DB_DIRECTORY = "./db-cbg/"
+DEFUALT_DB_DIRECTORY = "./db-bigsi/"
 
 
-class CBG(object):
+class BIGSI(object):
 
     def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1):
         self.db = db
@@ -71,7 +71,7 @@ class CBG(object):
                 filename=os.path.join(self.db, "metadata"))
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             raise ValueError(
-                "Cannot find a CBG at %s. Run `cbg init` or CBG.create()" % db)
+                "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
             self.bloom_filter_size = int.from_bytes(
                 self.metadata['bloom_filter_size'], 'big')
@@ -85,10 +85,10 @@ class CBG(object):
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
-        # Initialises a CBG
+        # Initialises a BIGSI
         # m: bloom_filter_size
         # h: number of hash functions
-        # directory - where to store the cbg
+        # directory - where to store the bigsi
         try:
             os.mkdir(db)
         except FileExistsError:
@@ -98,10 +98,10 @@ class CBG(object):
                 return cls.create(db=db, k=k, m=m, h=h,
                                   cachesize=cachesize, force=False)
             raise FileExistsError(
-                "A CBG already exists at %s. Run with --force or CBG.create(force=True) to recreate." % db)
+                "A BIGSI already exists at %s. Run with --force or BIGSI.create(force=True) to recreate." % db)
 
         else:
-            logger.info("Initialising CBG at %s" % db)
+            logger.info("Initialising BIGSI at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
             metadata = BerkeleyDBStorage(filename=metadata_filepath)
             metadata["bloom_filter_size"] = m
@@ -114,8 +114,8 @@ class CBG(object):
         bloom_filter_size = len(bloomfilters[0])
         assert len(bloomfilters) == len(samples)
         [self._add_sample(s) for s in samples]
-        cbg = transpose(bloomfilters)
-        for i, ba in enumerate(cbg):
+        bigsi = transpose(bloomfilters)
+        for i, ba in enumerate(bigsi):
             if (i % (self.bloom_filter_size/10)) == 0:
                 logger.info("%i of %i" % (i, self.bloom_filter_size))
             self.graph[i] = ba.tobytes()

@@ -1,1 +1,1 @@
-from cbg.graph.probabilistic import CBG
+from bigsi.graph.probabilistic import BIGSI

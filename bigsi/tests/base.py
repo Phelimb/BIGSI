@@ -1,5 +1,5 @@
 import hypothesis.strategies as st
-from cbg import CBG
+from bigsi import BIGSI
 import os
 REDIS_HOST = os.environ.get("REDIS_IP_1", '127.0.0.1')
 REDIS_CLUSTER_PORT = os.environ.get("REDIS_PORT_1", '7000')
@@ -14,7 +14,7 @@ ST_KMER_SIZE = st.integers(min_value=11, max_value=31)
 ST_SEQ = st.text(min_size=31, max_size=1000, alphabet=['A', 'T', 'C', 'G'])
 
 ST_SAMPLE_NAME = st.text(min_size=1)
-ST_GRAPH = st.just(CBG)
+ST_GRAPH = st.just(BIGSI)
 ST_SAMPLE_COLOUR = st.integers(min_value=0, max_value=10)
 ST_BLOOM_FILTER_SIZE = st.integers(min_value=10, max_value=100)
 ST_NUM_HASHES = st.integers(min_value=10, max_value=100)

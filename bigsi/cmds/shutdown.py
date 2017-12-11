@@ -1,5 +1,5 @@
 from __future__ import print_function
-from cbg.graph import CBG as Graph
+from bigsi.graph import BIGSI as Graph
 
 
 def shutdown(conn_config):

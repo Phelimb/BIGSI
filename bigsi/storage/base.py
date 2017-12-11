@@ -2,9 +2,9 @@ import redis
 import sys
 import os
 # from rediscluster import StrictRedisCluster
-from cbg.utils import hash_key
-from cbg.utils import chunks
-from cbg.bitvector import BitArray
+from bigsi.utils import hash_key
+from bigsi.utils import chunks
+from bigsi.bitvector import BitArray
 import shutil
 import logging
 import time
@@ -15,7 +15,7 @@ import math
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 try:

@@ -1,16 +1,16 @@
-from cbg.sketch import HyperLogLogJaccardIndex
-from cbg.sketch import MinHashHashSet
+from bigsi.sketch import HyperLogLogJaccardIndex
+from bigsi.sketch import MinHashHashSet
 from hypothesis import given
 from hypothesis import example
 import hypothesis.strategies as st
 
 import os
 
-from cbg.tests.base import ST_KMER
-from cbg.tests.base import ST_SEQ
-from cbg.tests.base import REDIS_HOST
-from cbg.tests.base import REDIS_PORT
-from cbg.utils import seq_to_kmers
+from bigsi.tests.base import ST_KMER
+from bigsi.tests.base import ST_SEQ
+from bigsi.tests.base import REDIS_HOST
+from bigsi.tests.base import REDIS_PORT
+from bigsi.utils import seq_to_kmers
 
 SKETCHS = [HyperLogLogJaccardIndex(host=REDIS_HOST, port=REDIS_PORT),
            MinHashHashSet(host=REDIS_HOST, port=REDIS_PORT, sketch_size=100)]

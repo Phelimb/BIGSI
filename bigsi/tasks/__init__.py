@@ -1,1 +1,1 @@
-from cbg.tasks.tasks import *
+from bigsi.tasks.tasks import *

@@ -1,1 +1,1 @@
-celery -A cbg.tasks.tasks worker --loglevel=info
+celery -A bigsi.tasks.tasks worker --loglevel=info

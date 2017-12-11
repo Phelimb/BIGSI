@@ -5,7 +5,7 @@ venv*
 venv
 *.rdb
 *nodes.conf
-cbg.egg-info/
+bigsi.egg-info/
 .coverage
 .hypothesis/
 dist/
@@ -16,8 +16,8 @@ venv
 *~
 *.pyc
 ._*
-cbg/utils.c
-cbg/utils.so
+bigsi/utils.c
+bigsi/utils.so
 *.fasta
 *.json
 *.fai
@@ -25,7 +25,7 @@ cbg/utils.so
 .cache
 
 
-cbg/utils.cpython-35m-darwin.so
+bigsi/utils.cpython-35m-darwin.so
 cortex-py/
 db
 docker-compose1.yaml
@@ -40,9 +40,9 @@ remcdbg/
 scripts/probablistic.py
 
 *#
-cbg/demo.sh
-cbg/utils/*.c
-cbg/utils/*.so
+bigsi/demo.sh
+bigsi/utils/*.c
+bigsi/utils/*.so
 db2/
 redis-cluster/redis_tmp.conf
 scripts/benchmark_dumps.py

@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from cbg.graph import CBG as Graph
+from bigsi.graph import BIGSI as Graph
 import os.path
 import sys
 import logging
 import json
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
-from cbg.tasks import run_insert
+from bigsi.tasks import run_insert
 
 
 def insert(kmers, bloom_filter, async=False):

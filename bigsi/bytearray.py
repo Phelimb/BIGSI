@@ -1,6 +1,6 @@
 from __future__ import print_function
 # from bitstring import BitArray
-from cbg.bitvector import BitArray
+from bigsi.bitvector import BitArray
 import sys
 import math
 

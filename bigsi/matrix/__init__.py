@@ -1,1 +1,1 @@
-from cbg.matrix.transpose import transpose
+from bigsi.matrix.transpose import transpose

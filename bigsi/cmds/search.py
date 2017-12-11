@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 from __future__ import print_function
-# from cbg.utils import min_lexo
-from cbg.utils import seq_to_kmers
-from cbg.graph import CBG as Graph
+# from bigsi.utils import min_lexo
+from bigsi.utils import seq_to_kmers
+from bigsi.graph import BIGSI as Graph
 import argparse
 import os.path
 import time
@@ -11,10 +11,10 @@ import json
 import logging
 import sys
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 import operator
-from cbg.utils import convert_query_kmer
+from bigsi.utils import convert_query_kmer
 
 
 def per(i):

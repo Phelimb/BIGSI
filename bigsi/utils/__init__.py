@@ -1,3 +1,3 @@
-from cbg.utils.fncts import *
+from bigsi.utils.fncts import *
 import os
 DEFAULT_LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'INFO')

@@ -1,12 +1,12 @@
 import redis
-from cbg.utils import chunks
+from bigsi.utils import chunks
 import mmh3
-# from cbg.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
+# from bigsi.storage.graph.probabilistic import ProbabilisticRedisBitArrayStorage
 import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 import heapq
 import random

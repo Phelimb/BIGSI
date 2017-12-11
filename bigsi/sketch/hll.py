@@ -1,5 +1,5 @@
 import redis
-from cbg.utils import chunks
+from bigsi.utils import chunks
 
 
 class HyperLogLogJaccardIndex(object):

@@ -1,7 +1,7 @@
 from __future__ import print_function
 from functools import wraps
-from cbg.utils import convert_query_kmers
-from cbg.utils import convert_query_kmer
+from bigsi.utils import convert_query_kmers
+from bigsi.utils import convert_query_kmer
 import logging
 import time
 import collections
@@ -10,7 +10,7 @@ import itertools
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 

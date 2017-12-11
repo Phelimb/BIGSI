@@ -6,29 +6,29 @@ with open('requirements.txt') as f:
 from Cython.Build import cythonize
 
 setup(
-    name='cbg',
+    name='bigsi',
     version='0.1.5',
     packages=[
-        'cbg',
-        'cbg.cmds',
-        'cbg.utils',
-        'cbg.graph',
-        'cbg.sketch',
-        'cbg.tasks',
-        'cbg.storage',
-        'cbg.matrix',
-        'cbg.storage.graph',
+        'bigsi',
+        'bigsi.cmds',
+        'bigsi.utils',
+        'bigsi.graph',
+        'bigsi.sketch',
+        'bigsi.tasks',
+        'bigsi.storage',
+        'bigsi.matrix',
+        'bigsi.storage.graph',
     ],
-    keywords='DBG coloured de bruijn graphs sequence search',
+    keywords='DBG coloured de bruijn graphs sequence search signture files signature index bitsliced',
     license='MIT',
-    url='http://github.com/phelimb/cbg',
+    url='http://github.com/phelimb/bigsi',
     description='Coloured Bloom Graphs - Low memory multicolour de Bruijn graphs for indexing large collections of genomes',
     author='Phelim Bradley',
     author_email='wave@phel.im',
     install_requires=required[4:],
     entry_points={
         'console_scripts': [
-            'cbg = cbg.__main__:main',
+            'bigsi = bigsi.__main__:main',
         ]},
     classifiers=[
         # How mature is this project? Common values are

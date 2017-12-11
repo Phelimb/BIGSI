@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from cbg.graph import CBG as Graph
+from bigsi.graph import BIGSI as Graph
 import argparse
 import json
 import logging
 import json
 logger = logging.getLogger(__name__)
-from cbg.utils import DEFAULT_LOGGING_LEVEL
+from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
@@ -22,7 +22,7 @@ def jaccard_index(graph, s1, s2=None, method="minhash"):
 
 # #! /usr/bin/env python
 # from __future__ import print_function
-# from cbg.graph import CBG as Graph
+# from bigsi.graph import BIGSI as Graph
 # import argparse
 # import json
 # import pickle
