@@ -16,18 +16,18 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 @given(Graph=ST_GRAPH, kmer_size=st.integers(min_value=11, max_value=31))
 def test_create_variant_probe_set(Graph, kmer_size):
-    bigsi = Graph.create(m=100, k=kmer_size, force=True)
-    variant_search = BIGSIVariantSearch(bigsi)
+    bigsi = Graph.create(m=1000, k=kmer_size, force=True)
+    variant_search = BIGSIVariantSearch(bigsi, "bigsi/tests/data/ref.fasta")
     assert variant_search is not None
 
     assert len(variant_search.create_variant_probe_set(
-        "T1C", "bigsi/tests/data/ref.fasta").refs[0]) == (2*kmer_size+1)
+        "T1C").refs[0]) == (2*kmer_size+1)
 
 
 @given(Graph=ST_GRAPH)
 def test_search_for_variant(Graph):
     kmer_size = 21
-    bigsi = Graph.create(m=100, k=kmer_size, force=True)
+    bigsi = Graph.create(m=1000, k=kmer_size, force=True)
     variant_search = BIGSIVariantSearch(bigsi, "bigsi/tests/data/ref.fasta")
     # Add a the reference seq, the alternate and both as samples
     variant_probe_set = variant_search.create_variant_probe_set(
@@ -46,7 +46,7 @@ def test_search_for_variant(Graph):
 
 def test_search_for_amino_acid_mutation():
     kmer_size = 21
-    bigsi = BIGSI.create(m=100, k=kmer_size, force=True)
+    bigsi = BIGSI.create(m=1000, k=kmer_size, force=True)
     variant_search = BIGSIAminoAcidMutationSearch(
         bigsi, "bigsi/tests/data/ref.fasta", "bigsi/tests/data/ref.gb")
 
