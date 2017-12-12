@@ -1,4 +1,4 @@
-FROM python:3.5.2
+FROM python:3.6.3
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
@@ -25,15 +25,15 @@ WORKDIR /usr/src/app/mccortex
 RUN make all
 WORKDIR /usr/src/app
 
-## Install cbg
+## Install bigsi
 COPY . /usr/src/app
 RUN pip install cython
 RUN  pip install --no-cache-dir -r requirements.txt
 
-# install cbg
+# install bigsi
 WORKDIR /usr/src/app
 RUN python setup.py install
 RUN sh clean.sh
 RUN python setup.py install
 
-CMD cbg --help
+CMD bigsi --help

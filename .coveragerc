@@ -1,2 +1,2 @@
 [run]
-omit = cbg/tests/*,cbg/cmds/*,cbg/version.py,cbg/main.py,cbg/bytearray.py
+omit = bigsi/tests/*,bigsi/cmds/*,bigsi/version.py,bigsi/main.py,bigsi/bytearray.py

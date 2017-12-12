@@ -2,7 +2,7 @@ version: '2'
 
 services:
   main:
-    image: phelimb/cbg
+    image: phelimb/bigsi
     ports:
       - "5000:5000"      
       - "8000:8000"      
@@ -19,7 +19,7 @@ services:
     network_mode: "host"
 
   worker:
-    image: phelimb/cbg
+    image: phelimb/bigsi
     environment:
         - CELERY=1    
         - REDIS_IP_1=127.0.0.1

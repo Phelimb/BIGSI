@@ -3,7 +3,7 @@ import begin
 
 
 def search(seq, threshold=1):
-    url = "http://api.cbgseq.com/search?threshold=%f&seq=%s" % (
+    url = "http://api.bigsiseq.com/search?threshold=%f&seq=%s" % (
         float(threshold), seq)
     results = requests.get(url).json()
     samples = []
