@@ -6,7 +6,8 @@ BIGSI can search a collection of raw (fastq/bam), contigs or assembly for genes,
 This tool was formally named "Coloured Bloom Graph" or "CBG" in reference to the fact that it can be viewed as a coloured probabilistic de Bruijn graph.
 
 
-Documentation can be found at https://bigsi.readme.io/
+Documentation can be found at https://bigsi.readme.io/. 
+An index of the microbial ENA/SRA (Dec 2016) can be queried at http://www.bigsi.io. 
 
 # Installing without docker
 
