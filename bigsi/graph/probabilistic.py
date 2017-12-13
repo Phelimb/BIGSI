@@ -104,9 +104,10 @@ class BIGSI(object):
             logger.info("Initialising BIGSI at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
             metadata = BerkeleyDBStorage(filename=metadata_filepath)
-            metadata["bloom_filter_size"] = m
-            metadata["num_hashes"] = h
-            metadata["kmer_size"] = k
+            metadata["bloom_filter_size"] = (
+                int(m)).to_bytes(4, byteorder='big')
+            metadata["num_hashes"] = (int(h)).to_bytes(4, byteorder='big')
+            metadata["kmer_size"] = (int(k)).to_bytes(4, byteorder='big')
             metadata.sync()
             return cls(db=db, cachesize=cachesize)
 
