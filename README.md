@@ -33,22 +33,22 @@ For berkeley-db install on unix, see [Dockerfile](Dockerfile).
 
 Requires [mccortex](github.com/mcveanlab/mccortex). 
 
-	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 example-data/kmers.txt example-data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 example-data/kmers.txt example-data/test2.ctx
 
 #### Construct the bloom filters
 
-	bigsi init test-data/db --k 31 --m 1000 --h 1
+	bigsi init test-bigsi --k 31 --m 1000 --h 1
 
-	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
-	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
+	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test1.bloom
+	bigsi bloom --db test-bigsi -c example-data/test2.ctx example-data/test2.bloom
 	
 ### Build the combined graph
 
-	bigsi build test-data/db test-data/test1.bloom test-data/test2.bloom
+	bigsi build test-bigsi example-data/test1.bloom example-data/test2.bloom -s s1 -s s2
 
 ### Query the graph
-	bigsi search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	bigsi search -o tsv --db test-bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 	
 
@@ -63,22 +63,22 @@ BIGSI using single colour graphs to construct the coloured graph.
 Use [mccortex](https://github.com/mcveanlab/mccortex) to build. 
 	
 	PWD=`pwd`
-	docker run -v $PWD/test-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	docker run -v $PWD/test-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+	docker run -v $PWD/example-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
+	docker run -v $PWD/example-data:/data phelimb/bigsi mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
 
 ### Building a BIGSI
 
 #### Construct the bloom filters
 
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi  init /data/test.bigsi --k 31 --m 1000 --h 1
+	docker run -v $PWD/example-data:/data phelimb/bigsi bigsi  init /data/test.bigsi --k 31 --m 1000 --h 1
 
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test1.bloom	
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test2.bloom	
+	docker run -v $PWD/example-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test1.bloom	
+	docker run -v $PWD/example-data:/data phelimb/bigsi bigsi bloom --db /data/test.bigsi -c /data/test1.ctx /data/test2.bloom	
 #### Build the combined graph
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi build /data/test.bigsi /data/test1.bloom /data/test2.bloom
+	docker run -v $PWD/example-data:/data phelimb/bigsi bigsi build /data/test.bigsi /data/test1.bloom /data/test2.bloom
 
 #### Query the graph
-	docker run -v $PWD/test-data:/data phelimb/bigsi bigsi search --db /data/test.bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	docker run -v $PWD/example-data:/data phelimb/bigsi bigsi search --db /data/test.bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 	
 
 
