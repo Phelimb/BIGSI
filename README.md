@@ -33,22 +33,22 @@ For berkeley-db install on unix, see [Dockerfile](Dockerfile).
 
 Requires [mccortex](github.com/mcveanlab/mccortex). 
 
-	mccortex/bin/mccortex31 build -k 31 -s test1 -1 /data/kmers.txt /data/test1.ctx
-	mccortex/bin/mccortex31 build -k 31 -s test2 -1 /data/kmers.txt /data/test2.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test1 -1 example-data/kmers.txt example-data/test1.ctx
+	mccortex/bin/mccortex31 build -k 31 -s test2 -1 example-data/kmers.txt example-data/test2.ctx
 
 #### Construct the bloom filters
 
 	bigsi init test-bigsi --k 31 --m 1000 --h 1
 
 	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test1.bloom
-	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test2.bloom
+	bigsi bloom --db test-bigsi -c example-data/test2.ctx example-data/test2.bloom
 	
 ### Build the combined graph
 
 	bigsi build test-bigsi example-data/test1.bloom example-data/test2.bloom
 
 ### Query the graph
-	bigsi search --db test-bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	bigsi search -o tsv --db test-bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 	
 
