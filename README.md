@@ -11,21 +11,11 @@ An index of the microbial ENA/SRA (Dec 2016) can be queried at http://www.bigsi.
 
 # Installing without docker
 
-bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. Skip to `Quickstart with docker` for an easier install.. 
+bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. More detailed Detailed install 
 
 #### Install requirement berkeley-db
 
-	brew install berkeley-db4
-	pip install cython
-	BERKELEYDB_DIR=/usr/local/opt/berkeley-db4/ pip install bsddb3
-
-For berkeley-db install on unix, see [Dockerfile](Dockerfile). 
-
-#### Install BIGSI
-
-	git clone https://github.com/Phelimb/BIGSI.git
-	pip install -r requirements.txt
-	python setup.py install
+See: https://bigsi.readme.io/docs for install instructions. 
 
 ## Quickstart
 
