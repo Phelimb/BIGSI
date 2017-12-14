@@ -38,17 +38,17 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 
 #### Construct the bloom filters
 
-	bigsi init test-data/db --k 31 --m 1000 --h 1
+	bigsi init test-bigsi --k 31 --m 1000 --h 1
 
-	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test1.bloom
-	bigsi bloom --db test-data/db -c test-data/test1.ctx test-data/test2.bloom
+	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test1.bloom
+	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test2.bloom
 	
 ### Build the combined graph
 
-	bigsi build test-data/db test-data/test1.bloom test-data/test2.bloom
+	bigsi build test-bigsi example-data/test1.bloom example-data/test2.bloom
 
 ### Query the graph
-	bigsi search --db test-data/db -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
+	bigsi search --db test-bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
 	
 
