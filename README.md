@@ -9,13 +9,9 @@ This tool was formally named "Coloured Bloom Graph" or "CBG" in reference to the
 Documentation can be found at https://bigsi.readme.io/. 
 An index of the microbial ENA/SRA (Dec 2016) can be queried at http://www.bigsi.io. 
 
-# Installing without docker
+# Install
 
-bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. More detailed Detailed install 
-
-#### Install requirement berkeley-db
-
-See: https://bigsi.readme.io/docs for install instructions. 
+bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. See: https://bigsi.readme.io/docs for install instructions. 
 
 ## Quickstart
 
