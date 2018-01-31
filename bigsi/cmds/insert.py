@@ -8,16 +8,16 @@ import json
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
+from bitarray import bitarray
 
-from bigsi.tasks import run_insert
+
+def load_bloomfilter(f):
+    bloomfilter = bitarray()
+    with open(f, 'rb') as inf:
+        bloomfilter.fromfile(inf)
+    return bloomfilter
 
 
-def insert(kmers, bloom_filter, async=False):
-    if async:
-        logger.debug("Inserting with a celery task")
-        result = run_insert.delay(bloom_filter)
-        result = result.get()
-    else:
-        logger.debug("Inserting without a celery task")
-        result = run_insert(bloom_filter)
-    return result
+def insert(graph, bloomfilter, sample):
+    graph.insert(load_bloomfilter(bloomfilter), sample)
+    return {'result': 'success'}

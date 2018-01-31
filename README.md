@@ -38,6 +38,11 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 ### Query the graph
 	bigsi search -o tsv --db test-bigsi -s CGGCGAGGAAGCGTTAAATCTCTTTCTGACG
 
+## Insert a new sample into the graph 
+
+	bigsi insert test-bigsi example-data/test3.bloom s3
+
+
 	
 
 # Quickstart with docker

@@ -11,6 +11,8 @@ from bigsi.tests.base import ST_GRAPH
 from bigsi import BIGSI
 import hypothesis.strategies as st
 from hypothesis import given
+from hypothesis import settings
+
 import random
 import tempfile
 from bigsi.utils import seq_to_kmers
@@ -61,11 +63,13 @@ def test_build_cmd():
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
     response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, "score": True})
-    assert response.data.get(seq).get('results')
+    #
+    assert response.data.get(seq).get('results') != {}
     # assert "score" in list(response.data.get(seq).get('results').values())[0]
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
     response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, 'threshold': 0.1, "score": True})
+    print(response.data[seq])
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(
@@ -91,20 +95,34 @@ def test_build_cmd():
 #     #     bigsi.__main__, '', {})
 
 # TODO, insert takes a bloom filters
-# def test_insert_search_cmd():
-#     # Returns a Response object
-#     response = hug.test.delete(
-#         bigsi.__main__, '', {})
-#     assert not '404' in response.data
-#     response = hug.test.post(
-#         bigsi.__main__, 'insert', {'kmer_file': 'bigsi/tests/data/test_kmers.txt'})
-#     # assert response.data.get('result') == 'success'
-#     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-#     response = hug.test.get(bigsi.__main__, 'search', {'seq': seq})
-#     assert response.data.get(seq).get(
-#         'results').get('test_kmers') == 1.0
-#     response = hug.test.delete(
-#         bigsi.__main__, '', {})
+def test_insert_search_cmd():
+    f = Graph.db
+    response = hug.test.delete(bigsi.__main__, '', {'db': f})
+    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
+    N = 3
+    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
+    samples = []
+    for i in range(N):
+        samples.append(''.join(random.choice(
+            string.ascii_uppercase + string.digits) for _ in range(6)))
+    response = hug.test.post(
+        bigsi.__main__, 'build', {'db': f,
+                                  'bloomfilters': bloomfilter_filepaths,
+                                  'samples': samples})
+
+    # Returns a Response object
+    response = hug.test.post(
+        bigsi.__main__, 'insert', {'db': f,
+                                   'bloomfilter': 'bigsi/tests/data/test_kmers.bloom',
+                                   'sample': "s3"})
+    assert response.data.get('result') == 'success'
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
+    response = hug.test.get(bigsi.__main__, 'search', {'db': f, 'seq': seq})
+
+    assert "s3" in response.data.get(seq).get(
+        'results')
+    response = hug.test.delete(
+        bigsi.__main__, '', {'db': f, })
 
 # TODO, insert takes a bloom filters
 # def test_insert_search_cmd_ctx():
