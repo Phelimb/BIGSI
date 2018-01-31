@@ -18,5 +18,6 @@ def load_bloomfilter(f):
     return bloomfilter
 
 
-def insert(graph, bloom_filter, sample):
-    return graph.insert(load_bloomfilter(bloom_filter), sample)
+def insert(graph, bloomfilter, sample):
+    graph.insert(load_bloomfilter(bloomfilter), sample)
+    return {'result': 'success'}

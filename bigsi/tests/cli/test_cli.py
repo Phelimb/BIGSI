@@ -111,20 +111,18 @@ def test_insert_search_cmd():
                                   'samples': samples})
 
     # Returns a Response object
-    response = hug.test.delete(
-        bigsi.__main__, '', {})
-    assert not '404' in response.data
     response = hug.test.post(
         bigsi.__main__, 'insert', {'db': f,
-                                   'bloomfilter': 'bigsi/tests/data/test_kmers.txt',
+                                   'bloomfilter': 'bigsi/tests/data/test_kmers.bloom',
                                    'sample': "s3"})
-    # assert response.data.get('result') == 'success'
+    assert response.data.get('result') == 'success'
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
-    response = hug.test.get(bigsi.__main__, 'search', {'seq': seq})
-    assert response.data.get(seq).get(
-        'results').get('s3') == 1.0
+    response = hug.test.get(bigsi.__main__, 'search', {'db': f, 'seq': seq})
+
+    assert "s3" in response.data.get(seq).get(
+        'results')
     response = hug.test.delete(
-        bigsi.__main__, '', {})
+        bigsi.__main__, '', {'db': f, })
 
 # TODO, insert takes a bloom filters
 # def test_insert_search_cmd_ctx():

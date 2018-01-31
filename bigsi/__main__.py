@@ -103,14 +103,14 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, db: hug.types.text, bloom_filter, sample):
+    def insert(self, db: hug.types.text, bloomfilter, sample):
         """Inserts a bloom filter into the graph
 
         e.g. bigsi insert ERR1010211.bloom ERR1010211
 
         """
         graph = BIGSI(db)
-        return insert(graph=BIGSI(db), bloom_filter=bloom_filter, sample=sample)
+        return insert(graph=BIGSI(db), bloomfilter=bloomfilter, sample=sample)
 
     @hug.object.cli
     @hug.object.post('/bloom')
