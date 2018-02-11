@@ -62,6 +62,39 @@ import os
 import bsddb3
 DEFUALT_DB_DIRECTORY = "./db-bigsi/"
 
+import math
+from multiprocessing import Pool
+
+
+def unpack_and_sum(bas):
+    c = 0
+    for ba in bas:
+        if c == 0:
+            cumsum = np.fromstring(ba.unpack(one=bone),
+                                   dtype='i1').astype("i4")
+        else:
+            l = np.fromstring(ba.unpack(one=bone), dtype='i1').astype("i4")
+            cumsum = np.add(cumsum, l)
+        c += 1
+    return cumsum
+
+
+def chunks(l, n):
+    n = max(1, n)
+    return (l[i:i+n] for i in range(0, len(l), n))
+
+
+def unpack_bas(bas, j):
+    if j == 0:
+        res = unpack(bas)
+        return res
+    else:
+        n = math.ceil(float(len(bas))/j)
+        p = Pool(j)
+        res = p.map(unpack_and_sum, chunks(bas, n))
+        p.close()
+        return np.sum(res, axis=0)
+
 
 class BIGSI(object):
 
@@ -284,19 +317,11 @@ class BIGSI(object):
         return out
 
     def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold, convert_colours=True):
-        lkmers = 0
-        bone = (1).to_bytes(1, byteorder='big')
-        for kmer, ba in self._get_kmers_colours(kmers):
-            if lkmers == 0:
-                cumsum = np.fromstring(
-                    ba.unpack(one=bone), dtype='i1').astype("i4")
-            else:
-                l = np.fromstring(ba.unpack(one=bone), dtype='i1').astype("i4")
-                cumsum = np.add(cumsum, l)
-            lkmers += 1
         out = {}
+        bas = [ba for _, ba in self._get_kmers_colours(kmers)]
+        cumsum = unpack_bas(bas, j=16)
+        lkmers = len(bas)
 
-        # for i, f in tmp.items():
         for i, f in enumerate(cumsum):
             res = float(f)/lkmers
             if res >= threshold:
