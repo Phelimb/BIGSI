@@ -292,7 +292,7 @@ class BIGSI(object):
                 cumsum = np.fromstring(
                     ba.unpack(one=bone), dtype='i1').astype("i4")
             else:
-                l = np.fromstring(ba.unpack(one=bone), dtype='i1')
+                l = np.fromstring(ba.unpack(one=bone), dtype='i1').astype("i4")
                 cumsum = np.add(cumsum, l)
             lkmers += 1
         out = {}
