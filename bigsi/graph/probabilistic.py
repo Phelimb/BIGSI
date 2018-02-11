@@ -53,6 +53,7 @@ def load_bloomfilter(f):
 # bloom, search commands should only need to point to the DB and
 # parameters are read from there
 
+
 # TODO
 # create class method to init the `bigsi init` - BIGSI().create(m=,n,)
 # test if init without creating first returns error
@@ -285,11 +286,13 @@ class BIGSI(object):
     def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold, convert_colours=True):
         tmp = Counter()
         lkmers = 0
+        bone = (1).to_bytes(1, byteorder='big')
         for kmer, ba in self._get_kmers_colours(kmers):
             if lkmers == 0:
-                cumsum = np.array(ba, dtype='i4')
+                cumsum = np.fromstring(
+                    ba.unpack(one=bone), dtype='i1').astype("i4")
             else:
-                l = np.array(ba, dtype='bool_')
+                l = np.fromstring(ba.unpack(one=bone), dtype='i1')
                 cumsum = np.add(cumsum, l)
             lkmers += 1
         out = {}
