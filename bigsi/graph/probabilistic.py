@@ -284,7 +284,6 @@ class BIGSI(object):
         return out
 
     def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold, convert_colours=True):
-        tmp = Counter()
         lkmers = 0
         bone = (1).to_bytes(1, byteorder='big')
         for kmer, ba in self._get_kmers_colours(kmers):
@@ -299,7 +298,7 @@ class BIGSI(object):
 
         # for i, f in tmp.items():
         for i, f in enumerate(cumsum):
-            res = f/lkmers
+            res = float(f)/lkmers
             if res >= threshold:
                 if convert_colours:
                     sample = self.colour_to_sample(i)
