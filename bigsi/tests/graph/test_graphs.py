@@ -61,7 +61,7 @@ def test_add_sample_metadata(Graph, sample):
 @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ, k=ST_KMER_SIZE, m=ST_BLOOM_FILTER_SIZE, h=ST_NUM_HASHES)
 # @example(Graph=BIGSI, sample='0', seq='AATTTTTATTTTTTTTTTTTTAATTAATATT', k=11, m=100, h=1)
 def test_insert_and_unique_sample_names(Graph, sample, seq, k, m, h):
-    logger.info("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
+    logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
     kmers = seq_to_kmers(seq, k)
     m = 100
     bigsi = Graph.create(m=m, k=k, h=h, force=True)
@@ -75,13 +75,14 @@ def test_insert_and_unique_sample_names(Graph, sample, seq, k, m, h):
     assert bigsi.search(seq).get(sample).get('percent_kmers_found') == 100
     bigsi.delete_all()
 
+
 from bitarray import bitarray
 
 
 @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ,  k=ST_KMER_SIZE, m=ST_BLOOM_FILTER_SIZE, h=ST_NUM_HASHES)
 # @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', k=11, m=10, h=10)
 def test_insert_lookup_kmers(Graph, sample, seq, k, m, h):
-    logger.info("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
+    logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
     kmers = list(seq_to_kmers(seq, k))
     bigsi = Graph.create(m=m, k=k, h=h, force=True)
     bloom = bigsi.bloom(kmers)
@@ -149,11 +150,13 @@ def test_add_metadata(Graph, s, key, value, value2):
 
 
 @given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
-       score=st.sampled_from([True, False]),
-       k=ST_KMER_SIZE, m=ST_BLOOM_FILTER_SIZE, h=ST_NUM_HASHES)
-def test_query_kmers(Graph, x, score, k, m, h):
-    logger.info("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-    logger.info("Testing graph kmers %s" % ",".join(x))
+       score=st.sampled_from([True, False]))
+def test_query_kmers(Graph, x, score):
+    m = 100
+    h = 2
+    k = 13
+    logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
+    logger.debug("Testing graph kmers %s" % ",".join(x))
     k1, k2, k3, k4, k5 = x
     bigsi = Graph.create(m=m, k=k, h=h, force=True)
 
@@ -165,7 +168,7 @@ def test_query_kmers(Graph, x, score, k, m, h):
 
     assert bigsi.get_num_colours() == 3
     bigsi.num_colours = bigsi.get_num_colours()
-    logger.info("Searching graph score %s" % str(score))
+    logger.debug("Searching graph score %s" % str(score))
 
     assert bigsi._search([k1, k2], threshold=0.5, score=score).get(
         '1234').get("percent_kmers_found") >= 100

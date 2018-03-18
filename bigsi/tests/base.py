@@ -10,7 +10,9 @@ REDIS_CLUSTER_STORAGE_CREDIS = {
     "conn": [(REDIS_HOST, REDIS_CLUSTER_PORT, 0)], 'credis': True}
 
 ST_KMER = st.text(min_size=31, max_size=31, alphabet=['A', 'T', 'C', 'G'])
-ST_KMER_SIZE = st.integers(min_value=11, max_value=31)
+# ST_KMER_SIZE = st.integers(min_value=11, max_value=31)
+ST_KMER_SIZE = st.just(13)
+
 ST_SEQ = st.text(min_size=31, max_size=1000, alphabet=['A', 'T', 'C', 'G'])
 
 ST_SAMPLE_NAME = st.text(min_size=1)

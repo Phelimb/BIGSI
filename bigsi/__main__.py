@@ -152,10 +152,11 @@ class bigsi(object):
                pipe_out: hug.types.smart_boolean=False,
                pipe_in: hug.types.smart_boolean=False,
                cachesize: hug.types.number=4,
-               score: hug.types.smart_boolean=False):
+               score: hug.types.smart_boolean=False,
+               nproc: hug.types.number=4):
         if db is None:
             db = BDB_DB_FILENAME
-        bigsi = BIGSI(db, cachesize=cachesize)
+        bigsi = BIGSI(db, cachesize=cachesize, nproc=nproc)
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:
@@ -222,6 +223,7 @@ class bigsi(object):
 
 def main():
     API.cli()
+
 
 if __name__ == "__main__":
     main()

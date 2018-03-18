@@ -39,7 +39,6 @@ import logging
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
-from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
@@ -86,8 +85,10 @@ def chunks(l, n):
 
 
 def unpack_bas(bas, j):
+    j = 1
+    logger.debug("ncores: %i" % j)
     if j == 0:
-        res = unpack(bas)
+        res = unpack_and_sum(bas)
         return res
     else:
         n = math.ceil(float(len(bas))/j)
@@ -99,7 +100,9 @@ def unpack_bas(bas, j):
 
 class BIGSI(object):
 
-    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1):
+    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="r"):
+        self.mode = mode
+        self.nproc = nproc
         self.db = db
         try:
             self.metadata = BerkeleyDBStorage(
@@ -114,9 +117,13 @@ class BIGSI(object):
                 self.metadata['num_hashes'], 'big')
             self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
-                                                        bloom_filter_size=self.bloom_filter_size,
-                                                        num_hashes=self.num_hashes)
+            self.graph = self.load_graph(mode=self.mode)
+
+    def load_graph(self, mode="r"):
+        return ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
+                                              bloom_filter_size=self.bloom_filter_size,
+                                              num_hashes=self.num_hashes,
+                                              mode=mode)
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
@@ -129,7 +136,7 @@ class BIGSI(object):
         except FileExistsError:
             if force:
                 logger.info("Clearing and recreating %s" % db)
-                cls(db).delete_all()
+                cls(db, mode="c").delete_all()
                 return cls.create(db=db, k=k, m=m, h=h,
                                   cachesize=cachesize, force=False)
             raise FileExistsError(
@@ -138,23 +145,25 @@ class BIGSI(object):
         else:
             logger.info("Initialising BIGSI at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
-            metadata = BerkeleyDBStorage(filename=metadata_filepath)
+            metadata = BerkeleyDBStorage(filename=metadata_filepath, mode="c")
             metadata["bloom_filter_size"] = (
                 int(m)).to_bytes(4, byteorder='big')
             metadata["num_hashes"] = (int(h)).to_bytes(4, byteorder='big')
             metadata["kmer_size"] = (int(k)).to_bytes(4, byteorder='big')
             metadata.sync()
-            return cls(db=db, cachesize=cachesize)
+            return cls(db=db, cachesize=cachesize, mode="c")
 
     def build(self, bloomfilters, samples):
+        # Need to open with read and write access
+        graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
         assert len(bloomfilters) == len(samples)
         [self._add_sample(s) for s in samples]
         bigsi = transpose(bloomfilters)
         for i, ba in enumerate(bigsi):
             if (i % (self.bloom_filter_size/10)) == 0:
-                logger.info("%i of %i" % (i, self.bloom_filter_size))
-            self.graph[i] = ba.tobytes()
+                logger.debug("%i of %i" % (i, self.bloom_filter_size))
+            graph[i] = ba.tobytes()
         self.sync()
 
     @convert_kmers_to_canonical
@@ -172,6 +181,7 @@ class BIGSI(object):
         self._insert(bloom_filter, colour)
 
     def search(self, seq, threshold=1, score=False):
+        assert threshold <= 1
         return self._search(self.seq_to_kmers(seq), threshold=threshold, score=score)
 
     def lookup(self, kmers):
@@ -256,9 +266,11 @@ class BIGSI(object):
         return self.graph.create_bloom_filter(kmers)
 
     def _insert(self, bloomfilter, colour):
+        graph = self.load_graph(
+            mode="c")
         if bloomfilter:
             logger.debug("Inserting bloomfilter into colour %i" % colour)
-            self.graph.insert(bloomfilter, int(colour))
+            graph.insert(bloomfilter, int(colour))
 
     def colours(self, kmer):
         return {kmer: self._colours(kmer)}
@@ -320,7 +332,8 @@ class BIGSI(object):
     def _search_kmers_threshold_not_1_without_scoring(self, kmers, threshold, convert_colours=True):
         out = {}
         bas = [ba for _, ba in self._get_kmers_colours(kmers)]
-        cumsum = unpack_bas(bas, j=16)
+        cumsum = unpack_bas(bas, j=self.nproc)
+        print(cumsum)
         lkmers = len(bas)
 
         for i, f in enumerate(cumsum):

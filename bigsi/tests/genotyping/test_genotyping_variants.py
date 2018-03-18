@@ -40,6 +40,7 @@ def test_search_for_variant(Graph):
     bigsi.insert(bloom2, 'alt')
 
     results = variant_search.search_for_variant("T", 1, "C")
+    print(results)
     assert results.get("T1C").get("ref").get("genotype") == "0/0"
     assert results.get("T1C").get("alt").get("genotype") == "1/1"
 

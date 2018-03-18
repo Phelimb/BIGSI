@@ -210,7 +210,7 @@ class BaseProbabilisticStorage(BaseStorage):
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
 
-    def __init__(self, filename, bloom_filter_size, num_hashes, mode="c", cachesize=4, decode=None):
+    def __init__(self, filename, bloom_filter_size, num_hashes, mode="r", cachesize=4, decode=None):
         super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
                          num_hashes=num_hashes, mode=mode,
                          cachesize=cachesize, decode=decode)
