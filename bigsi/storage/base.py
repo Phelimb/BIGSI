@@ -459,7 +459,7 @@ class BerkeleyDBCollectionStorage(BaseStorage):
 
 class BerkeleyDBStorage(BaseStorage):
 
-    def __init__(self, filename=None, mode="c", cachesize=4, decode=None, store_int_as_string=False):
+    def __init__(self, filename=None, mode="r", cachesize=4, decode=None, store_int_as_string=False):
         if filename is None:
             raise ValueError(
                 "You must supply a 'filename'")
@@ -507,6 +507,7 @@ class BerkeleyDBStorage(BaseStorage):
         self.storage[key] = val
 
     def __getitem__(self, key):
+        # print("key", key)
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
@@ -527,7 +528,7 @@ class BerkeleyDBStorage(BaseStorage):
     def get(self, key, default=None):
         try:
             return self[key]
-        except KeyError:
+        except KeyError as e:
             return default
 
     def delete_all(self):

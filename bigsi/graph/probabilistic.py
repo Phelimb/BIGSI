@@ -105,19 +105,24 @@ class BIGSI(object):
         self.nproc = nproc
         self.db = db
         try:
-            self.metadata = BerkeleyDBStorage(
-                filename=os.path.join(self.db, "metadata"))
+            self.metadata = self.load_metadata()
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             raise ValueError(
                 "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
+            metadata = self.load_metadata(mode="c")
             self.bloom_filter_size = int.from_bytes(
-                self.metadata['bloom_filter_size'], 'big')
+                metadata['bloom_filter_size'], 'big')
             self.num_hashes = int.from_bytes(
-                self.metadata['num_hashes'], 'big')
-            self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
+                metadata['num_hashes'], 'big')
+            self.kmer_size = int.from_bytes(metadata['kmer_size'], 'big')
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = self.load_graph(mode=self.mode)
+            self.graph = self.load_graph(
+                mode=self.mode)  # Create the graph file
+            metadata.sync()
+
+    def load_metadata(self, mode="r"):
+        return BerkeleyDBStorage(filename=os.path.join(self.db, "metadata"), mode=mode)
 
     def load_graph(self, mode="r"):
         return ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
@@ -155,30 +160,42 @@ class BIGSI(object):
 
     def build(self, bloomfilters, samples):
         # Need to open with read and write access
+        if not len(bloomfilters) == len(samples):
+            raise ValueError(
+                "There must be the same number of bloomfilters and sample names")
         graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
-        assert len(bloomfilters) == len(samples)
+        # print(bloom_filter_size)
         [self._add_sample(s) for s in samples]
         bigsi = transpose(bloomfilters)
         for i, ba in enumerate(bigsi):
             if (i % (self.bloom_filter_size/10)) == 0:
                 logger.debug("%i of %i" % (i, self.bloom_filter_size))
+            # print(i)
             graph[i] = ba.tobytes()
-        self.sync()
+        graph.sync()
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):
         logger.info("Building bloom filter")
-        return self.graph.bloomfilter.create(kmers)
+        return self.load_graph().bloomfilter.create(kmers)
 
     def insert(self, bloom_filter, sample):
         """
            Insert kmers into the multicoloured graph.
            sample can not already exist in the graph
         """
+        try:
+            self.load_graph()[0]
+        except:
+            logger.error(
+                "No existing index. Run `init` and `build` before `insert` or `search`")
+            raise ValueError(
+                "No existing index. Run `init` and `build` before `insert` or `search`")
         colour = self._add_sample(sample)
         logger.info("Inserting sample %s into colour %i" % (sample, colour))
         self._insert(bloom_filter, colour)
+        self.sync()
 
     def search(self, seq, threshold=1, score=False):
         assert threshold <= 1
@@ -205,10 +222,12 @@ class BIGSI(object):
         return seq_to_kmers(seq, self.kmer_size)
 
     def metadata_set(self, metadata_key, value):
-        self.metadata[metadata_key] = pickle.dumps(value)
+        metadata = self.load_metadata(mode="c")
+        metadata[metadata_key] = pickle.dumps(value)
+        metadata.sync()
 
     def metadata_hgetall(self, metadata_key):
-        return pickle.loads(self.metadata.get(metadata_key, pickle.dumps({})))
+        return pickle.loads(self.load_metadata().get(metadata_key, pickle.dumps({})))
 
     def metadata_hget(self, metadata_key, key):
         return self.metadata_hgetall(metadata_key).get(key)
@@ -232,13 +251,17 @@ class BIGSI(object):
 
     def set_colour(self, colour, sample, overwrite=False):
         colour = int(colour)
-        self.metadata["colour%i" % colour] = sample
+        metadata = self.load_metadata(mode="w")
+        metadata["colour%i" % colour] = sample
+        metadata.sync()
 
     def sample_to_colour(self, sample):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        r = self.metadata["colour%i" % colour].decode('utf-8')
+        metadata = self.load_metadata(mode="w")
+        r = metadata["colour%i" % colour].decode('utf-8')
+        metadata.sync()
         if r:
             return r
         else:
@@ -266,23 +289,23 @@ class BIGSI(object):
         return self.graph.create_bloom_filter(kmers)
 
     def _insert(self, bloomfilter, colour):
-        graph = self.load_graph(
-            mode="c")
+        graph = self.load_graph(mode="c")
         if bloomfilter:
             logger.debug("Inserting bloomfilter into colour %i" % colour)
             graph.insert(bloomfilter, int(colour))
+            graph.sync()
 
     def colours(self, kmer):
         return {kmer: self._colours(kmer)}
 
     @convert_kmers_to_canonical
     def _colours(self, kmer, canonical=False):
-        colour_presence_boolean_array = self.graph.lookup(kmer)
+        colour_presence_boolean_array = self.load_graph().lookup(kmer)
         return colour_presence_boolean_array.colours()
 
     def _get_kmers_colours(self, kmers):
         for kmer in kmers:
-            ba = self.graph.lookup(kmer)
+            ba = self.load_graph().lookup(kmer)
             yield kmer, ba
 
     def _search(self, kmers, threshold=1, score=False):
@@ -319,7 +342,7 @@ class BIGSI(object):
         kmers = list(kmers)
         result = self._search_kmers_threshold_not_1_without_scoring(
             kmers, threshold, convert_colours=False)
-        kmer_lookups = [self.graph.lookup(kmer) for kmer in kmers]
+        kmer_lookups = [self.load_graph().lookup(kmer) for kmer in kmers]
         for colour, r in result.items():
             percent = r["percent_kmers_found"]
             s = "".join([str(int(kmer_lookups[i][colour]))
@@ -333,7 +356,6 @@ class BIGSI(object):
         out = {}
         bas = [ba for _, ba in self._get_kmers_colours(kmers)]
         cumsum = unpack_bas(bas, j=self.nproc)
-        print(cumsum)
         lkmers = len(bas)
 
         for i, f in enumerate(cumsum):
@@ -351,7 +373,7 @@ class BIGSI(object):
     def _search_kmers_threshold_1(self, kmers, score=False):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
         kmers = list(kmers)
-        ba = self.graph.lookup_all_present(
+        ba = self.load_graph().lookup_all_present(
             kmers)
         out = {}
         for c in ba.colours():
@@ -369,7 +391,7 @@ class BIGSI(object):
     def _lookup(self, kmer, canonical=False):
         assert not isinstance(kmer, list)
         num_colours = self.get_num_colours()
-        colour_presence_boolean_array = self.graph.lookup(
+        colour_presence_boolean_array = self.load_graph().lookup(
             kmer)
         samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
@@ -381,6 +403,7 @@ class BIGSI(object):
         return samples_present
 
     def _add_sample(self, sample_name):
+        metadata = self.load_metadata(mode="w")
         logger.debug("Adding sample %s" % sample_name)
         existing_index = self.sample_to_colour(sample_name)
         if existing_index is not None:
@@ -393,22 +416,20 @@ class BIGSI(object):
                 colour = int(colour)
             self.add_sample_metadata(sample_name, 'colour', colour)
             self.set_colour(colour, sample_name)
-            self.metadata.incr('num_colours')
+            metadata.incr('num_colours')
+            metadata.sync()
             return colour
 
     def get_num_colours(self):
-        try:
-            return int.from_bytes(
-                self.metadata.get('num_colours'), 'big')
-        except TypeError:
-            return 0
+        return int.from_bytes(self.load_metadata().get(
+            'num_colours', b'\x00\x00\x00\x00'), 'big')
 
     def sync(self):
-        if isinstance(self.graph, ProbabilisticBerkeleyDBStorage):
-            self.graph.storage.sync()
+        if isinstance(self.load_graph(), ProbabilisticBerkeleyDBStorage):
+            self.load_graph().storage.sync()
             self.metadata.storage.sync()
 
     def delete_all(self):
-        self.graph.delete_all()
+        self.load_graph().delete_all()
         self.metadata.delete_all()
         os.rmdir(self.db)

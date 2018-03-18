@@ -17,7 +17,7 @@ from bigsi.bytearray import ByteArray
 import os
 import pytest
 from bigsi.utils import seq_to_kmers
-from bigsi.graph import BIGSI
+from bigsi import BIGSI
 
 import logging
 logging.basicConfig()
@@ -47,6 +47,7 @@ def test_force_create(Graph):
 
 
 @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME)
+@settings(max_examples=5)
 def test_add_sample_metadata(Graph, sample):
     bigsi = Graph.create(m=100, force=True)
     assert os.path.isdir("db-bigsi")
@@ -58,17 +59,21 @@ def test_add_sample_metadata(Graph, sample):
     bigsi.delete_all()
 
 
-@given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ, k=ST_KMER_SIZE, m=ST_BLOOM_FILTER_SIZE, h=ST_NUM_HASHES)
-# @example(Graph=BIGSI, sample='0', seq='AATTTTTATTTTTTTTTTTTTAATTAATATT', k=11, m=100, h=1)
-def test_insert_and_unique_sample_names(Graph, sample, seq, k, m, h):
+@given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME)
+@example(Graph=BIGSI, sample='0')
+@settings(max_examples=5)
+def test_insert_and_unique_sample_names(Graph, sample):
+    seq, k, h = 'AATTTTTATTTTTTTTTTTTTAATTAATATT', 11, 1
+    m = 10
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
     kmers = seq_to_kmers(seq, k)
-    m = 100
     bigsi = Graph.create(m=m, k=k, h=h, force=True)
     assert bigsi.kmer_size == k
     bloom = bigsi.bloom(kmers)
     assert len(bloom) == m
-    bigsi.insert(bloom, sample)
+    with pytest.raises(ValueError):
+        bigsi.insert(bloom, sample)
+    bigsi.build([bloom], [sample])
     with pytest.raises(ValueError):
         bigsi.insert(bloom, sample)
     assert sample in bigsi.search(seq)
@@ -79,14 +84,17 @@ def test_insert_and_unique_sample_names(Graph, sample, seq, k, m, h):
 from bitarray import bitarray
 
 
-@given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ,  k=ST_KMER_SIZE, m=ST_BLOOM_FILTER_SIZE, h=ST_NUM_HASHES)
-# @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', k=11, m=10, h=10)
-def test_insert_lookup_kmers(Graph, sample, seq, k, m, h):
+# @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
+# @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+def test_insert_lookup_kmers():
+    Graph, sample, seq = BIGSI, '0', 'AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA'
+    m, h, k = 10, 2, 31
+
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
     kmers = list(seq_to_kmers(seq, k))
     bigsi = Graph.create(m=m, k=k, h=h, force=True)
     bloom = bigsi.bloom(kmers)
-    bigsi.insert(bloom, sample)
+    bigsi.build([bloom], [sample])
     for kmer in kmers:
         # assert sample not in bigsi.lookup(kmer+"T")[kmer+"T"]
         ba = bitarray()
@@ -98,23 +106,27 @@ def test_insert_lookup_kmers(Graph, sample, seq, k, m, h):
 
 
 # TODO update for insert to take bloomfilter
-@given(Graph=ST_GRAPH, kmer=ST_KMER)
-# @example(Graph=BIGSI, kmer='ATAAAAAAAAAAAAAAAAAAAAAAAAAAATT')
-def test_insert_get_kmer(Graph, kmer):
-    bigsi = Graph.create(m=100, force=True)
+# @given(Graph=ST_GRAPH, kmer=ST_KMER)
+# @example(Graph=BIGSI, kmer='AAAAAAAAA')
+# def test_insert_get_kmer(Graph, kmer):
+def test_insert_get_kmer():
+    Graph, kmer = BIGSI, 'AAAAAAAAA'
+    bigsi = Graph.create(m=10, force=True)
     bloom = bigsi.bloom([kmer])
-    bigsi.insert(bloom, "1")  # insert
+    bigsi.build([bloom], ['1'])
     assert bigsi.colours(kmer)[kmer] == [0]
     bigsi.insert(bloom, "2")
     assert bigsi.colours(kmer)[kmer] == [0, 1]
     bigsi.delete_all()
 
 
-@given(Graph=ST_GRAPH, kmer=ST_KMER)
-def test_query_kmer(Graph, kmer):
+# @given(Graph=ST_GRAPH, kmer=ST_KMER)
+# def test_query_kmer(Graph, kmer):
+def test_query_kmer():
+    Graph, kmer = BIGSI, 'AAAAAAAAA'
     bigsi = Graph.create(m=100, force=True)
     bloom1 = bigsi.bloom([kmer])
-    bigsi.insert(bloom1, '1234')
+    bigsi.build([bloom1], ['1234'])
     assert bigsi.lookup(kmer) == {kmer: ['1234']}
     bigsi.insert(bloom1, '1235')
     assert bigsi.lookup(kmer) == {kmer: ['1234', '1235']}
@@ -132,11 +144,12 @@ def test_query_kmer(Graph, kmer):
            st.lists(st.integers()),
            st.sets(st.integers()),
        ))
+@settings(max_examples=2)
 def test_add_metadata(Graph, s, key, value, value2):
     kmer = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
     bigsi = Graph.create(m=100, force=True)
     bloom1 = bigsi.bloom([kmer])
-    bigsi.insert(bloom1, s)
+    bigsi.build([bloom1], [s])
     bigsi.add_sample_metadata(s, key, value)
     assert bigsi.lookup_sample_metadata(s).get(key) == value
     with pytest.raises(ValueError):
@@ -149,12 +162,18 @@ def test_add_metadata(Graph, s, key, value, value2):
     bigsi.delete_all()
 
 
-@given(Graph=ST_GRAPH, x=st.lists(ST_KMER, min_size=5, max_size=5, unique=True),
-       score=st.sampled_from([True, False]))
-def test_query_kmers(Graph, x, score):
+# @given(Graph=ST_GRAPH, k1=ST_KMER, k2=ST_KMER, k3=ST_KMER, k4=ST_KMER, k5=ST_KMER,
+#        score=st.sampled_from([True, False]))
+# @example(Graph=BIGSI, x=['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAATA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG'], score=False)
+def test_query_kmers():
+    Graph = BIGSI
+    x = ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT',
+         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAATA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC',
+         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG']
+    score = False
     m = 100
     h = 2
-    k = 13
+    k = 9
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
     logger.debug("Testing graph kmers %s" % ",".join(x))
     k1, k2, k3, k4, k5 = x
