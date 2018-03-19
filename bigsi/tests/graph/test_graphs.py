@@ -154,9 +154,6 @@ def test_merge():
     for i in range(10):
         assert bigsi1.graph[i] == bigsicombined.graph[i]
     for k, v in bigsicombined.metadata.items():
-        if not bigsi1.metadata[k] == v:
-                bigsi1.metadata[k], 'big'), int.from_bytes(
-                v, 'big'))
         assert bigsi1.metadata[k] == v
     bigsi1.delete_all()
     bigsi2.delete_all()
@@ -167,17 +164,17 @@ def test_merge():
 
 
 def test_insert_lookup_kmers():
-    Graph, sample, seq=BIGSI, '0', 'AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA'
-    m, h, k=10, 2, 31
+    Graph, sample, seq = BIGSI, '0', 'AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA'
+    m, h, k = 10, 2, 31
 
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-    kmers=list(seq_to_kmers(seq, k))
-    bigsi=Graph.create(m=m, k=k, h=h, force=True)
-    bloom=bigsi.bloom(kmers)
+    kmers = list(seq_to_kmers(seq, k))
+    bigsi = Graph.create(m=m, k=k, h=h, force=True)
+    bloom = bigsi.bloom(kmers)
     bigsi.build([bloom], [sample])
     for kmer in kmers:
         # assert sample not in bigsi.lookup(kmer+"T")[kmer+"T"]
-        ba=bitarray()
+        ba = bitarray()
         ba.frombytes(bigsi.lookup_raw(kmer))
         assert ba[0] == True
         assert sample in bigsi.lookup(kmer)[kmer]
@@ -190,9 +187,9 @@ def test_insert_lookup_kmers():
 # @example(Graph=BIGSI, kmer='AAAAAAAAA')
 # def test_insert_get_kmer(Graph, kmer):
 def test_insert_get_kmer():
-    Graph, kmer=BIGSI, 'AAAAAAAAA'
-    bigsi=Graph.create(m=10, force=True)
-    bloom=bigsi.bloom([kmer])
+    Graph, kmer = BIGSI, 'AAAAAAAAA'
+    bigsi = Graph.create(m=10, force=True)
+    bloom = bigsi.bloom([kmer])
     bigsi.build([bloom], ['1'])
     assert bigsi.colours(kmer)[kmer] == [0]
     bigsi.insert(bloom, "2")
@@ -203,9 +200,9 @@ def test_insert_get_kmer():
 # @given(Graph=ST_GRAPH, kmer=ST_KMER)
 # def test_query_kmer(Graph, kmer):
 def test_query_kmer():
-    Graph, kmer=BIGSI, 'AAAAAAAAA'
-    bigsi=Graph.create(m=100, force=True)
-    bloom1=bigsi.bloom([kmer])
+    Graph, kmer = BIGSI, 'AAAAAAAAA'
+    bigsi = Graph.create(m=100, force=True)
+    bloom1 = bigsi.bloom([kmer])
     bigsi.build([bloom1], ['1234'])
     assert bigsi.lookup(kmer) == {kmer: ['1234']}
     bigsi.insert(bloom1, '1235')
@@ -215,8 +212,8 @@ def test_query_kmer():
 
 @given(Graph=ST_GRAPH,
        s=ST_SAMPLE_NAME,
-       key=st.text(min_size = 1),
-       value=st.text(min_size = 1),
+       key=st.text(min_size=1),
+       value=st.text(min_size=1),
        value2=st.one_of(
            st.text(min_size=1),
            st.dictionaries(keys=st.text(min_size=1),
