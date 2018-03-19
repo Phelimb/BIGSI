@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 import unittest
+import os
 
 
 @given(Graph=ST_GRAPH, kmer_size=st.integers(min_value=11, max_value=31))

@@ -124,8 +124,12 @@ class BIGSI(object):
     def load_metadata(self, mode="r"):
         return BerkeleyDBStorage(filename=os.path.join(self.db, "metadata"), mode=mode)
 
+    @property
+    def graph_filename(self):
+        return os.path.join(self.db, "graph")
+
     def load_graph(self, mode="r"):
-        return ProbabilisticBerkeleyDBStorage(filename=os.path.join(self.db, "graph"),
+        return ProbabilisticBerkeleyDBStorage(filename=self.graph_filename,
                                               bloom_filter_size=self.bloom_filter_size,
                                               num_hashes=self.num_hashes,
                                               mode=mode)

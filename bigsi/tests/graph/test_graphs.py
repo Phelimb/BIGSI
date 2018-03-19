@@ -1,5 +1,6 @@
 """Tests that are common to graphs"""
 import random
+import bsddb3
 from bigsi.tests.base import ST_KMER
 from bigsi.tests.base import ST_SEQ
 from bigsi.tests.base import ST_SAMPLE_NAME
@@ -19,6 +20,10 @@ import pytest
 from bigsi.utils import seq_to_kmers
 from bigsi import BIGSI
 
+from bitarray import bitarray
+
+import os
+from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import logging
 logging.basicConfig()
 
@@ -59,10 +64,11 @@ def test_add_sample_metadata(Graph, sample):
     bigsi.delete_all()
 
 
-@given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME)
-@example(Graph=BIGSI, sample='0')
-@settings(max_examples=5)
+# @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME)
+# @example(Graph=BIGSI, sample='0')
+# @settings(max_examples=5)
 def test_insert_and_unique_sample_names(Graph, sample):
+    Graph, sample = BIGSI, '0'
     seq, k, h = 'AATTTTTATTTTTTTTTTTTTAATTAATATT', 11, 1
     m = 10
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
@@ -81,7 +87,24 @@ def test_insert_and_unique_sample_names(Graph, sample):
     bigsi.delete_all()
 
 
-from bitarray import bitarray
+def test_cant_write_to_read_only_index():
+    Graph, sample = BIGSI, "sfewe"
+    seq, k, h = 'AATTTTTATTTTTTTTTTTTTAATTAATATT', 11, 1
+    m = 10
+    logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
+    kmers = seq_to_kmers(seq, k)
+    bigsi = Graph.create(m=m, k=k, h=h, force=True)
+    assert bigsi.kmer_size == k
+    bloom = bigsi.bloom(kmers)
+    bigsi.build([bloom], [sample])
+    os.chmod(bigsi.graph_filename, S_IREAD | S_IRGRP | S_IROTH)
+    # Can write to a read only DB
+    with pytest.raises(bsddb3.db.DBAccessError):
+        bigsi.insert(bloom, "1234")
+    assert sample in bigsi.search(seq)
+    assert bigsi.search(seq).get(sample).get('percent_kmers_found') == 100
+    os.chmod(bigsi.graph_filename, S_IWUSR | S_IREAD)
+    bigsi.delete_all()
 
 
 # @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
