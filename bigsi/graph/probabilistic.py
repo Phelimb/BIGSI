@@ -169,15 +169,41 @@ class BIGSI(object):
                 "There must be the same number of bloomfilters and sample names")
         graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
-        # print(bloom_filter_size)
         [self._add_sample(s) for s in samples]
         bigsi = transpose(bloomfilters)
         for i, ba in enumerate(bigsi):
             if (i % (self.bloom_filter_size/10)) == 0:
                 logger.debug("%i of %i" % (i, self.bloom_filter_size))
-            # print(i)
             graph[i] = ba.tobytes()
         graph.sync()
+
+    def merge(self, merged_bigsi):
+        logger.info("Starting merge")
+        # Check that they're the same length
+        assert self.metadata["bloom_filter_size"] == merged_bigsi.metadata["bloom_filter_size"]
+        assert self.metadata["num_hashes"] == merged_bigsi.metadata["num_hashes"]
+        assert self.metadata["kmer_size"] == merged_bigsi.metadata["kmer_size"]
+        self._merge_graph(merged_bigsi)
+        self._merge_metadata(merged_bigsi)
+
+    def _merge_graph(self, merged_bigsi):
+        graph = self.load_graph(mode="w")
+        # Update graph
+        for i in range(self.bloom_filter_size):
+            r = graph.get_row(i)[:self.get_num_colours()]
+            r2 = merged_bigsi.graph.get_row(i)[:merged_bigsi.get_num_colours()]
+            r.extend(r2)
+            graph.set_row(i, r)
+        graph.sync()
+
+    def _merge_metadata(self, merged_bigsi):
+        # Update metadata
+        for c in range(merged_bigsi.get_num_colours()):
+            sample = merged_bigsi.colour_to_sample(c)
+            try:
+                self._add_sample(sample)
+            except ValueError:
+                self._add_sample(sample+"_duplicate_in_merge")
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):

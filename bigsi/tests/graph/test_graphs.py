@@ -107,20 +107,77 @@ def test_cant_write_to_read_only_index():
     bigsi.delete_all()
 
 
+import copy
+
+
+def combine_samples(samples1, samples2):
+    combined_samples = copy.copy(samples1)
+    for x in samples2:
+        if x in combined_samples:
+            z = x+'_duplicate_in_merge'
+        else:
+            z = x
+        combined_samples.append(z)
+    return combined_samples
+
+
+# @given(kmers1=st.lists(ST_KMER, min_size=1, max_size=9), kmers2=st.lists(ST_KMER, min_size=1, max_size=9))
+# @settings(max_examples=1)
+# def test_merge(kmers1, kmers2):
+def test_merge():
+    kmers1 = ['AAAAAAAAA']*3
+    kmers2 = ['AAAAAAAAT']*9
+    bigsi1 = BIGSI.create(db="./db-bigsi1/", m=10,
+                          k=9, h=1, force=True)
+    blooms1 = []
+    for s in kmers1:
+        blooms1.append(bigsi1.bloom([s]))
+    samples1 = [str(i) for i in range(len(kmers1))]
+    bigsi1.build(blooms1, samples1)
+
+    bigsi2 = BIGSI.create(db="./db-bigsi2/", m=10,
+                          k=9, h=1, force=True)
+    blooms2 = []
+    for s in kmers2:
+        blooms2.append(bigsi2.bloom([s]))
+    samples2 = [str(i) for i in range(len(kmers2))]
+    bigsi2.build(blooms2, samples2)
+
+    combined_samples = combine_samples(samples1, samples2)
+    bigsicombined = BIGSI.create(
+        db="./db-bigsi-c/", m=10, k=9, h=1, force=True)
+    bigsicombined = BIGSI(db="./db-bigsi-c/", mode="c")
+    bigsicombined.build(blooms1+blooms2, combined_samples)
+
+    bigsi1.merge(bigsi2)
+    bigsi1 = BIGSI(db="./db-bigsi1/")
+    for i in range(10):
+        assert bigsi1.graph[i] == bigsicombined.graph[i]
+    for k, v in bigsicombined.metadata.items():
+        if not bigsi1.metadata[k] == v:
+                bigsi1.metadata[k], 'big'), int.from_bytes(
+                v, 'big'))
+        assert bigsi1.metadata[k] == v
+    bigsi1.delete_all()
+    bigsi2.delete_all()
+    bigsicombined.delete_all()
+
 # @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME, seq=ST_SEQ)
 # @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+
+
 def test_insert_lookup_kmers():
-    Graph, sample, seq = BIGSI, '0', 'AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA'
-    m, h, k = 10, 2, 31
+    Graph, sample, seq=BIGSI, '0', 'AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA'
+    m, h, k=10, 2, 31
 
     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-    kmers = list(seq_to_kmers(seq, k))
-    bigsi = Graph.create(m=m, k=k, h=h, force=True)
-    bloom = bigsi.bloom(kmers)
+    kmers=list(seq_to_kmers(seq, k))
+    bigsi=Graph.create(m=m, k=k, h=h, force=True)
+    bloom=bigsi.bloom(kmers)
     bigsi.build([bloom], [sample])
     for kmer in kmers:
         # assert sample not in bigsi.lookup(kmer+"T")[kmer+"T"]
-        ba = bitarray()
+        ba=bitarray()
         ba.frombytes(bigsi.lookup_raw(kmer))
         assert ba[0] == True
         assert sample in bigsi.lookup(kmer)[kmer]
@@ -133,9 +190,9 @@ def test_insert_lookup_kmers():
 # @example(Graph=BIGSI, kmer='AAAAAAAAA')
 # def test_insert_get_kmer(Graph, kmer):
 def test_insert_get_kmer():
-    Graph, kmer = BIGSI, 'AAAAAAAAA'
-    bigsi = Graph.create(m=10, force=True)
-    bloom = bigsi.bloom([kmer])
+    Graph, kmer=BIGSI, 'AAAAAAAAA'
+    bigsi=Graph.create(m=10, force=True)
+    bloom=bigsi.bloom([kmer])
     bigsi.build([bloom], ['1'])
     assert bigsi.colours(kmer)[kmer] == [0]
     bigsi.insert(bloom, "2")
@@ -146,9 +203,9 @@ def test_insert_get_kmer():
 # @given(Graph=ST_GRAPH, kmer=ST_KMER)
 # def test_query_kmer(Graph, kmer):
 def test_query_kmer():
-    Graph, kmer = BIGSI, 'AAAAAAAAA'
-    bigsi = Graph.create(m=100, force=True)
-    bloom1 = bigsi.bloom([kmer])
+    Graph, kmer=BIGSI, 'AAAAAAAAA'
+    bigsi=Graph.create(m=100, force=True)
+    bloom1=bigsi.bloom([kmer])
     bigsi.build([bloom1], ['1234'])
     assert bigsi.lookup(kmer) == {kmer: ['1234']}
     bigsi.insert(bloom1, '1235')
@@ -158,8 +215,8 @@ def test_query_kmer():
 
 @given(Graph=ST_GRAPH,
        s=ST_SAMPLE_NAME,
-       key=st.text(min_size=1),
-       value=st.text(min_size=1),
+       key=st.text(min_size = 1),
+       value=st.text(min_size = 1),
        value2=st.one_of(
            st.text(min_size=1),
            st.dictionaries(keys=st.text(min_size=1),
