@@ -61,6 +61,7 @@ import cProfile
 from bigsi.version import __version__
 import humanfriendly
 
+
 def do_cprofile(func):
     def profiled_func(*args, **kwargs):
         profile = cProfile.Profile()
@@ -142,10 +143,17 @@ class bigsi(object):
             max_memory_bytes = humanfriendly.parse_size(max_memory)
         else:
             max_memory_bytes = None
-        return build(graph=BIGSI(db),
+        return build(index=BIGSI(db),
                      bloomfilter_filepaths=bloomfilters,
                      samples=samples,
-                     max_memory_bytes=max_memory_bytes)
+                     max_memory=max_memory_bytes)
+
+    @hug.object.cli
+    @hug.object.post('/merge', output_format=hug.output_format.json)
+    def merge(self, db1: hug.types.text,
+              db2: hug.types.text):
+        BIGSI(db1).merge(BIGSI(db2))
+        return {"result": "merged %s into %s." % (db2, db1)}
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
