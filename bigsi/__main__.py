@@ -59,7 +59,7 @@ from bigsi.utils.cortex import GraphReader
 from bigsi.utils import seq_to_kmers
 import cProfile
 from bigsi.version import __version__
-
+import humanfriendly
 
 def do_cprofile(func):
     def profiled_func(*args, **kwargs):
