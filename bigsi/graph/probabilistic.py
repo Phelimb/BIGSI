@@ -175,8 +175,6 @@ class BIGSI(object):
         bigsi = transpose(bloomfilters)
         logger.debug("insert")
         for i, ba in enumerate(bigsi):
-            if (i % (self.bloom_filter_size/10)) == 0:
-                logger.debug("%i of %i" % (i, self.bloom_filter_size))
             graph[i] = ba.tobytes()
         graph.sync()
 

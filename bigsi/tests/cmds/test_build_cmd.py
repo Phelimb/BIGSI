@@ -63,7 +63,7 @@ def test_build_chunks():
 
     bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=10, k=9, h=1, force=True)
     build(bloomfilter_filepaths, sample_names,
-          bigsi2, max_memory=10)  # 10bytes
+          bigsi2, max_memory=20)  # 20bytes
 
     # Reload and test equal
     bigsi1 = BIGSI("./db-bigsi-no-max-mem/")
