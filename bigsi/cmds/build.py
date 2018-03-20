@@ -42,6 +42,9 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None):
     else:
         chunk_size = get_required_chunk_size(
             N=len(samples), m=index.bloom_filter_size, max_memory=max_memory)
+    if chunk_size < 1:
+        raise ValueError(
+            "Max memory must be at least 8 * Bloomfilter size in bytes")
     LL = list(zip(bloomfilter_filepaths, samples))
     for i, v in enumerate(chunks(LL, chunk_size)):
         bloomfilter_filepaths = [x[0] for x in v]

@@ -22,6 +22,7 @@ from bigsi.cmds.build import build
 from bitarray import bitarray
 import numpy as np
 import string
+import pytest
 
 
 def test_get_required_bytes_per_bloomfilter():
@@ -76,27 +77,13 @@ def test_build_chunks():
     bigsi2.delete_all()
 
 
-# def test_cant_build_chunks_if_max_memory_less_than_bf():
-#     N = 3
-#     bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
-#     sample_names = generate_sample_names(
-#         len(bloomfilter_filepaths))
+def test_cant_build_chunks_if_max_memory_less_than_bf():
+    N = 3
+    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
+    sample_names = generate_sample_names(
+        len(bloomfilter_filepaths))
 
-#     bigsi1 = BIGSI.create(db="./db-bigsi-no-max-mem/",
-#                           m=10, k=9, h=1, force=True)
-#     build(bloomfilter_filepaths, sample_names, bigsi1)
-
-#     bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=10, k=9, h=1, force=True)
-#     build(bloomfilter_filepaths, sample_names,
-#           bigsi2, max_memory=1)  # 1byte (should fail)
-
-#     # Reload and test equal
-#     bigsi1 = BIGSI("./db-bigsi-no-max-mem/")
-#     bigsi2 = BIGSI("./db-bigsi-max-mem")
-#     for i in range(10):
-#         assert bigsi1.graph[i] == bigsi2.graph[i]
-#     for k, v in bigsi2.metadata.items():
-#         assert bigsi1.metadata[k] == v
-
-#     bigsi1.delete_all()
-#     bigsi2.delete_all()
+    bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=10, k=9, h=1, force=True)
+    with pytest.raises(ValueError):
+        build(bloomfilter_filepaths, sample_names,
+              bigsi2, max_memory=1)  # 1byte (should fail)
