@@ -28,7 +28,7 @@ import pytest
 def test_get_required_bytes_per_bloomfilter():
     m = 25*10**6
     num_bytes = get_required_bytes_per_bloomfilter(m)
-    assert num_bytes == 25*10**6
+    assert num_bytes == 25*10**6 + (25*10**6)/8
 
 
 def test_get_required_chunk_size():

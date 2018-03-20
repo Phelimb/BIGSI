@@ -24,7 +24,7 @@ def load_bloomfilter(f):
 
 
 def get_required_bytes_per_bloomfilter(m):
-    return m
+    return m * 9/8
 
 
 def get_required_chunk_size(N, m, max_memory):
