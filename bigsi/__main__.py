@@ -132,12 +132,20 @@ class bigsi(object):
     @hug.object.post('/build', output_format=hug.output_format.json)
     def build(self, db: hug.types.text,
               bloomfilters: hug.types.multiple,
-              samples: hug.types.multiple = []):
+              samples: hug.types.multiple = [],
+              max_memory: hug.types.text=''):
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
             samples = bloomfilters
-        return build(graph=BIGSI(db), bloomfilter_filepaths=bloomfilters, samples=samples)
+        if max_memory:
+            max_memory_bytes = humanfriendly.parse_size(max_memory)
+        else:
+            max_memory_bytes = None
+        return build(graph=BIGSI(db),
+                     bloomfilter_filepaths=bloomfilters,
+                     samples=samples,
+                     max_memory_bytes=max_memory_bytes)
 
     @hug.object.cli
     @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",

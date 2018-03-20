@@ -23,3 +23,4 @@ pytest
 codecov
 pytest-cov
 psutil
+humanfriendly
