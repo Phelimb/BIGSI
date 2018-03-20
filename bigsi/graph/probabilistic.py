@@ -169,8 +169,11 @@ class BIGSI(object):
                 "There must be the same number of bloomfilters and sample names")
         graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
+        logger.debug("Adding samples")
         [self._add_sample(s) for s in samples]
+        logger.debug("transpose")
         bigsi = transpose(bloomfilters)
+        logger.debug("insert")
         for i, ba in enumerate(bigsi):
             if (i % (self.bloom_filter_size/10)) == 0:
                 logger.debug("%i of %i" % (i, self.bloom_filter_size))
