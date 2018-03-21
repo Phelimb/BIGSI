@@ -3,6 +3,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN pip install --upgrade pip
 ARG TRAVIS
+RUN echo $TRAVIS
 ## Install berkeleydb
 ENV BERKELEY_VERSION 4.8.30
 # Download, configure and install BerkeleyDB
