@@ -53,7 +53,7 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None):
         if i == 0:
             build_main(bloomfilter_filepaths, samples, index)
         else:
-            tmp_index = build_tmp(bloomfilter_filepaths, samples, index)
+            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i)
             index.merge(tmp_index)
             tmp_index.delete_all()
     return {'result': 'success'}
@@ -66,8 +66,8 @@ def build_main(bloomfilter_filepaths, samples, index):
     index.build(bloomfilters, samples)
 
 
-def build_tmp(bloomfilter_filepaths, samples, indext):
-    index_dir = tempfile.mkdtemp()+"/bigsi-index"
+def build_tmp(bloomfilter_filepaths, samples, indext, i):
+    index_dir = indext.db+"-%i.tmp"
     index = BIGSI.create(db=index_dir, k=indext.kmer_size,
                          m=indext.bloom_filter_size, h=indext.num_hashes, force=True)
     build_main(bloomfilter_filepaths, samples, index)
