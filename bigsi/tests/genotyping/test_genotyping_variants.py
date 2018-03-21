@@ -14,6 +14,7 @@ from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 import unittest
 import os
+import pytest
 
 
 @given(Graph=ST_GRAPH, kmer_size=st.integers(min_value=11, max_value=31))
@@ -46,7 +47,7 @@ def test_search_for_variant(Graph):
     assert results.get("T1C").get("alt").get("genotype") == "1/1"
 
 
-@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
+@pytest.mark.skipif('"TRAVIS" in os.environ and os.environ["TRAVIS"] == "true"')
 def test_search_for_amino_acid_mutation():
     kmer_size = 21
     bigsi = BIGSI.create(m=1000, k=kmer_size, force=True)
