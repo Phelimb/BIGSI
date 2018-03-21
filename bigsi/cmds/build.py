@@ -56,7 +56,7 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None):
         else:
             tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i)
             index.merge(tmp_index)
-            # tmp_index.delete_all()
+            tmp_index.delete_all()
     return {'result': 'success'}
 
 
