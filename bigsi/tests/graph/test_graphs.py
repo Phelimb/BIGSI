@@ -99,6 +99,7 @@ def test_cant_write_to_read_only_index():
     bigsi.build([bloom], [sample])
     os.chmod(bigsi.graph_filename, S_IREAD | S_IRGRP | S_IROTH)
     # Can write to a read only DB
+    bigsi = Graph(mode="r")
     with pytest.raises(bsddb3.db.DBAccessError):
         bigsi.insert(bloom, "1234")
     assert sample in bigsi.search(seq)
