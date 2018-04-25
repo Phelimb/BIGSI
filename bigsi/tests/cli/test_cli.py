@@ -19,10 +19,9 @@ from bigsi.utils import seq_to_kmers
 from bitarray import bitarray
 import numpy as np
 
-Graph = BIGSI.create(m=100, force=True)
-
 
 def test_bloom_cmd():
+    Graph = BIGSI.create(m=100, force=True)
     f = '/tmp/test_kmers.bloom'
     response = hug.test.post(
         bigsi.__main__, 'bloom', {'db': Graph.db,
@@ -42,10 +41,12 @@ def load_bloomfilter(f):
         bloomfilter.fromfile(inf)
     return np.array(bloomfilter)
 
+
 import string
 
 
 def test_build_cmd():
+    Graph = BIGSI.create(m=100, force=True)
     f = Graph.db
     response = hug.test.delete(bigsi.__main__, '', {'db': f})
     response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
@@ -96,6 +97,7 @@ def test_build_cmd():
 
 # TODO, insert takes a bloom filters
 def test_insert_search_cmd():
+    Graph = BIGSI.create(m=100, force=True)
     f = Graph.db
     response = hug.test.delete(bigsi.__main__, '', {'db': f})
     response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
