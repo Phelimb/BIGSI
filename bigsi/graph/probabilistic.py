@@ -104,6 +104,7 @@ class BIGSI(object):
         self.mode = mode
         self.nproc = nproc
         self.db = db
+        self.db_modes = {}
         try:
             self.metadata = self.load_metadata()
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
@@ -122,7 +123,10 @@ class BIGSI(object):
             metadata.sync()
 
     def load_metadata(self, mode="r"):
-        return BerkeleyDBStorage(filename=os.path.join(self.db, "metadata"), mode=mode)
+        if mode not in self.db_modes:
+            self.db_modes[mode] = BerkeleyDBStorage(
+                filename=os.path.join(self.db, "metadata"), mode=mode)
+        return self.db_modes[mode]
 
     @property
     def graph_filename(self):
