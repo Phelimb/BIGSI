@@ -438,6 +438,7 @@ class BIGSI(object):
         return samples_present
 
     def _add_sample(self, sample_name, sync=True):
+        sample_name = str(sample_name)
         metadata = self.metadata
         # logger.debug("Adding sample %s" % sample_name)
         existing_index = self.sample_to_colour(sample_name)
