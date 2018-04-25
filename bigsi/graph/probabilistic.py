@@ -100,43 +100,40 @@ def unpack_bas(bas, j):
 
 class BIGSI(object):
 
-    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="r"):
+    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="c"):
         self.mode = mode
         self.nproc = nproc
         self.db = db
-        self.db_modes = {}
         try:
-            self.metadata = self.load_metadata()
+            self.metadata = self.load_metadata(mode)
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             raise ValueError(
                 "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            metadata = self.load_metadata(mode="c")
+            self.metadata = self.load_metadata(mode="c")
             self.bloom_filter_size = int.from_bytes(
-                metadata['bloom_filter_size'], 'big')
+                self.metadata['bloom_filter_size'], 'big')
             self.num_hashes = int.from_bytes(
-                metadata['num_hashes'], 'big')
-            self.kmer_size = int.from_bytes(metadata['kmer_size'], 'big')
+                self.metadata['num_hashes'], 'big')
+            self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = self.load_graph(
-                mode=self.mode)  # Create the graph file
-            metadata.sync()
+            self.graph = ProbabilisticBerkeleyDBStorage(filename=self.graph_filename,
+                                                        bloom_filter_size=self.bloom_filter_size,
+                                                        num_hashes=self.num_hashes,
+                                                        mode=mode)
+            self.graph.sync()
+            self.metadata.sync()
 
-    def load_metadata(self, mode="r"):
-        if mode not in self.db_modes:
-            self.db_modes[mode] = BerkeleyDBStorage(
-                filename=os.path.join(self.db, "metadata"), mode=mode)
-        return self.db_modes[mode]
+    def load_metadata(self, mode="c"):
+        return BerkeleyDBStorage(
+            filename=os.path.join(self.db, "metadata"), mode=mode)
 
     @property
     def graph_filename(self):
         return os.path.join(self.db, "graph")
 
     def load_graph(self, mode="r"):
-        return ProbabilisticBerkeleyDBStorage(filename=self.graph_filename,
-                                              bloom_filter_size=self.bloom_filter_size,
-                                              num_hashes=self.num_hashes,
-                                              mode=mode)
+        return self.graph
 
     @classmethod
     def create(cls, db=DEFUALT_DB_DIRECTORY, k=31, m=25000000, h=3, cachesize=1, force=False):
@@ -174,13 +171,13 @@ class BIGSI(object):
         graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
         logger.debug("Adding samples")
-        [self._add_sample(s) for s in samples]
+        [self._add_sample(s, sync=False) for s in samples]
         logger.debug("transpose")
         bigsi = transpose(bloomfilters)
         logger.debug("insert")
         for i, ba in enumerate(bigsi):
             graph[i] = ba.tobytes()
-        graph.sync()
+        self.sync()
 
     def merge(self, merged_bigsi):
         logger.info("Starting merge")
@@ -206,9 +203,10 @@ class BIGSI(object):
         for c in range(merged_bigsi.get_num_colours()):
             sample = merged_bigsi.colour_to_sample(c)
             try:
-                self._add_sample(sample)
+                self._add_sample(sample, sync=False)
             except ValueError:
-                self._add_sample(sample+"_duplicate_in_merge")
+                self._add_sample(sample+"_duplicate_in_merge", sync=False)
+        self.metadata.sync()
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):
@@ -256,47 +254,49 @@ class BIGSI(object):
     def seq_to_kmers(self, seq):
         return seq_to_kmers(seq, self.kmer_size)
 
-    def metadata_set(self, metadata_key, value):
-        metadata = self.load_metadata(mode="c")
+    def metadata_set(self, metadata_key, value, sync=True):
+        metadata = self.metadata
         metadata[metadata_key] = pickle.dumps(value)
-        metadata.sync()
+        if sync:
+            self.sync()
 
     def metadata_hgetall(self, metadata_key):
-        return pickle.loads(self.load_metadata().get(metadata_key, pickle.dumps({})))
+        return pickle.loads(self.metadata.get(metadata_key, pickle.dumps({})))
 
     def metadata_hget(self, metadata_key, key):
         return self.metadata_hgetall(metadata_key).get(key)
 
-    def add_sample_metadata(self, sample, key, value, overwrite=False):
+    def add_sample_metadata(self, sample, key, value, overwrite=False, sync=True):
         metadata_key = "ss_%s" % sample
-        self.metadata_hset(metadata_key, key, value, overwrite=overwrite)
+        self.metadata_hset(metadata_key, key, value,
+                           overwrite=overwrite, sync=sync)
 
     def lookup_sample_metadata(self, sample):
         metadata_key = "ss_%s" % sample
         return self.metadata_hgetall(metadata_key)
 
-    def metadata_hset(self, metadata_key, key, value, overwrite=False):
+    def metadata_hset(self, metadata_key, key, value, overwrite=False, sync=True):
         metadata_values = self.metadata_hgetall(metadata_key)
         if key in metadata_values and not overwrite:
             raise ValueError("%s is already in the metadata of %s with value %s " % (
                 key, metadata_key, metadata_values[key]))
         else:
             metadata_values[key] = value
-            self.metadata_set(metadata_key, metadata_values)
+            self.metadata_set(metadata_key, metadata_values, sync=sync)
 
-    def set_colour(self, colour, sample, overwrite=False):
+    def set_colour(self, colour, sample, overwrite=False, sync=True):
         colour = int(colour)
-        metadata = self.load_metadata(mode="w")
+        metadata = self.metadata
         metadata["colour%i" % colour] = sample
-        metadata.sync()
+        if sync:
+            self.sync()
 
     def sample_to_colour(self, sample):
         return self.lookup_sample_metadata(sample).get('colour')
 
     def colour_to_sample(self, colour):
-        metadata = self.load_metadata(mode="w")
+        metadata = self.metadata
         r = metadata["colour%i" % colour].decode('utf-8')
-        metadata.sync()
         if r:
             return r
         else:
@@ -437,9 +437,9 @@ class BIGSI(object):
                 break
         return samples_present
 
-    def _add_sample(self, sample_name):
-        metadata = self.load_metadata(mode="w")
-        logger.debug("Adding sample %s" % sample_name)
+    def _add_sample(self, sample_name, sync=True):
+        metadata = self.metadata
+        # logger.debug("Adding sample %s" % sample_name)
         existing_index = self.sample_to_colour(sample_name)
         if existing_index is not None:
             raise ValueError("%s already exists in the db" % sample_name)
@@ -449,20 +449,20 @@ class BIGSI(object):
                 colour = 0
             else:
                 colour = int(colour)
-            self.add_sample_metadata(sample_name, 'colour', colour)
-            self.set_colour(colour, sample_name)
+            self.add_sample_metadata(sample_name, 'colour', colour, sync=sync)
+            self.set_colour(colour, sample_name, sync=sync)
             metadata.incr('num_colours')
-            metadata.sync()
+            if sync:
+                metadata.sync()
             return colour
 
     def get_num_colours(self):
-        return int.from_bytes(self.load_metadata().get(
+        return int.from_bytes(self.metadata.get(
             'num_colours', b'\x00\x00\x00\x00'), 'big')
 
     def sync(self):
-        if isinstance(self.load_graph(), ProbabilisticBerkeleyDBStorage):
-            self.load_graph().storage.sync()
-            self.metadata.storage.sync()
+        self.load_graph().storage.sync()
+        self.metadata.sync()
 
     def delete_all(self):
         self.load_graph().delete_all()
