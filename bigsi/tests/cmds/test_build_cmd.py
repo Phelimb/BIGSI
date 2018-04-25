@@ -35,12 +35,12 @@ def test_get_required_chunk_size():
     m = 25*10**6
     N = 10
     max_memory = 10**8  # 100MB
-    assert get_required_chunk_size(m=m, N=N, max_memory=max_memory) == 3
+    assert get_required_chunk_size(m=m, N=N, max_memory=max_memory)[0] == 3
 
     m = 25*10**6
     N = 10
     max_memory = 10**9  # 100MB
-    assert get_required_chunk_size(m=m, N=N, max_memory=max_memory) == 10
+    assert get_required_chunk_size(m=m, N=N, max_memory=max_memory)[0] == 10
 
 
 def generate_sample_names(N):
