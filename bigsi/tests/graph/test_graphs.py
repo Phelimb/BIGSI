@@ -67,7 +67,7 @@ def test_add_sample_metadata(Graph, sample):
 # @given(Graph=ST_GRAPH, sample=ST_SAMPLE_NAME)
 # @example(Graph=BIGSI, sample='0')
 # @settings(max_examples=5)
-def test_insert_and_unique_sample_names(Graph, sample):
+def test_insert_and_unique_sample_names():
     Graph, sample = BIGSI, '0'
     seq, k, h = 'AATTTTTATTTTTTTTTTTTTAATTAATATT', 11, 1
     m = 10
