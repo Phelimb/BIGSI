@@ -1,10 +1,11 @@
 sudo: required  
+cache: pip
 services:
   - docker
 before_install:
-  - docker build -t phelimb/bigsi .
+  - docker build --build-arg TRAVIS=true -t phelimb/bigsi .
 script:
-  - sudo docker run phelimb/bigsi py.test  -v --cov=bigsi --cov-config .coveragerc bigsi/tests/
+  - sudo docker run phelimb/bigsi /bin/sh -c "TRAVIS=true py.test -s -vv --cov=bigsi --cov-config .coveragerc bigsi/tests/"
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";

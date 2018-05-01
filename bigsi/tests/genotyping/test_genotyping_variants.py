@@ -12,6 +12,9 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
+import unittest
+import os
+import pytest
 
 
 @given(Graph=ST_GRAPH, kmer_size=st.integers(min_value=11, max_value=31))
@@ -36,14 +39,15 @@ def test_search_for_variant(Graph):
     alt = variant_probe_set.alts[0]
     bloom1 = bigsi.bloom(bigsi.seq_to_kmers(ref))
     bloom2 = bigsi.bloom(bigsi.seq_to_kmers(alt))
-    bigsi.insert(bloom1, 'ref')
-    bigsi.insert(bloom2, 'alt')
+    bigsi.build([bloom1, bloom2], ['ref', 'alt'])
 
     results = variant_search.search_for_variant("T", 1, "C")
+    print(results)
     assert results.get("T1C").get("ref").get("genotype") == "0/0"
     assert results.get("T1C").get("alt").get("genotype") == "1/1"
 
 
+@pytest.mark.skipif('"TRAVIS" in os.environ and os.environ["TRAVIS"] == "true"')
 def test_search_for_amino_acid_mutation():
     kmer_size = 21
     bigsi = BIGSI.create(m=1000, k=kmer_size, force=True)
@@ -54,8 +58,6 @@ def test_search_for_amino_acid_mutation():
         0]
     var_name2 = variant_search.aa2dna.get_variant_names("rpoB", "S450X", True)[
         4]
-    print(var_name1)
-    print(var_name2)
 
     # # Add a the reference seq, the alternate and both as samples
     variant_probe_set1 = variant_search.create_variant_probe_set(var_name1)
@@ -69,10 +71,8 @@ def test_search_for_amino_acid_mutation():
     bloom2 = bigsi.bloom(bigsi.seq_to_kmers(alt1))
     bloom3 = bigsi.bloom(bigsi.seq_to_kmers(ref2))
     bloom4 = bigsi.bloom(bigsi.seq_to_kmers(alt2))
-    bigsi.insert(bloom1, 'ref1')
-    bigsi.insert(bloom2, 'alt1')
-    bigsi.insert(bloom3, 'ref2')
-    bigsi.insert(bloom4, 'alt2')
+    bigsi.build([bloom1, bloom2, bloom3, bloom4],
+                ['ref1', 'alt1', 'ref2', 'alt2'])
 
     results = variant_search.search_for_amino_acid_variant(
         "rpoB", "S", 450, "X")

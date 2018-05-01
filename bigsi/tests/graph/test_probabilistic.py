@@ -9,6 +9,7 @@ from bigsi.utils import make_hash
 from bigsi.utils import reverse_comp
 from hypothesis import given
 from hypothesis import example
+from hypothesis import settings
 import hypothesis.strategies as st
 from bigsi.bytearray import ByteArray
 import tempfile
@@ -20,11 +21,13 @@ from bigsi import BIGSI
 # Add test for insert, lookup.
 
 
-@given(sample=ST_SAMPLE_NAME, seq=ST_SEQ)
-def test_get_bloomfilter(sample, seq):
+@given(seq=ST_SEQ)
+@settings(max_examples=5)
+def test_get_bloomfilter(seq):
+    sample = "1234"
     kmers = seq_to_kmers(seq, 31)
-    bigsi = BIGSI.create(m=100, force=True)
-    bigsi.insert(bigsi.bloom(kmers), sample)
+    bigsi = BIGSI.create(m=10, force=True)
+    bigsi.build([bigsi.bloom(kmers)], [sample])
     bf = bigsi.get_bloom_filter(sample)
     assert bf.length() == bigsi.graph.bloomfilter.size
     bigsi.delete_all()

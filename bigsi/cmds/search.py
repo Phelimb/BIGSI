@@ -39,7 +39,7 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             if result:
                 for sample_id, percent in result.items():
                     print(
-                        "\t".join([gene_name, sample_id, str(percent["percent_kmers_found"]), str(diff)]))
+                        "\t".join([gene_name, sample_id, str(round(percent["percent_kmers_found"], 2)), str(round(diff, 2))]))
             else:
                 print("\t".join([gene_name, "NA", str(0), str(diff)]))
         elif output_format == "fasta":

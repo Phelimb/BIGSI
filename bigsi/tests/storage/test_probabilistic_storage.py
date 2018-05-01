@@ -21,7 +21,8 @@ import os
 def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
     storage = ProbabilisticBerkeleyDBStorage(filename="db",
                                              bloom_filter_size=bloom_filter_size,
-                                             num_hashes=num_hashes)
+                                             num_hashes=num_hashes,
+                                             mode="c")
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
 
@@ -36,7 +37,8 @@ def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
 def test_update_contains(colour, elements, bloom_filter_size,  num_hashes):
     storage = ProbabilisticBerkeleyDBStorage(filename="db",
                                              bloom_filter_size=bloom_filter_size,
-                                             num_hashes=num_hashes)
+                                             num_hashes=num_hashes,
+                                             mode="c")
 
     elements = list(seq_to_kmers(elements, 31))
     storage.bloom_filter_size = bloom_filter_size

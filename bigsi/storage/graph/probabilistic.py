@@ -60,7 +60,7 @@ class BloomFilterMatrix:
     def add_column(self, bloomfilter, colour):
         colour = int(colour)
         for i, j in enumerate(bloomfilter):
-            self._setbit(i, colour, j)
+            self._setbit(i, colour, int(j))
 
     def update(self, elements, colour):
         indexes = self._get_all_indexes(elements)
@@ -112,6 +112,7 @@ class BloomFilterMatrix:
     def _lookup_element(self, element):
         indexes = self.hashes(element)
         rows = self._get_rows(indexes)
+        # print(element, rows)
         return self._binary_and(rows)
 
     def _binary_and(self, rows):
@@ -183,7 +184,11 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def get_row(self, index):
         b = BitArray()
-        b.frombytes(self.get(index, b''))
+        _row_bytes = self.get(index, b'')
+        # if not _row_bytes:
+        #     logger.warning(
+        #         "There is no row %i. Run `bigsi init` and `bigsi build` before `insert` or `search`. Creating row regardless." % index)
+        b.frombytes(_row_bytes)
         return b
 
     def get_rows(self, indexes):
@@ -210,11 +215,12 @@ class BaseProbabilisticStorage(BaseStorage):
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
 
-    def __init__(self, filename, bloom_filter_size, num_hashes, mode="c", cachesize=4, decode=None):
+    def __init__(self, filename, bloom_filter_size, num_hashes, mode="r", cachesize=4, decode=None):
         super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
                          num_hashes=num_hashes, mode=mode,
                          cachesize=cachesize, decode=decode)
         self.name = 'probabilistic-bsddb'
+        self.mode = mode
 
     def setbits(self, indexes, colour, bit):
         for index in indexes:
@@ -224,6 +230,7 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
         r = self.get_row(index)
         r.setbit(colour, bit)
         self.set_row(index, r)
+        # print(self.mode, index, r, index, self.get_row(index))
 
     def getbit(self, index, colour):
         return self.get_row(index).getbit(colour)
