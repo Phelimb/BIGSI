@@ -112,7 +112,6 @@ class BloomFilterMatrix:
     def _lookup_element(self, element):
         indexes = self.hashes(element)
         rows = self._get_rows(indexes)
-        # print(element, rows)
         return self._binary_and(rows)
 
     def _binary_and(self, rows):
@@ -172,7 +171,6 @@ class BaseProbabilisticStorage(BaseStorage):
         indexes = []
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
-        logger.debug(indexes)
         rows = self.get_rows(indexes)
         return self.bloomfilter._binary_and(rows)
 
@@ -230,7 +228,6 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
         r = self.get_row(index)
         r.setbit(colour, bit)
         self.set_row(index, r)
-        # print(self.mode, index, r, index, self.get_row(index))
 
     def getbit(self, index, colour):
         return self.get_row(index).getbit(colour)
