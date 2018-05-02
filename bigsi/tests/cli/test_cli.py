@@ -70,7 +70,6 @@ def test_build_cmd():
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
     response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, 'threshold': 0.1, "score": True})
-    print(response.data[seq])
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(
