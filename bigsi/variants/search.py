@@ -7,7 +7,9 @@ from atlasvar.annotation.genes import GeneAminoAcidChangeToDNAVariants
 import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-flatten = lambda l: [item for sublist in l for item in sublist]
+
+
+def flatten(l): return [item for sublist in l for item in sublist]
 
 
 class BIGSIVariantSearch(object):
@@ -84,24 +86,3 @@ class BIGSIAminoAcidMutationSearch(BIGSIVariantSearch):
                 _results[sample] = {"genotype": genotype[
                     "genotype"], "aa_mut": mut.mut, "variant": mut.variant.var_name, "gene": gene}
         return results
-        #     if not mut.mut in mutations:
-        #         mutations[mut.mut] = [mut]
-        #     else:
-        #         mutations[mut.mut].append(mut)
-
-        # for amino_acid_mutation, mut_object_list in mutations.items():
-        #     refs = []
-        #     alts = []
-        #     for mut_object in mut_object_list:
-        #         variant_probe_set = self.make_variant_probe_set(
-        #             mut_object.variant)
-        #        	refs.extend(variant_probe_set.refs)
-        #        	alts.extend(variant_probe_set.alts)
-        #     self.genotype_alleles(refs,alts)
-
-        # print(mut.mut)
-        # print(var_name)
-        # variant_probe_set = self.create_variant_probe_set(
-        #     var_name=var_name)
-        # print(self.genotype_alleles(
-        #     variant_probe_set.refs, variant_probe_set.alts))

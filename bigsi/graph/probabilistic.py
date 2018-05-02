@@ -107,10 +107,15 @@ class BIGSI(object):
         try:
             self.metadata = self.load_metadata(mode)
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
-            raise ValueError(
-                "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
+            print(e)
+            if isinstance(e, bsddb3.db.DBError):
+                raise OSError(
+                    "You don't have permission to access this directory %s ." % self.db)
+            else:
+                raise OSError(
+                    "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            self.metadata = self.load_metadata(mode="c")
+            self.metadata = self.load_metadata(mode=mode)
             self.bloom_filter_size = int.from_bytes(
                 self.metadata['bloom_filter_size'], 'big')
             self.num_hashes = int.from_bytes(
@@ -131,6 +136,10 @@ class BIGSI(object):
     @property
     def graph_filename(self):
         return os.path.join(self.db, "graph")
+
+    @property
+    def metadata_filename(self):
+        return os.path.join(self.db, "metadata")
 
     def load_graph(self, mode="r"):
         return self.graph
