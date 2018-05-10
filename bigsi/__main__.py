@@ -116,7 +116,7 @@ class bigsi(object):
     @hug.object.cli
     @hug.object.post('/bloom')
     def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None):
-        bigsi = BIGSI(db)
+        bigsi = BIGSI(db, mode="r")
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. bigsi insert ERR1010211.ctx
@@ -172,7 +172,7 @@ class bigsi(object):
                nproc: hug.types.number=4):
         if db is None:
             db = BDB_DB_FILENAME
-        bigsi = BIGSI(db, cachesize=cachesize, nproc=nproc)
+        bigsi = BIGSI(db, cachesize=cachesize, nproc=nproc, mode="r")
         """Returns samples that contain the searched sequence.
         Use -f to search for sequence from fasta"""
         if output_format in ["tsv", "fasta"]:

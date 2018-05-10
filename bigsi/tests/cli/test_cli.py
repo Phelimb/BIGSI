@@ -1,6 +1,7 @@
 import os
 import hug
 import redis
+from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 
 import bigsi.__main__
 import json
@@ -18,6 +19,7 @@ import tempfile
 from bigsi.utils import seq_to_kmers
 from bitarray import bitarray
 import numpy as np
+import pytest
 
 
 def test_bloom_cmd():
@@ -122,6 +124,51 @@ def test_insert_search_cmd():
 
     assert "s3" in response.data.get(seq).get(
         'results')
+    response = hug.test.delete(
+        bigsi.__main__, '', {'db': f, })
+
+
+def test_search_doesnt_required_write_access():
+    Graph = BIGSI.create(m=100, force=True)
+    f = Graph.db
+    response = hug.test.delete(bigsi.__main__, '', {'db': f})
+    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
+    N = 3
+    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
+    samples = []
+    for i in range(N):
+        samples.append(''.join(random.choice(
+            string.ascii_uppercase + string.digits) for _ in range(6)))
+
+    response = hug.test.post(
+        bigsi.__main__, 'build', {'db': f,
+                                  'bloomfilters': bloomfilter_filepaths,
+                                  'samples': samples})
+
+    # Make the DB read only
+    os.chmod(Graph.graph_filename, S_IREAD | S_IRGRP | S_IROTH)
+    os.chmod(Graph.metadata_filename, S_IREAD | S_IRGRP | S_IROTH)
+    with pytest.raises(OSError):
+        response = hug.test.post(
+            bigsi.__main__, 'insert', {'db': f,
+                                       'bloomfilter': 'bigsi/tests/data/test_kmers.bloom',
+                                       'sample': "s3"})
+
+    # Search doesn't raise errors
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGA'
+    response = hug.test.get(bigsi.__main__, 'search', {
+                            'db': f, 'seq': seq, "score": True})
+    #
+    assert response.data.get(seq).get('results') != {}
+    # assert "score" in list(response.data.get(seq).get('results').values())[0]
+    seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
+    response = hug.test.get(bigsi.__main__, 'search', {
+                            'db': f, 'seq': seq, 'threshold': 0.1, "score": True})
+    assert response.data.get(seq).get('results')
+    assert "score" in list(response.data.get(seq).get('results').values())[0]
+    # Delete requires read access
+    os.chmod(Graph.graph_filename, S_IWUSR | S_IREAD)
+    os.chmod(Graph.metadata_filename, S_IWUSR | S_IREAD)
     response = hug.test.delete(
         bigsi.__main__, '', {'db': f, })
 
