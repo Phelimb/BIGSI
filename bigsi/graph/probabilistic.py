@@ -85,7 +85,6 @@ def chunks(l, n):
 
 
 def unpack_bas(bas, j):
-    j = 1
     logger.debug("ncores: %i" % j)
     if j == 0:
         res = unpack_and_sum(bas)
