@@ -19,9 +19,10 @@ SIZE = 10
 
 @given(booleans=st.lists(st.lists(st.booleans(), min_size=SIZE, max_size=SIZE), min_size=5, max_size=10))
 def test_transpose(booleans):
-    npmatrix = np.array(booleans).transpose()
-    bitarrays = create_bitarrays(booleans)
-    tbitarrays = transpose(bitarrays)
-    for j in range(len(booleans)):
-        for i in range(SIZE):
-            assert npmatrix[i, j] == tbitarrays[i][j]
+	for lowmem in [True,False]:
+	    npmatrix = np.array(booleans).transpose()
+	    bitarrays = create_bitarrays(booleans)
+	    tbitarrays = transpose(bitarrays, lowmem)
+	    for j in range(len(booleans)):
+	        for i in range(SIZE):
+	            assert npmatrix[i, j] == tbitarrays[i][j]

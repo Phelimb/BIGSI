@@ -35,7 +35,7 @@ def get_required_chunk_size(N, m, max_memory):
     return chunk_size, num_chunks
 
 
-def build(bloomfilter_filepaths, samples, index, max_memory=None):
+def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False):
         # Max memory is in bytes
     if max_memory is None:
         chunk_size = len(bloomfilter_filepaths)
@@ -52,24 +52,24 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None):
         samples = [x[1] for x in v]
         logger.info("Building index: %i/%i" % (i, num_chunks))
         if i == 0:
-            build_main(bloomfilter_filepaths, samples, index)
+            build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem)
         else:
-            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i)
+            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i, lowmem=lowmem)
             index.merge(tmp_index)
             tmp_index.delete_all()
     return {'result': 'success'}
 
 
-def build_main(bloomfilter_filepaths, samples, index):
+def build_main(bloomfilter_filepaths, samples, index,lowmem=False):
     bloomfilters = []
     for f in bloomfilter_filepaths:
         bloomfilters.append(load_bloomfilter(f))
-    index.build(bloomfilters, samples)
+    index.build(bloomfilters, samples,lowmem=lowmem)
 
 
-def build_tmp(bloomfilter_filepaths, samples, indext, i):
+def build_tmp(bloomfilter_filepaths, samples, indext, i,lowmem=False):
     index_dir = indext.db+"%i.tmp" % i
     index = BIGSI.create(db=index_dir, k=indext.kmer_size,
                          m=indext.bloom_filter_size, h=indext.num_hashes, force=True)
-    build_main(bloomfilter_filepaths, samples, index)
+    build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem)
     return BIGSI(index_dir)

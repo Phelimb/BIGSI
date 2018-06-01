@@ -171,7 +171,7 @@ class BIGSI(object):
             metadata.sync()
             return cls(db=db, cachesize=cachesize, mode="c")
 
-    def build(self, bloomfilters, samples):
+    def build(self, bloomfilters, samples, lowmem=False):
         # Need to open with read and write access
         if not len(bloomfilters) == len(samples):
             raise ValueError(
@@ -181,7 +181,7 @@ class BIGSI(object):
         logger.debug("Adding samples")
         [self._add_sample(s, sync=False) for s in samples]
         logger.debug("transpose")
-        bigsi = transpose(bloomfilters)
+        bigsi = transpose(bloomfilters,lowmem=lowmem)
         logger.debug("insert")
         for i, ba in enumerate(bigsi):
             graph[i] = ba.tobytes()
