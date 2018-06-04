@@ -22,7 +22,7 @@ def test_transpose(booleans):
 	for lowmem in [True,False]:
 	    npmatrix = np.array(booleans).transpose()
 	    bitarrays = create_bitarrays(booleans)
-	    tbitarrays = transpose(bitarrays, lowmem)
+	    tbitarrays = list(transpose(bitarrays, lowmem))
 	    for j in range(len(booleans)):
 	        for i in range(SIZE):
 	            assert npmatrix[i, j] == tbitarrays[i][j]
