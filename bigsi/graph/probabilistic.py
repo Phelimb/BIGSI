@@ -184,6 +184,9 @@ class BIGSI(object):
         bigsi = transpose(bloomfilters,lowmem=lowmem)
         logger.debug("insert")
         for i, ba in enumerate(bigsi):
+            _len=len(bloomfilters[0])
+            if (i % int(_len/100))==0:
+                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*i)/_len)))
             graph[i] = ba.tobytes()
         self.sync()
 
