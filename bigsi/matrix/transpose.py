@@ -24,7 +24,7 @@ def transpose_low_mem(bitarrays):
     return tbitarrays
 
 
-def transpose_numpy(bitarrays):
+def transpose_numpy_old(bitarrays):
     logger.info("Using high memory transpose")
 
     # Takes a list of bitarrays and returns the transpose as a list of
@@ -32,6 +32,16 @@ def transpose_numpy(bitarrays):
     X = np.array(bitarrays).transpose()
     tbitarrays=[bitarray(i.tolist()) for i in X]  
     return tbitarrays
+    
+def transpose_numpy(bitarrays):
+    # Takes a list of bitarrays and returns the transpose as a list of
+    # bitarrays
+    
+    X=np.array([np.frombuffer(ba.unpack(),dtype=bool) for ba in bitarrays],dtype=bool)
+    for row in X.T:
+        ba=bitarray()
+        ba.pack(row.tobytes())         
+        yield ba
 
 def transpose(bitarrays, lowmem=False):
     if lowmem:
