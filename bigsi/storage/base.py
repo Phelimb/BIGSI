@@ -543,3 +543,118 @@ class BerkeleyDBStorage(BaseStorage):
 
     def sync(self):
         self.storage.sync()
+
+import rocksdb
+import shutil
+import gc
+
+class RocksDBStorage(BaseStorage):
+
+    def __init__(self, filename=None, mode="r", cachesize=4, decode=None, store_int_as_string=False):
+        if filename is None:
+            raise ValueError(
+                "You must supply a 'filename'")
+        self.db_file = filename
+        self.mode = mode
+        self.cachesize = cachesize
+        print(self.db_file)
+        self.delete_lock_file()
+        try:
+            if mode=="r":
+                create_if_missing=False
+            else:
+                create_if_missing=True
+            self.storage  = rocksdb.DB(self.db_file, rocksdb.Options(create_if_missing=create_if_missing))
+        except AttributeError:
+            raise ValueError(
+                "Please install rocksdb to use rocks DB storage")
+        self.decode = decode
+
+    def delete_lock_file(self):
+        lock_file=os.path.join(self.db_file,'LOCK')
+        try:
+            os.remove(lock_file)
+            print(lock_file)
+        except FileNotFoundError:
+            pass
+        gc.collect()
+
+    def incr(self, key):
+        if self.get(key) is None:
+            self[key] = 0
+        v = int.from_bytes(
+            self.get(key), 'big')
+        v += 1
+        self[key] = v
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def close(self):
+        print("closing")
+        self.delete_lock_file()
+        del self.storage
+        gc.collect() 
+
+    def keys(self):
+        return self.storage.iterkeys()
+
+    def items(self):
+        for i in self.keys():
+            yield (i.decode('utf-8'), self[i])
+
+    def count_keys(self):
+        return len(self.keys())
+
+    def __setitem__(self, key, val):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = (key).to_bytes(4, byteorder='big')
+        if isinstance(val, str):
+            val = str.encode(val)
+        elif isinstance(val, int):
+            val = (val).to_bytes(4, byteorder='big')
+        self.storage.put(key,val)
+
+    def __getitem__(self, key):
+        # print("key", key)
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = (key).to_bytes(4, byteorder='big')
+        v = self.storage.get(key)
+        if self.decode:
+            return v.decode(self.decode)
+        else:
+            return v
+
+    def __delitem__(self, key):
+        if isinstance(key, str):
+            key = str.encode(key)
+        elif isinstance(key, int):
+            key = str.encode(str(key))
+        self.storage.delete(key)
+
+    def get(self, key, default=None):
+        try:
+            v= self[key]
+            if v is None:
+            	return default
+            else:
+            	return v
+        except KeyError as e:
+            return default
+
+    def delete_all(self):
+        self.close()
+        try:
+	        shutil.rmtree(self.db_file)
+        except FileNotFoundError:
+           pass
+
+    def getmemoryusage(self):
+        return 0
+
+    def sync(self):
+        gc.collect()         

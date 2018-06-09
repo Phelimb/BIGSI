@@ -3,3 +3,4 @@
 # from bigsi.storage.base import RedisBitArrayStorage
 # from bigsi.storage.base import SimpleRedisStorage
 from bigsi.storage.base import BerkeleyDBStorage
+from bigsi.storage.base import RocksDBStorage

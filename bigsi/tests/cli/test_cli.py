@@ -50,6 +50,8 @@ import string
 def test_build_cmd():
     Graph = BIGSI.create(m=100, force=True)
     f = Graph.db
+    Graph.close()
+
     response = hug.test.delete(bigsi.__main__, '', {'db': f})
     response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
     N = 3

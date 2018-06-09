@@ -10,16 +10,51 @@ from hypothesis import given
 from hypothesis import settings
 import hypothesis.strategies as st
 from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+from bigsi.storage.graph.probabilistic import ProbabilisticRocksDBStorage
 from bigsi.utils import seq_to_kmers
 
 import os
+import pytest
 
+
+def test_create_and_delete():
+    storage = ProbabilisticRocksDBStorage(filename="d2b",
+                                             bloom_filter_size=100,
+                                             num_hashes=1,
+                                             mode="c")
+    storage.delete_all()
+    with pytest.raises(Exception):
+        ProbabilisticRocksDBStorage(filename="d2b",
+                                             bloom_filter_size=100,
+                                             num_hashes=1,
+                                             mode="r")
+    storage = ProbabilisticRocksDBStorage(filename="d2b",
+                                             bloom_filter_size=100,
+                                             num_hashes=1,
+                                             mode="c")    
+    storage.delete_all()
+
+def test_add_contains_1():
+    colour=1
+    element="AAAAAA"
+    bloom_filter_size=100
+    num_hashes=1
+    storage = ProbabilisticRocksDBStorage(filename="db",
+                                             bloom_filter_size=bloom_filter_size,
+                                             num_hashes=num_hashes,
+                                             mode="c")
+    storage.bloom_filter_size = bloom_filter_size
+    storage.num_hashes = num_hashes
+
+    storage.bloomfilter.add(element, colour)
+    assert storage.bloomfilter.contains(element, colour)
+    storage.delete_all()
 
 @given(colour=ST_SAMPLE_COLOUR, element=ST_KMER,
        bloom_filter_size=ST_BLOOM_FILTER_SIZE,
        num_hashes=ST_NUM_HASHES)
 def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
-    storage = ProbabilisticBerkeleyDBStorage(filename="db",
+    storage = ProbabilisticRocksDBStorage(filename="db",
                                              bloom_filter_size=bloom_filter_size,
                                              num_hashes=num_hashes,
                                              mode="c")

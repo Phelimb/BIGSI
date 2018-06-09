@@ -5,6 +5,7 @@ git+https://github.com/phelimb/pyseqfile
 cython
 numpy
 bsddb3
+python-rocksdb
 credis
 crc16
 uwsgi

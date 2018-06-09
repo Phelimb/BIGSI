@@ -98,7 +98,7 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post('/init', output_format=hug.output_format.json)
-    def init(self, db, k=31, m=25*10**6, h=3, force=False):
+    def init(self, db, k=31, m=25*10**6, h=3, force: hug.types.smart_boolean=False):
         bigsi = BIGSI.create(db=db, k=k, m=m, h=h, force=force)
         return {'k': k, 'm': m, 'h': h, 'db': db}
 

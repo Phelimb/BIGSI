@@ -25,10 +25,12 @@ from bigsi.decorators import convert_kmers_to_canonical
 from bigsi.bytearray import ByteArray
 
 
-from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage
+# from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage as IndexStorage
+from bigsi.storage.graph.probabilistic import ProbabilisticRocksDBStorage as IndexStorage
 
 
-from bigsi.storage import BerkeleyDBStorage
+# from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
+from bigsi.storage import RocksDBStorage as MetaDataStorage
 from bigsi.sketch import HyperLogLogJaccardIndex
 from bigsi.sketch import MinHashHashSet
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
@@ -99,12 +101,15 @@ def unpack_bas(bas, j):
 
 class BIGSI(object):
 
-    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="c"):
+    def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="c", metadata=None):
         self.mode = mode
         self.nproc = nproc
         self.db = db
         try:
-            self.metadata = self.load_metadata(mode)
+            if metadata is None:
+                self.metadata = self.load_metadata(mode)
+            else:
+                self.metadata=metadata
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             print(e)
             if isinstance(e, bsddb3.db.DBError):
@@ -114,14 +119,13 @@ class BIGSI(object):
                 raise OSError(
                     "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            self.metadata = self.load_metadata(mode=mode)
             self.bloom_filter_size = int.from_bytes(
                 self.metadata['bloom_filter_size'], 'big')
             self.num_hashes = int.from_bytes(
                 self.metadata['num_hashes'], 'big')
             self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = ProbabilisticBerkeleyDBStorage(filename=self.graph_filename,
+            self.graph = IndexStorage(filename=self.graph_filename,
                                                         bloom_filter_size=self.bloom_filter_size,
                                                         num_hashes=self.num_hashes,
                                                         mode=mode)
@@ -129,7 +133,7 @@ class BIGSI(object):
             self.metadata.sync()
 
     def load_metadata(self, mode="c"):
-        return BerkeleyDBStorage(
+        return MetaDataStorage(
             filename=os.path.join(self.db, "metadata"), mode=mode)
 
     @property
@@ -163,13 +167,29 @@ class BIGSI(object):
         else:
             logger.info("Initialising BIGSI at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
-            metadata = BerkeleyDBStorage(filename=metadata_filepath, mode="c")
+            metadata = MetaDataStorage(filename=metadata_filepath, mode="c")
             metadata["bloom_filter_size"] = (
                 int(m)).to_bytes(4, byteorder='big')
             metadata["num_hashes"] = (int(h)).to_bytes(4, byteorder='big')
             metadata["kmer_size"] = (int(k)).to_bytes(4, byteorder='big')
             metadata.sync()
-            return cls(db=db, cachesize=cachesize, mode="c")
+            return cls(db=db, cachesize=cachesize, mode="c",metadata=metadata)
+    ## Bdb
+    # def build(self, bloomfilters, samples, lowmem=False):
+    #     # Need to open with read and write access
+    #     if not len(bloomfilters) == len(samples):
+    #         raise ValueError(
+    #             "There must be the same number of bloomfilters and sample names")
+    #     graph = self.load_graph(mode="w")
+    #     bloom_filter_size = len(bloomfilters[0])
+    #     logger.debug("Adding samples")
+    #     [self._add_sample(s, sync=False) for s in samples]
+    #     logger.debug("transpose")
+    #     bigsi = transpose(bloomfilters,lowmem=lowmem)
+    #     logger.debug("insert")
+    #     for i, ba in enumerate(bigsi):
+    #         graph[i] = ba.tobytes()
+    #     self.sync()
 
     def build(self, bloomfilters, samples, lowmem=False):
         # Need to open with read and write access
@@ -183,10 +203,13 @@ class BIGSI(object):
         logger.debug("transpose")
         bigsi = transpose(bloomfilters,lowmem=lowmem)
         logger.debug("insert")
+        import rocksdb
+        batch = rocksdb.WriteBatch()
         for i, ba in enumerate(bigsi):
-            graph[i] = ba.tobytes()
+            batch.put((i).to_bytes(4, byteorder='big'), ba.tobytes())
+        graph.storage.write(batch)
         self.sync()
-
+        
     def merge(self, merged_bigsi):
         logger.info("Starting merge")
         # Check that they're the same length
@@ -470,10 +493,14 @@ class BIGSI(object):
             'num_colours', b'\x00\x00\x00\x00'), 'big')
 
     def sync(self):
-        self.load_graph().storage.sync()
+        self.graph.sync()
         self.metadata.sync()
 
     def delete_all(self):
-        self.load_graph().delete_all()
+        self.graph.delete_all()
         self.metadata.delete_all()
         os.rmdir(self.db)
+
+    def close(self):
+        self.graph.close()
+        self.metadata.close()

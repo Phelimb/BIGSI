@@ -5,6 +5,7 @@ from bigsi.storage.graph.base import BaseGraphStorage
 # from bigsi.storage import RedisBitArrayStorage
 # from bigsi.storage import SimpleRedisStorage
 from bigsi.storage import BerkeleyDBStorage
+from bigsi.storage import RocksDBStorage
 from bigsi.utils import hash_key
 from bigsi.bytearray import ByteArray
 from bigsi.bitvector import BitArray
@@ -218,6 +219,27 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
                          num_hashes=num_hashes, mode=mode,
                          cachesize=cachesize, decode=decode)
         self.name = 'probabilistic-bsddb'
+        self.mode = mode
+
+    def setbits(self, indexes, colour, bit):
+        for index in indexes:
+            self.setbit(index, colour, bit)
+
+    def setbit(self, index, colour, bit):
+        r = self.get_row(index)
+        r.setbit(colour, bit)
+        self.set_row(index, r)
+
+    def getbit(self, index, colour):
+        return self.get_row(index).getbit(colour)
+
+class ProbabilisticRocksDBStorage(BaseProbabilisticStorage, RocksDBStorage):
+
+    def __init__(self, filename, bloom_filter_size, num_hashes, mode="r", cachesize=4, decode=None):
+        super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
+                         num_hashes=num_hashes, mode=mode,
+                         cachesize=cachesize, decode=decode)
+        self.name = 'probabilistic-rocksdb'
         self.mode = mode
 
     def setbits(self, indexes, colour, bit):
