@@ -24,28 +24,28 @@ RUN set -x\
   && make -j$(nproc) shared_lib\
   && make install-shared\
   && strip /usr/local/lib/librocksdb.so.${ROCKSDB_VERSION}\
-  && rm -rf /tmp/rocksdb\
-  && apt-get purge -y\
-    build-essential\
-    libgflags-dev\
-    libjemalloc-dev\
-    libsnappy-dev\
-    libtbb-dev\
-    libzstd-dev\
-    zlib1g-dev\
-  && apt-get install -y\
-    libbz2-1.0\
-    libjemalloc1\
-    libsnappy1v5\
-    libtbb2\
-    libzstd1\
-    zlib1g
+  && rm -rf /tmp/rocksdb
+#  && apt-get purge -y\
+#    build-essential\
+#    libgflags-dev\
+#    libjemalloc-dev\
+#    libsnappy-dev\
+#    libtbb-dev\
+#    libzstd-dev\
+#    zlib1g-dev\
+#  && apt-get install -y\
+#    libbz2-1.0\
+#    libjemalloc1\
+#    libsnappy1v5\
+#    libtbb2\
+#    libzstd1\
+#    zlib1g
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y python3-pip && pip3 install --upgrade pip
-RUN apt-get install -y zlib1g zlib1g-dev
+RUN apt-get install -y zlib1g zlib1g-dev liblzma-dev
 ARG TRAVIS
 RUN echo $TRAVIS
 ## Install berkeleydb
@@ -59,7 +59,7 @@ RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
     ../dist/configure && make && make install
 
 # Upgrade your gcc to version at least 4.7 to get C++11 support. gflags snappy zlib bzip2
-#RUN apt-get -y install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev libbz2-dev cmake liblz4-dev
+RUN apt-get -y install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev libbz2-dev cmake liblz4-dev
 #RUN git clone https://github.com/facebook/rocksdb.git && mkdir rocksdb/build
 #WORKDIR /usr/src/app/rocksdb
 #RUN make shared_lib -j `nproc`

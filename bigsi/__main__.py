@@ -135,7 +135,8 @@ class bigsi(object):
               bloomfilters: hug.types.multiple,
               samples: hug.types.multiple = [],
               max_memory: hug.types.text='',
-              lowmem: hug.types.smart_boolean=False):
+              lowmem: hug.types.smart_boolean=False,
+              i=None,j=None):
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
@@ -144,11 +145,20 @@ class bigsi(object):
             max_memory_bytes = humanfriendly.parse_size(max_memory)
         else:
             max_memory_bytes = None
+        if (i is not None) and (j is not None):
+            bf_range=(i,j)
+        else:
+            bf_range=None
+        logger.debug(bf_range)
+        logger.debug(i)
+        logger.debug(j)
+
         return build(index=BIGSI(db),
                      bloomfilter_filepaths=bloomfilters,
                      samples=samples,
                      max_memory=max_memory_bytes,
-                     lowmem=lowmem)
+                     lowmem=lowmem,
+                     bf_range=bf_range)
 
     @hug.object.cli
     @hug.object.post('/merge', output_format=hug.output_format.json)

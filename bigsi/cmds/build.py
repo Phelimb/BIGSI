@@ -16,11 +16,17 @@ from bigsi.utils import chunks
 import tempfile
 
 
-def load_bloomfilter(f):
+def load_bloomfilter(f, bf_range=None):
+       
     bloomfilter = bitarray()
     with open(f, 'rb') as inf:
         bloomfilter.fromfile(inf)
-    return bloomfilter
+    if bf_range:
+        print(bf_range)
+        i,j=bf_range
+        return bloomfilter[int(i):int(j)]
+    else:
+        return bloomfilter
 
 
 def get_required_bytes_per_bloomfilter(m):
@@ -35,7 +41,7 @@ def get_required_chunk_size(N, m, max_memory):
     return chunk_size, num_chunks
 
 
-def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False):
+def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False, bf_range=None):
         # Max memory is in bytes
     if max_memory is None:
         chunk_size = len(bloomfilter_filepaths)
@@ -52,24 +58,24 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False):
         samples = [x[1] for x in v]
         logger.info("Building index: %i/%i" % (i, num_chunks))
         if i == 0:
-            build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem)
+            build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem, bf_range=bf_range)
         else:
-            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i, lowmem=lowmem)
+            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i, lowmem=lowmem, bf_range=bf_range)
             index.merge(tmp_index)
             tmp_index.delete_all()
     return {'result': 'success'}
 
 
-def build_main(bloomfilter_filepaths, samples, index,lowmem=False):
+def build_main(bloomfilter_filepaths, samples, index,lowmem=False, bf_range=None):
     bloomfilters = []
     for f in bloomfilter_filepaths:
-        bloomfilters.append(load_bloomfilter(f))
-    index.build(bloomfilters, samples,lowmem=lowmem)
+        bloomfilters.append(load_bloomfilter(f, bf_range))
+    index.build(bloomfilters, samples,lowmem=lowmem,bf_range=bf_range)
 
 
-def build_tmp(bloomfilter_filepaths, samples, indext, i,lowmem=False):
+def build_tmp(bloomfilter_filepaths, samples, indext, i,lowmem=False, bf_range=None):
     index_dir = indext.db+"%i.tmp" % i
     index = BIGSI.create(db=index_dir, k=indext.kmer_size,
                          m=indext.bloom_filter_size, h=indext.num_hashes, force=True)
-    build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem)
+    build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem,bf_range=bf_range)
     return index

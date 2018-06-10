@@ -191,7 +191,7 @@ class BIGSI(object):
     #         graph[i] = ba.tobytes()
     #     self.sync()
 
-    def build(self, bloomfilters, samples, lowmem=False):
+    def build(self, bloomfilters, samples, lowmem=False,bf_range=None):
         # Need to open with read and write access
         if not len(bloomfilters) == len(samples):
             raise ValueError(
@@ -205,9 +205,11 @@ class BIGSI(object):
         logger.debug("insert")
         batch = rocksdb.WriteBatch()
         _len=len(bloomfilters[0])
-        for i, ba in enumerate(bigsi):
-            if (i % int(_len/100))==0:
-                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*i)/_len)))            
+        for _iter, ba in enumerate(bigsi):
+            if bf_range is not None:
+                i=int(bf_range[0])+_iter
+            if (_iter % int(_len/100))==0:
+                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*_iter)/_len-1)))            
                 graph.storage.write(batch)
                 batch = rocksdb.WriteBatch()
             batch.put(struct.pack("Q", i) , ba.tobytes())
