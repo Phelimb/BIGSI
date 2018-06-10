@@ -493,7 +493,7 @@ class BIGSI(object):
             return colour
 
     def get_num_colours(self):
-        return struct.unpack("Q",self.metadata.get(b'\x00\x00\x00\x00')
+        return struct.unpack("Q",self.metadata.get(b'\x00\x00\x00\x00'))
 
     def sync(self):
         self.graph.sync()
