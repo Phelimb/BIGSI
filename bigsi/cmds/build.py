@@ -19,12 +19,15 @@ import tempfile
 def load_bloomfilter(f, bf_range=None):
        
     bloomfilter = bitarray()
-    with open(f, 'rb') as inf:
-        bloomfilter.fromfile(inf)
+
     if bf_range:
+        with open(f, 'rb') as inf:
+            bloomfilter.fromfile(inf,math.ceil(float(bf_range[1])/8))        
         i,j=bf_range
         return bloomfilter[int(i):int(j)]
     else:
+        with open(f, 'rb') as inf:
+            bloomfilter.fromfile(inf)        
         return bloomfilter
 
 
