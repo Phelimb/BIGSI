@@ -37,6 +37,7 @@ from bigsi.sketch import MinHashHashSet
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.matrix import transpose
 from bigsi.scoring import Scorer
+from bigsi.graph import constants
 from bitarray import bitarray
 import logging
 logging.basicConfig()
@@ -171,9 +172,9 @@ class BIGSI(object):
             metadata_filepath = os.path.join(db, "metadata")
             metadata = MetaDataStorage(filename=metadata_filepath, mode="c")
             metadata["bloom_filter_size"] = (
-                int(m)).to_bytes(4, byteorder='big')
-            metadata["num_hashes"] = (int(h)).to_bytes(4, byteorder='big')
-            metadata["kmer_size"] = (int(k)).to_bytes(4, byteorder='big')
+                int(m)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            metadata["num_hashes"] = (int(h)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            metadata["kmer_size"] = (int(k)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
             metadata.sync()
             return cls(db=db, cachesize=cachesize, mode="c",metadata=metadata)
     ## Bdb
@@ -210,7 +211,9 @@ class BIGSI(object):
         for i, ba in enumerate(bigsi):
             if (i % int(_len/100))==0:
                 logger.debug("Inserting row %i: %i%%" % (i, int(float(100*i)/_len)))            
-            batch.put((i).to_bytes(4, byteorder='big'), ba.tobytes())
+                graph.storage.write(batch)
+                batch = rocksdb.WriteBatch()
+            batch.put((i).to_bytes(constants.INT_BYTES_SIZE, byteorder='big'), ba.tobytes())
         graph.storage.write(batch)
         self.sync()
 

@@ -27,8 +27,6 @@ RUN set -x\
   && rm -rf /tmp/rocksdb\
   && apt-get purge -y\
     build-essential\
-    git\
-    libbz2-dev\
     libgflags-dev\
     libjemalloc-dev\
     libsnappy-dev\
@@ -45,12 +43,13 @@ RUN set -x\
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
-RUN pip install --upgrade pip
+RUN apt-get install -y python3-pip && pip3 install --upgrade pip
 ARG TRAVIS
 RUN echo $TRAVIS
 ## Install berkeleydb
 ENV BERKELEY_VERSION 4.8.30
 # Download, configure and install BerkeleyDB
+RUN apt-get install -y wget build-essential git
 RUN wget -P /tmp http://download.oracle.com/berkeley-db/db-"${BERKELEY_VERSION}".tar.gz && \
     tar -xf /tmp/db-"${BERKELEY_VERSION}".tar.gz -C /tmp && \
     rm -f /tmp/db-"${BERKELEY_VERSION}".tar.gz
@@ -59,7 +58,7 @@ RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
 
 # Upgrade your gcc to version at least 4.7 to get C++11 support. gflags snappy zlib bzip2
 RUN apt-get update -y && apt-get upgrade -y
-#RUN apt-get -y install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev cmake liblz4-dev
+#RUN apt-get -y install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev libbz2-dev cmake liblz4-dev
 #RUN git clone https://github.com/facebook/rocksdb.git && mkdir rocksdb/build
 #WORKDIR /usr/src/app/rocksdb
 #RUN make shared_lib -j `nproc`
@@ -76,8 +75,8 @@ WORKDIR /usr/src/app
 
 ## Install bigsi
 COPY . /usr/src/app
-RUN pip install cython
-RUN  pip install --no-cache-dir -r requirements.txt
+RUN pip3 install cython
+RUN  pip3 install --no-cache-dir -r requirements.txt
 
 # install bigsi
 WORKDIR /usr/src/app

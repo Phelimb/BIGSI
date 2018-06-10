@@ -5,6 +5,7 @@ import os
 from bigsi.utils import hash_key
 from bigsi.utils import chunks
 from bigsi.bitvector import BitArray
+from bigsi.graph import constants
 import shutil
 import logging
 import time
@@ -356,7 +357,7 @@ class RedisHashStorage(BaseRedisStorage):
         if isinstance(key, str):
             hkey = str.encode(key)
         elif isinstance(key, int):
-            hkey = (key).to_bytes(4, byteorder='big')
+            hkey = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         name = hash_key(hkey)
         return name
 
@@ -499,11 +500,11 @@ class BerkeleyDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
-            val = (val).to_bytes(4, byteorder='big')
+            val = (val).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         self.storage[key] = val
 
     def __getitem__(self, key):
@@ -511,7 +512,7 @@ class BerkeleyDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         v = self.storage[key]
         if self.decode:
             return v.decode(self.decode)
@@ -611,11 +612,11 @@ class RocksDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
-            val = (val).to_bytes(4, byteorder='big')
+            val = (val).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         self.storage.put(key,val)
 
     def __getitem__(self, key):
@@ -623,7 +624,7 @@ class RocksDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(4, byteorder='big')
+            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
         v = self.storage.get(key)
         if self.decode:
             return v.decode(self.decode)
