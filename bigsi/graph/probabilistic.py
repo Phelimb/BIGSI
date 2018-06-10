@@ -222,9 +222,11 @@ class BIGSI(object):
         for bigsi in merged_bigsis:
             batch = rocksdb.WriteBatch()
             cnt=0
-            for k,v in bigsi.graph.items():
+            it=bigsi.graph.storage.iteritems()
+            it.seek_to_first()
+            for k,v in it:
                 if v:
-                    batch.put(struct.pack("Q", k),v)
+                    batch.put(k,v)
                     cnt+=1
                 ## Write every 1000 keys
                 if cnt >= 1000:
