@@ -173,6 +173,7 @@ class BaseProbabilisticStorage(BaseStorage):
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
         rows = self.get_rows(indexes)
+        print(rows)
         return self.bloomfilter._binary_and(rows)
 
     def get_bloom_filter(self, colour):

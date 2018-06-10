@@ -92,6 +92,11 @@ def extract_kmers_from_ctx(ctx, k):
         for kmer in seq_to_kmers(i.kmer.canonical_value, k):
             yield kmer
 
+def bf_range_calc(index, i, N):
+    batch_size=math.ceil(index.bloom_filter_size/N)
+    i=list(range(0,index.bloom_filter_size,batch_size))[i-1]
+    j=i+batch_size        
+    return (i,j)    
 
 @hug.object(name='bigsi', version='0.1.1', api=API)
 @hug.object.urls('/', requires=())
@@ -105,14 +110,18 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, db: hug.types.text, bloomfilter, sample):
+    def insert(self, db: hug.types.text, bloomfilter, sample,
+              i:int=1,N:int=1):
         """Inserts a bloom filter into the graph
 
         e.g. bigsi insert ERR1010211.bloom ERR1010211
 
         """
-        graph = BIGSI(db)
-        return insert(graph=BIGSI(db), bloomfilter=bloomfilter, sample=sample)
+        index=BIGSI(db)
+        bf_range=bf_range_calc(index, i, N)
+        
+        return insert(graph=index, bloomfilter=bloomfilter, sample=sample,
+                     bf_range=bf_range)
 
     @hug.object.cli
     @hug.object.post('/bloom')
@@ -152,13 +161,8 @@ class bigsi(object):
             max_memory_bytes = None
         if i < 1:
             raise ValueError("Batch index is one-based. Use 1 for first batch, not 0.")
-        batch_size=math.ceil(index.bloom_filter_size/N)
-        i=list(range(0,index.bloom_filter_size,batch_size))[i-1]
-        j=i+batch_size        
-        bf_range=(i,j)
-        logger.debug(bf_range)
-        logger.debug(i)
-        logger.debug(j)
+        bf_range=bf_range_calc(index, i, N)
+
 
         return build(index=index,
                      bloomfilter_filepaths=bloomfilters,

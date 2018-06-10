@@ -24,17 +24,18 @@ import pytest
 
 def test_bloom_cmd():
     Graph = BIGSI.create(m=100, force=True)
+    Graph.close()
     f = '/tmp/test_kmers.bloom'
     response = hug.test.post(
         bigsi.__main__, 'bloom', {'db': Graph.db,
                                   'ctx': 'bigsi/tests/data/test_kmers.ctx',
                                   'outfile': f})
     a = bitarray()
-    with open(f, 'rb') as inf:
+    with open('/tmp/test_kmers.bloom/test_kmers.bloom_0_100', 'rb') as inf:
         a.fromfile(inf)
     assert sum(a) > 0
 
-    os.remove(f)
+    os.remove('/tmp/test_kmers.bloom/test_kmers.bloom_0_100')
 
 
 def load_bloomfilter(f):
@@ -53,7 +54,7 @@ def test_build_cmd():
     Graph.close()
 
     response = hug.test.delete(bigsi.__main__, '', {'db': f})
-    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
+    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000, 'h':1})
     N = 3
     bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
     samples = []
@@ -69,11 +70,14 @@ def test_build_cmd():
     response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, "score": True})
     #
+    assert response.data.get(seq).get('results')
+
     assert response.data.get(seq).get('results') != {}
     # assert "score" in list(response.data.get(seq).get('results').values())[0]
     seq = 'GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG'
     response = hug.test.get(bigsi.__main__, 'search', {
                             'db': f, 'seq': seq, 'threshold': 0.1, "score": True})
+
     assert response.data.get(seq).get('results')
     assert "score" in list(response.data.get(seq).get('results').values())[0]
     response = hug.test.delete(
@@ -100,11 +104,11 @@ def test_build_cmd():
 
 # TODO, insert takes a bloom filters
 def test_insert_search_cmd():
-    Graph = BIGSI.create(m=100, force=True)
+    Graph = BIGSI.create(m=1000, force=True)
     f = Graph.db
     Graph.close()
     response = hug.test.delete(bigsi.__main__, '', {'db': f})
-    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000})
+    response = hug.test.post(bigsi.__main__, 'init', {'db': f, 'm': 1000, 'h':1})
     N = 3
     bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
     samples = []

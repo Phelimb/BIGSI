@@ -52,6 +52,7 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False, 
     LL = list(zip(bloomfilter_filepaths, samples))
     for i, v in enumerate(chunks(LL, chunk_size)):
         bloomfilter_filepaths = [x[0] for x in v]
+        print(bloomfilter_filepaths)
         samples = [x[1] for x in v]
         logger.info("Building index: %i/%i" % (i, num_chunks))
         if i == 0:

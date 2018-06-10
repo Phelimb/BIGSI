@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 from bitarray import bitarray
+from bigsi.cmds.build import load_bloomfilter
+
+# def load_bloomfilter(f):
+#     bloomfilter = bitarray()
+#     with open(f, 'rb') as inf:
+#         bloomfilter.fromfile(inf)
+#     return bloomfilter
 
 
-def load_bloomfilter(f):
-    bloomfilter = bitarray()
-    with open(f, 'rb') as inf:
-        bloomfilter.fromfile(inf)
-    return bloomfilter
-
-
-def insert(graph, bloomfilter, sample):
-    graph.insert(load_bloomfilter(bloomfilter), sample)
+def insert(graph, bloomfilter, sample, bf_range):
+    graph.insert(load_bloomfilter(bloomfilter, bf_range=bf_range), sample)
     return {'result': 'success'}
