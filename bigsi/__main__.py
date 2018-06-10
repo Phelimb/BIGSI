@@ -5,6 +5,7 @@ import os
 import argparse
 import redis
 import json
+import math
 sys.path.append(
     os.path.realpath(
         os.path.join(
@@ -115,19 +116,23 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post('/bloom')
-    def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None):
-        bigsi = BIGSI(db, mode="r")
+    def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None,N:int=1):
+        index = BIGSI(db, mode="r")
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
-        e.g. bigsi insert ERR1010211.ctx
+        e.g. index insert ERR1010211.ctx
 
         """
         if ctx:
-            kmers = extract_kmers_from_ctx(ctx, bigsi.kmer_size)
+            kmers = extract_kmers_from_ctx(ctx, index.kmer_size)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
+        batch_size=math.ceil(index.bloom_filter_size/N)
+        bf_range=range(0,index.bloom_filter_size,batch_size)
+        print(batch_size, bf_range)
+
         bf = bloom(outfile=outfile, kmers=kmers,
-                   kmer_file=seqfile, graph=bigsi)
+                   kmer_file=seqfile, graph=index,bf_range=bf_range, batch_size=batch_size)
 
     @hug.object.cli
     @hug.object.post('/build', output_format=hug.output_format.json)
@@ -136,7 +141,8 @@ class bigsi(object):
               samples: hug.types.multiple = [],
               max_memory: hug.types.text='',
               lowmem: hug.types.smart_boolean=False,
-              i=None,j=None):
+              i:int=1,N:int=1):
+        index=BIGSI(db)
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
@@ -145,15 +151,17 @@ class bigsi(object):
             max_memory_bytes = humanfriendly.parse_size(max_memory)
         else:
             max_memory_bytes = None
-        if (i is not None) and (j is not None):
-            bf_range=(i,j)
-        else:
-            bf_range=None
+        if i < 1:
+            raise ValueError("Batch index is one-based. Use 1 for first batch, not 0.")
+        batch_size=math.ceil(index.bloom_filter_size/N)
+        i=list(range(0,index.bloom_filter_size,batch_size))[i-1]
+        j=i+batch_size        
+        bf_range=(i,j)
         logger.debug(bf_range)
         logger.debug(i)
         logger.debug(j)
 
-        return build(index=BIGSI(db),
+        return build(index=index,
                      bloomfilter_filepaths=bloomfilters,
                      samples=samples,
                      max_memory=max_memory_bytes,

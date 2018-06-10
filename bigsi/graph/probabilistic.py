@@ -208,7 +208,7 @@ class BIGSI(object):
         for _iter, ba in enumerate(bigsi):
             if bf_range is not None:
                 i=int(bf_range[0])+_iter
-            if (_iter % int(_len/100))==0:
+            if (_iter % int(_len/min(100,_len)))==0:
                 logger.debug("Inserting row %i: %i%%" % (i, int(float(100*_iter)/_len)))            
                 graph.storage.write(batch)
                 batch = rocksdb.WriteBatch()

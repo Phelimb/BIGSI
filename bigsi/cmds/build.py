@@ -13,22 +13,17 @@ import numpy as np
 from bitarray import bitarray
 import math
 from bigsi.utils import chunks
+from bigsi.cmds.bloom import bloom_file_name
 import tempfile
 
 
 def load_bloomfilter(f, bf_range=None):
-       
-    bloomfilter = bitarray()
-
-    if bf_range:
-        with open(f, 'rb') as inf:
-            bloomfilter.fromfile(inf,math.ceil(float(bf_range[1])/8))        
-        i,j=bf_range
-        return bloomfilter[int(i):int(j)]
-    else:
-        with open(f, 'rb') as inf:
-            bloomfilter.fromfile(inf)        
-        return bloomfilter
+    ff=bloom_file_name(f,bf_range)
+    print(ff)
+    bloomfilter = bitarray()        
+    with open(ff, 'rb') as inf:
+        bloomfilter.fromfile(inf)        
+    return bloomfilter
 
 
 def get_required_bytes_per_bloomfilter(m):
