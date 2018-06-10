@@ -209,7 +209,7 @@ class BIGSI(object):
             if bf_range is not None:
                 i=int(bf_range[0])+_iter
             if (_iter % int(_len/100))==0:
-                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*_iter)/_len-1)))            
+                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*_iter)/_len)))            
                 graph.storage.write(batch)
                 batch = rocksdb.WriteBatch()
             batch.put(struct.pack("Q", i) , ba.tobytes())
