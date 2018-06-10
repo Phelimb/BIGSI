@@ -129,7 +129,6 @@ class bigsi(object):
             return "--kmers or --seqfile must be provided"
         batch_size=math.ceil(index.bloom_filter_size/N)
         bf_range=range(0,index.bloom_filter_size,batch_size)
-        print(batch_size, bf_range)
 
         bf = bloom(outfile=outfile, kmers=kmers,
                    kmer_file=seqfile, graph=index,bf_range=bf_range, batch_size=batch_size)

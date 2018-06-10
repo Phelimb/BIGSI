@@ -19,7 +19,7 @@ import tempfile
 
 def load_bloomfilter(f, bf_range=None):
     ff=bloom_file_name(f,bf_range)
-    print(ff)
+    logger.debug("Loading %s " % ff)
     bloomfilter = bitarray()        
     with open(ff, 'rb') as inf:
         bloomfilter.fromfile(inf)        

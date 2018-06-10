@@ -17,7 +17,9 @@ def transpose_low_mem(bitarrays):
 
     tbitarrays = []
     for ii in range(y):
-        tbitarrays.append(bitarray('0'*x))
+        ba=bitarray(x)
+        ba.setall(False)
+        tbitarrays.append(ba)
     for i in range(x):
         for j in range(y):
             tbitarrays[j][i] = bitarrays[i][j]
