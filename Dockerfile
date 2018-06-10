@@ -43,7 +43,9 @@ RUN set -x\
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
+RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y python3-pip && pip3 install --upgrade pip
+RUN apt-get install -y zlib1g zlib1g-dev
 ARG TRAVIS
 RUN echo $TRAVIS
 ## Install berkeleydb
@@ -57,7 +59,6 @@ RUN cd /tmp/db-"${BERKELEY_VERSION}"/build_unix && \
     ../dist/configure && make && make install
 
 # Upgrade your gcc to version at least 4.7 to get C++11 support. gflags snappy zlib bzip2
-RUN apt-get update -y && apt-get upgrade -y
 #RUN apt-get -y install -y build-essential checkinstall zlib1g zlib1g-dev libgflags-dev libsnappy-dev libbz2-dev cmake liblz4-dev
 #RUN git clone https://github.com/facebook/rocksdb.git && mkdir rocksdb/build
 #WORKDIR /usr/src/app/rocksdb

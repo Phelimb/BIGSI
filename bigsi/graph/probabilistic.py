@@ -8,6 +8,7 @@ import json
 import logging
 import pickle
 import shutil
+import struct
 import numpy as np
 from bigsi.graph.base import BaseGraph
 from bigsi.utils import seq_to_kmers
@@ -213,7 +214,7 @@ class BIGSI(object):
                 logger.debug("Inserting row %i: %i%%" % (i, int(float(100*i)/_len)))            
                 graph.storage.write(batch)
                 batch = rocksdb.WriteBatch()
-            batch.put((i).to_bytes(constants.INT_BYTES_SIZE, byteorder='big'), ba.tobytes())
+            batch.put(struct.pack("Q", i) , ba.tobytes())
         graph.storage.write(batch)
         self.sync()
 
