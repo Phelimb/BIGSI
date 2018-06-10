@@ -1,3 +1,11 @@
+venvinstall
+example-data
+roaring-test
+test-bigsi
+notebooks
+data
+rocksdb
+venv
 kpc2-test
 scripts/*
 venv*

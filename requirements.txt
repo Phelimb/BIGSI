@@ -4,7 +4,7 @@ git+git://github.com/Grokzen/redis-py-cluster@9f9baeced12b7abac53b3680ea3f5a1b16
 git+https://github.com/phelimb/pyseqfile
 cython
 numpy
-bsddb3
+#bsddb3
 python-rocksdb
 credis
 crc16

@@ -544,6 +544,10 @@ class BerkeleyDBStorage(BaseStorage):
     def sync(self):
         self.storage.sync()
 
+    def close(self):
+        self.sync()
+        self.storage.close()
+
 import rocksdb
 import shutil
 import gc
@@ -557,7 +561,6 @@ class RocksDBStorage(BaseStorage):
         self.db_file = filename
         self.mode = mode
         self.cachesize = cachesize
-        print(self.db_file)
         self.delete_lock_file()
         try:
             if mode=="r":
@@ -574,8 +577,7 @@ class RocksDBStorage(BaseStorage):
         lock_file=os.path.join(self.db_file,'LOCK')
         try:
             os.remove(lock_file)
-            print(lock_file)
-        except FileNotFoundError:
+        except (FileNotFoundError,NotADirectoryError,PermissionError):
             pass
         gc.collect()
 
@@ -591,7 +593,6 @@ class RocksDBStorage(BaseStorage):
         self.close()
 
     def close(self):
-        print("closing")
         self.delete_lock_file()
         del self.storage
         gc.collect() 

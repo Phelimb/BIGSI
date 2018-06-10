@@ -72,4 +72,4 @@ def build_tmp(bloomfilter_filepaths, samples, indext, i,lowmem=False):
     index = BIGSI.create(db=index_dir, k=indext.kmer_size,
                          m=indext.bloom_filter_size, h=indext.num_hashes, force=True)
     build_main(bloomfilter_filepaths, samples, index,lowmem=lowmem)
-    return BIGSI(index_dir)
+    return index

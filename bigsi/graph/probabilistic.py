@@ -7,6 +7,7 @@ from collections import Counter
 import json
 import logging
 import pickle
+import shutil
 import numpy as np
 from bigsi.graph.base import BaseGraph
 from bigsi.utils import seq_to_kmers
@@ -29,8 +30,8 @@ from bigsi.bytearray import ByteArray
 from bigsi.storage.graph.probabilistic import ProbabilisticRocksDBStorage as IndexStorage
 
 
-# from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
-from bigsi.storage import RocksDBStorage as MetaDataStorage
+from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
+# from bigsi.storage import RocksDBStorage as MetaDataStorage
 from bigsi.sketch import HyperLogLogJaccardIndex
 from bigsi.sketch import MinHashHashSet
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
@@ -39,6 +40,7 @@ from bigsi.scoring import Scorer
 from bitarray import bitarray
 import logging
 logging.basicConfig()
+import rocksdb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
@@ -203,13 +205,12 @@ class BIGSI(object):
         logger.debug("transpose")
         bigsi = transpose(bloomfilters,lowmem=lowmem)
         logger.debug("insert")
-        import rocksdb
         batch = rocksdb.WriteBatch()
         for i, ba in enumerate(bigsi):
             batch.put((i).to_bytes(4, byteorder='big'), ba.tobytes())
         graph.storage.write(batch)
         self.sync()
-        
+
     def merge(self, merged_bigsi):
         logger.info("Starting merge")
         # Check that they're the same length
@@ -499,7 +500,7 @@ class BIGSI(object):
     def delete_all(self):
         self.graph.delete_all()
         self.metadata.delete_all()
-        os.rmdir(self.db)
+        shutil.rmtree(self.db)
 
     def close(self):
         self.graph.close()

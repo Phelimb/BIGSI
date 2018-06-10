@@ -66,8 +66,8 @@ def test_build_chunks():
           bigsi2, max_memory=20)  # 20bytes
 
     # Reload and test equal
-    bigsi1 = BIGSI("./db-bigsi-no-max-mem/")
-    bigsi2 = BIGSI("./db-bigsi-max-mem")
+    # bigsi1 = BIGSI("./db-bigsi-no-max-mem/")
+    # bigsi2 = BIGSI("./db-bigsi-max-mem")
     for i in range(10):
         assert bigsi1.graph[i] == bigsi2.graph[i]
     for k, v in bigsi2.metadata.items():
