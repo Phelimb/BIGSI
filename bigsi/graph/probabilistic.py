@@ -206,7 +206,10 @@ class BIGSI(object):
         bigsi = transpose(bloomfilters,lowmem=lowmem)
         logger.debug("insert")
         batch = rocksdb.WriteBatch()
+        _len=len(bloomfilters[0])
         for i, ba in enumerate(bigsi):
+            if (i % int(_len/100))==0:
+                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*i)/_len)))            
             batch.put((i).to_bytes(4, byteorder='big'), ba.tobytes())
         graph.storage.write(batch)
         self.sync()
