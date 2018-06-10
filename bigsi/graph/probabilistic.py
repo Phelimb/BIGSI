@@ -122,9 +122,9 @@ class BIGSI(object):
                 raise OSError(
                     "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            self.bloom_filter_size = struct.unpack("Q",self.metadata['bloom_filter_size'])
-            self.num_hashes = struct.unpack("Q",self.metadata['num_hashes']) 
-            self.kmer_size = struct.unpack("Q",self.metadata['kmer_size'])
+            self.bloom_filter_size = struct.unpack("Q",self.metadata['bloom_filter_size'])[0]
+            self.num_hashes = struct.unpack("Q",self.metadata['num_hashes'])[0]
+            self.kmer_size = struct.unpack("Q",self.metadata['kmer_size'])[0]
             self.scorer = Scorer(self.get_num_colours())
             self.graph = IndexStorage(filename=self.graph_filename,
                                                         bloom_filter_size=self.bloom_filter_size,
@@ -493,7 +493,7 @@ class BIGSI(object):
             return colour
 
     def get_num_colours(self):
-        return struct.unpack("Q",self.metadata.get(b'\x00\x00\x00\x00'))
+        return struct.unpack("Q",self.metadata.get('num_colours', struct.pack("Q",0)))[0]
 
     def sync(self):
         self.graph.sync()

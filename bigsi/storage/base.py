@@ -478,7 +478,7 @@ class BerkeleyDBStorage(BaseStorage):
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v=struct.unpack("Q", self.get(key))
+        v=struct.unpack("Q", self.get(key))[0]
         v += 1
         self[key] = v
 
@@ -584,7 +584,7 @@ class RocksDBStorage(BaseStorage):
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v=struct.unpack("Q", self.get(key))
+        v=struct.unpack("Q", self.get(key))[0]
         v += 1
         self[key] = v
 
