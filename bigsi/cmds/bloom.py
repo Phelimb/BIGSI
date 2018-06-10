@@ -49,4 +49,4 @@ def bloom(outfile, kmers, kmer_file, graph, bf_range, batch_size):
         if not os.path.exists(directory):
             os.makedirs(directory)        
         with open(off, 'wb') as of:
-            bloomfilter.tofile(of)
+            bloomfilter[i:j].tofile(of)

@@ -162,6 +162,7 @@ class bigsi(object):
         if i < 1:
             raise ValueError("Batch index is one-based. Use 1 for first batch, not 0.")
         bf_range=bf_range_calc(index, i, N)
+        print(bf_range)
 
 
         return build(index=index,

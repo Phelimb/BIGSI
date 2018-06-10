@@ -1,0 +1,84 @@
+2018/06/10-21:23:50.957060 7fffa20dd380 RocksDB version: 5.13.3
+2018/06/10-21:23:50.957120 7fffa20dd380 Git sha rocksdb_build_git_sha:
+2018/06/10-21:23:50.957124 7fffa20dd380 Compile date Jun  8 2018
+2018/06/10-21:23:50.957125 7fffa20dd380 DB SUMMARY
+2018/06/10-21:23:50.957185 7fffa20dd380 CURRENT file:  CURRENT
+2018/06/10-21:23:50.957188 7fffa20dd380 IDENTITY file:  IDENTITY
+2018/06/10-21:23:50.957202 7fffa20dd380 MANIFEST file:  MANIFEST-000008 size: 100 Bytes
+2018/06/10-21:23:50.957205 7fffa20dd380 SST files in test-bigsi-2/graph dir, Total Num: 1, files: 000007.sst 
+2018/06/10-21:23:50.957206 7fffa20dd380 Write Ahead Log file in test-bigsi-2/graph: 000009.log size: 0 ; 
+2018/06/10-21:23:50.957209 7fffa20dd380                         Options.error_if_exists: 0
+2018/06/10-21:23:50.957210 7fffa20dd380                       Options.create_if_missing: 1
+2018/06/10-21:23:50.957211 7fffa20dd380                         Options.paranoid_checks: 1
+2018/06/10-21:23:50.957212 7fffa20dd380                                     Options.env: 0x10cbc9d18
+2018/06/10-21:23:50.957214 7fffa20dd380                                Options.info_log: 0x7f8328e67400
+2018/06/10-21:23:50.957215 7fffa20dd380                Options.max_file_opening_threads: 16
+2018/06/10-21:23:50.957216 7fffa20dd380                              Options.statistics: 0x0
+2018/06/10-21:23:50.957217 7fffa20dd380                               Options.use_fsync: 0
+2018/06/10-21:23:50.957218 7fffa20dd380                       Options.max_log_file_size: 0
+2018/06/10-21:23:50.957219 7fffa20dd380                  Options.max_manifest_file_size: 18446744073709551615
+2018/06/10-21:23:50.957221 7fffa20dd380                   Options.log_file_time_to_roll: 0
+2018/06/10-21:23:50.957222 7fffa20dd380                       Options.keep_log_file_num: 1000
+2018/06/10-21:23:50.957223 7fffa20dd380                    Options.recycle_log_file_num: 0
+2018/06/10-21:23:50.957224 7fffa20dd380                         Options.allow_fallocate: 1
+2018/06/10-21:23:50.957225 7fffa20dd380                        Options.allow_mmap_reads: 0
+2018/06/10-21:23:50.957226 7fffa20dd380                       Options.allow_mmap_writes: 0
+2018/06/10-21:23:50.957227 7fffa20dd380                        Options.use_direct_reads: 0
+2018/06/10-21:23:50.957228 7fffa20dd380                        Options.use_direct_io_for_flush_and_compaction: 0
+2018/06/10-21:23:50.957230 7fffa20dd380          Options.create_missing_column_families: 0
+2018/06/10-21:23:50.957231 7fffa20dd380                              Options.db_log_dir: 
+2018/06/10-21:23:50.957232 7fffa20dd380                                 Options.wal_dir: test-bigsi-2/graph
+2018/06/10-21:23:50.957233 7fffa20dd380                Options.table_cache_numshardbits: 6
+2018/06/10-21:23:50.957234 7fffa20dd380                      Options.max_subcompactions: 1
+2018/06/10-21:23:50.957235 7fffa20dd380                  Options.max_background_flushes: -1
+2018/06/10-21:23:50.957236 7fffa20dd380                         Options.WAL_ttl_seconds: 0
+2018/06/10-21:23:50.957238 7fffa20dd380                       Options.WAL_size_limit_MB: 0
+2018/06/10-21:23:50.957239 7fffa20dd380             Options.manifest_preallocation_size: 4194304
+2018/06/10-21:23:50.957240 7fffa20dd380                     Options.is_fd_close_on_exec: 1
+2018/06/10-21:23:50.957241 7fffa20dd380                   Options.advise_random_on_open: 1
+2018/06/10-21:23:50.957242 7fffa20dd380                    Options.db_write_buffer_size: 0
+2018/06/10-21:23:50.957243 7fffa20dd380                    Options.write_buffer_manager: 0x7f8328e9e930
+2018/06/10-21:23:50.957244 7fffa20dd380         Options.access_hint_on_compaction_start: 1
+2018/06/10-21:23:50.957254 7fffa20dd380  Options.new_table_reader_for_compaction_inputs: 0
+2018/06/10-21:23:50.957256 7fffa20dd380           Options.random_access_max_buffer_size: 1048576
+2018/06/10-21:23:50.957257 7fffa20dd380                      Options.use_adaptive_mutex: 0
+2018/06/10-21:23:50.957258 7fffa20dd380                            Options.rate_limiter: 0x0
+2018/06/10-21:23:50.957259 7fffa20dd380     Options.sst_file_manager.rate_bytes_per_sec: 0
+2018/06/10-21:23:50.957260 7fffa20dd380                       Options.wal_recovery_mode: 2
+2018/06/10-21:23:50.957261 7fffa20dd380                  Options.enable_thread_tracking: 0
+2018/06/10-21:23:50.957262 7fffa20dd380                  Options.enable_pipelined_write: 0
+2018/06/10-21:23:50.957264 7fffa20dd380         Options.allow_concurrent_memtable_write: 1
+2018/06/10-21:23:50.957265 7fffa20dd380      Options.enable_write_thread_adaptive_yield: 1
+2018/06/10-21:23:50.957266 7fffa20dd380             Options.write_thread_max_yield_usec: 100
+2018/06/10-21:23:50.957267 7fffa20dd380            Options.write_thread_slow_yield_usec: 3
+2018/06/10-21:23:50.957268 7fffa20dd380                               Options.row_cache: None
+2018/06/10-21:23:50.957269 7fffa20dd380                              Options.wal_filter: None
+2018/06/10-21:23:50.957270 7fffa20dd380             Options.avoid_flush_during_recovery: 0
+2018/06/10-21:23:50.957271 7fffa20dd380             Options.allow_ingest_behind: 0
+2018/06/10-21:23:50.957272 7fffa20dd380             Options.preserve_deletes: 0
+2018/06/10-21:23:50.957274 7fffa20dd380             Options.two_write_queues: 0
+2018/06/10-21:23:50.957275 7fffa20dd380             Options.manual_wal_flush: 0
+2018/06/10-21:23:50.957276 7fffa20dd380             Options.max_background_jobs: 2
+2018/06/10-21:23:50.957277 7fffa20dd380             Options.max_background_compactions: -1
+2018/06/10-21:23:50.957278 7fffa20dd380             Options.avoid_flush_during_shutdown: 0
+2018/06/10-21:23:50.957279 7fffa20dd380           Options.writable_file_max_buffer_size: 1048576
+2018/06/10-21:23:50.957280 7fffa20dd380             Options.delayed_write_rate : 16777216
+2018/06/10-21:23:50.957282 7fffa20dd380             Options.max_total_wal_size: 0
+2018/06/10-21:23:50.957283 7fffa20dd380             Options.delete_obsolete_files_period_micros: 21600000000
+2018/06/10-21:23:50.957284 7fffa20dd380                   Options.stats_dump_period_sec: 600
+2018/06/10-21:23:50.957285 7fffa20dd380                          Options.max_open_files: -1
+2018/06/10-21:23:50.957286 7fffa20dd380                          Options.bytes_per_sync: 0
+2018/06/10-21:23:50.957287 7fffa20dd380                      Options.wal_bytes_per_sync: 0
+2018/06/10-21:23:50.957288 7fffa20dd380       Options.compaction_readahead_size: 0
+2018/06/10-21:23:50.957290 7fffa20dd380 Compression algorithms supported:
+2018/06/10-21:23:50.957291 7fffa20dd380 	kZSTD supported: 0
+2018/06/10-21:23:50.957293 7fffa20dd380 	kZlibCompression supported: 1
+2018/06/10-21:23:50.957294 7fffa20dd380 	kXpressCompression supported: 0
+2018/06/10-21:23:50.957295 7fffa20dd380 	kSnappyCompression supported: 1
+2018/06/10-21:23:50.957296 7fffa20dd380 	kZSTDNotFinalCompression supported: 0
+2018/06/10-21:23:50.957297 7fffa20dd380 	kLZ4HCCompression supported: 1
+2018/06/10-21:23:50.957299 7fffa20dd380 	kLZ4Compression supported: 1
+2018/06/10-21:23:50.957300 7fffa20dd380 	kBZip2Compression supported: 1
+2018/06/10-21:23:50.957301 7fffa20dd380 Fast CRC32 supported: Not supported on x86
+2018/06/10-21:23:50.957413 7fffa20dd380 [db/db_impl.cc:252] Shutdown: canceling all background work
+2018/06/10-21:23:50.957431 7fffa20dd380 [db/db_impl.cc:395] Shutdown complete

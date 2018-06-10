@@ -218,6 +218,21 @@ class BIGSI(object):
         graph.storage.write(batch)
         self.sync()
 
+    def row_merge(self, merged_bigsis):
+        for bigsi in merged_bigsis:
+            batch = rocksdb.WriteBatch()
+            cnt=0
+            for k,v in bigsi.graph.items():
+                if v:
+                    batch.put(struct.pack("Q", k),v)
+                    cnt+=1
+                ## Write every 1000 keys
+                if cnt >= 1000:
+                    self.graph.storage.write(batch) 
+                    batch = rocksdb.WriteBatch()
+                    cnt=0
+            self.graph.storage.write(batch)        
+
     def merge(self, merged_bigsi):
         logger.info("Starting merge")
         # Check that they're the same length

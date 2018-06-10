@@ -23,7 +23,7 @@ def load_bloomfilter(f, bf_range=None):
     bloomfilter = bitarray()        
     with open(ff, 'rb') as inf:
         bloomfilter.fromfile(inf)        
-    return bloomfilter
+    return bloomfilter[0:bf_range[1]-bf_range[0]]
 
 
 def get_required_bytes_per_bloomfilter(m):
@@ -52,7 +52,7 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False, 
     LL = list(zip(bloomfilter_filepaths, samples))
     for i, v in enumerate(chunks(LL, chunk_size)):
         bloomfilter_filepaths = [x[0] for x in v]
-        print(bloomfilter_filepaths)
+        # print(bloomfilter_filepaths)
         samples = [x[1] for x in v]
         logger.info("Building index: %i/%i" % (i, num_chunks))
         if i == 0:
