@@ -22,7 +22,6 @@ def load_bloomfilter(f, bf_range=None):
     with open(f, 'rb') as inf:
         bloomfilter.fromfile(inf)
     if bf_range:
-        print(bf_range)
         i,j=bf_range
         return bloomfilter[int(i):int(j)]
     else:
