@@ -38,7 +38,6 @@ from bigsi.sketch import MinHashHashSet
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.matrix import transpose
 from bigsi.scoring import Scorer
-from bigsi.graph import constants
 from bitarray import bitarray
 import logging
 logging.basicConfig()
@@ -123,11 +122,9 @@ class BIGSI(object):
                 raise OSError(
                     "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            self.bloom_filter_size = int.from_bytes(
-                self.metadata['bloom_filter_size'], 'big')
-            self.num_hashes = int.from_bytes(
-                self.metadata['num_hashes'], 'big')
-            self.kmer_size = int.from_bytes(self.metadata['kmer_size'], 'big')
+            self.bloom_filter_size = struct.unpack("Q",self.metadata['bloom_filter_size'])
+            self.num_hashes = struct.unpack("Q",self.metadata['num_hashes']) 
+            self.kmer_size = struct.unpack("Q",self.metadata['kmer_size'])
             self.scorer = Scorer(self.get_num_colours())
             self.graph = IndexStorage(filename=self.graph_filename,
                                                         bloom_filter_size=self.bloom_filter_size,
@@ -172,10 +169,9 @@ class BIGSI(object):
             logger.info("Initialising BIGSI at %s" % db)
             metadata_filepath = os.path.join(db, "metadata")
             metadata = MetaDataStorage(filename=metadata_filepath, mode="c")
-            metadata["bloom_filter_size"] = (
-                int(m)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
-            metadata["num_hashes"] = (int(h)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
-            metadata["kmer_size"] = (int(k)).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            metadata["bloom_filter_size"] = struct.pack("Q", int(m))
+            metadata["num_hashes"] = struct.pack("Q", int(h))
+            metadata["kmer_size"] = struct.pack("Q", int(k))
             metadata.sync()
             return cls(db=db, cachesize=cachesize, mode="c",metadata=metadata)
     ## Bdb
@@ -497,8 +493,7 @@ class BIGSI(object):
             return colour
 
     def get_num_colours(self):
-        return int.from_bytes(self.metadata.get(
-            'num_colours', b'\x00\x00\x00\x00'), 'big')
+        return struct.unpack("Q",self.metadata.get(b'\x00\x00\x00\x00')
 
     def sync(self):
         self.graph.sync()

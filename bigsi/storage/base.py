@@ -5,12 +5,12 @@ import os
 from bigsi.utils import hash_key
 from bigsi.utils import chunks
 from bigsi.bitvector import BitArray
-from bigsi.graph import constants
 import shutil
 import logging
 import time
 import crc16
 import math
+import struct
 # from redis_protocol import encode as redis_encode
 # from redis.connection import Connection
 logging.basicConfig(level=logging.DEBUG)
@@ -357,7 +357,7 @@ class RedisHashStorage(BaseRedisStorage):
         if isinstance(key, str):
             hkey = str.encode(key)
         elif isinstance(key, int):
-            hkey = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            hkey = struct.pack("Q", key)
         name = hash_key(hkey)
         return name
 
@@ -478,8 +478,7 @@ class BerkeleyDBStorage(BaseStorage):
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v = int.from_bytes(
-            self.get(key), 'big')
+        v=struct.unpack("Q", self.get(key))
         v += 1
         self[key] = v
 
@@ -500,11 +499,11 @@ class BerkeleyDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            key = struct.pack("Q", key)
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
-            val = (val).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            val = struct.pack("Q", val)
         self.storage[key] = val
 
     def __getitem__(self, key):
@@ -512,7 +511,7 @@ class BerkeleyDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            key = struct.pack("Q", key)
         v = self.storage[key]
         if self.decode:
             return v.decode(self.decode)
@@ -585,8 +584,7 @@ class RocksDBStorage(BaseStorage):
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v = int.from_bytes(
-            self.get(key), 'big')
+        v=struct.unpack("Q", self.get(key))
         v += 1
         self[key] = v
 
@@ -612,11 +610,11 @@ class RocksDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            key = struct.pack("Q", key)
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
-            val = (val).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            val = struct.pack("Q", val)
         self.storage.put(key,val)
 
     def __getitem__(self, key):
@@ -624,7 +622,7 @@ class RocksDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = (key).to_bytes(constants.INT_BYTES_SIZE, byteorder='big')
+            key = struct.pack("Q", key)
         v = self.storage.get(key)
         if self.decode:
             return v.decode(self.decode)

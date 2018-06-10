@@ -117,7 +117,7 @@ class ByteArray(object):
         s = self.sparse_byte_length
         _bytes = self.bitstring.tobytes()
         assert self.is_sparse()
-        return [int.from_bytes(_bytes[i*s:(i+1)*s], byteorder='big') for i in range(0, int(len(_bytes)/s))]
+        return [struct.unpack("Q", _bytes[i*s:(i+1)*s]) for i in range(0, int(len(_bytes)/s))]
 
     def setbit(self, pos, i):
         if self.is_sparse():
