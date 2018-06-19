@@ -69,7 +69,7 @@ DEFUALT_DB_DIRECTORY = "./db-bigsi/"
 import math
 from multiprocessing import Pool
 bone = (1).to_bytes(1, byteorder='big')
-
+MIN_UNIQUE_KMERS_IN_QUERY=50
 
 def unpack_and_sum(bas):
     c = 0
@@ -288,7 +288,18 @@ class BIGSI(object):
 
     def search(self, seq, threshold=1, score=False):
         assert threshold <= 1
+        self._validate_search_query(seq)
         return self._search(self.seq_to_kmers(seq), threshold=threshold, score=score)
+
+    def _validate_search_query(self, seq):
+        kmers=set()
+        for k in self.seq_to_kmers(seq):
+            kmers.add(k)
+            if len(kmers)>MIN_UNIQUE_KMERS_IN_QUERY:
+                return True
+        else:
+            logger.warning("Query string should contain at least %i unique kmers. Your query contained %i unique kmers, and as a result the false discovery rate may be high. In future this will become an error." % (MIN_UNIQUE_KMERS_IN_QUERY,len(kmers)))
+
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
