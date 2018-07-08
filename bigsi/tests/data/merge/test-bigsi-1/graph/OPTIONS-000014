@@ -96,7 +96,7 @@
   compaction_options_fifo={allow_compaction=false;ttl=0;max_table_files_size=1073741824;}
   inplace_update_num_locks=10000
   level0_file_num_compaction_trigger=4
-  compression=kSnappyCompression
+  compression=kNoCompression
   level0_stop_writes_trigger=36
   num_levels=7
   table_factory=BlockBasedTable

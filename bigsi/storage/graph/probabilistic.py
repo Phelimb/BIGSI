@@ -173,7 +173,6 @@ class BaseProbabilisticStorage(BaseStorage):
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
         rows = self.get_rows(indexes)
-        print(rows)
         return self.bloomfilter._binary_and(rows)
 
     def get_bloom_filter(self, colour):
@@ -185,14 +184,17 @@ class BaseProbabilisticStorage(BaseStorage):
     def get_row(self, index):
         b = BitArray()
         _row_bytes = self.get(index, b'')
-        # if not _row_bytes:
-        #     logger.warning(
-        #         "There is no row %i. Run `bigsi init` and `bigsi build` before `insert` or `search`. Creating row regardless." % index)
         b.frombytes(_row_bytes)
         return b
 
     def get_rows(self, indexes):
-        return [self.get_row(i) for i in indexes]
+        vals=self.multiget(indexes)
+        rows=[]
+        for v in vals:
+            b = BitArray()
+            b.frombytes(v)
+            rows.append(b)
+        return rows
 
     def set_row(self, index, b):
         self[index] = b.tobytes()

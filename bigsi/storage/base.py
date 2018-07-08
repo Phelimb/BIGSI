@@ -607,28 +607,37 @@ class RocksDBStorage(BaseStorage):
     def count_keys(self):
         return len(self.keys())
 
-    def __setitem__(self, key, val):
+    def convert_key(self, key):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = struct.pack("Q", key)
+            key = struct.pack("Q", key)  
+        return key      
+
+    def convert_val(self, val):
         if isinstance(val, str):
             val = str.encode(val)
         elif isinstance(val, int):
             val = struct.pack("Q", val)
+        return val
+
+    def __setitem__(self, key, val):
+        key = self.convert_key(key)
         self.storage.put(key,val)
 
     def __getitem__(self, key):
-        # print("key", key)
-        if isinstance(key, str):
-            key = str.encode(key)
-        elif isinstance(key, int):
-            key = struct.pack("Q", key)
+        key=self.convert_key(key)
         v = self.storage.get(key)
         if self.decode:
             return v.decode(self.decode)
         else:
             return v
+
+    def multiget(self, keys):
+        keys = [self.convert_key(k) for k in keys]
+        vals= self.storage.multi_get(keys)
+        return vals
+
 
     def __delitem__(self, key):
         if isinstance(key, str):
