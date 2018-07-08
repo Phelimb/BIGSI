@@ -568,7 +568,7 @@ class RocksDBStorage(BaseStorage):
             else:
                 create_if_missing=True
             self.storage  = rocksdb.DB(self.db_file, rocksdb.Options(create_if_missing=create_if_missing,
-                compression=rocksdb.CompressionType.no_compression))
+                compression=rocksdb.CompressionType.lz4_compression))
         except AttributeError:
             raise ValueError(
                 "Please install rocksdb to use rocks DB storage")
