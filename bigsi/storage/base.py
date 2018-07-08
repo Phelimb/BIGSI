@@ -635,7 +635,8 @@ class RocksDBStorage(BaseStorage):
 
     def multiget(self, keys):
         keys = [self.convert_key(k) for k in keys]
-        vals= self.storage.multi_get(keys)
+        vals_d= self.storage.multi_get(keys)
+        vals = [vals_d[k] for k in keys]
         return vals
 
 

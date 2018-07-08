@@ -53,7 +53,7 @@ def convert_kmers_to_canonical(func):
     # and it's reverse complement
     @wraps(func)
     def convert_kmers_inner(self, kmers, *args, **kwargs):
-        logger.debug("Converting kmers to canonical")
+        # logger.debug("Converting kmers to canonical")
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
         if not kwargs.get('canonical'):
