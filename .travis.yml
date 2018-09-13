@@ -1,5 +1,8 @@
 sudo: required  
 cache: pip
+env:
+  global:
+  - COMMIT=${TRAVIS_COMMIT::7}
 services:
   - docker
 before_install:
@@ -11,7 +14,9 @@ after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker push phelimb/bigsi;
     else
+    docker tag phelimb/bigsi:latest phelimb/bigsi:"$TRAVIS_BRANCH-$COMMIT";
+    docker push phelimb/bigsi:"$TRAVIS_BRANCH-$COMMIT";
     docker tag phelimb/bigsi:latest phelimb/bigsi:"$TRAVIS_BRANCH";
-    docker push phelimb/bigsi:"$TRAVIS_BRANCH";
+    docker push phelimb/bigsi:"$TRAVIS_BRANCH";    
     fi
 
