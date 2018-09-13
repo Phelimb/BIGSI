@@ -7,8 +7,11 @@ before_install:
 script:
   - sudo docker run phelimb/bigsi /bin/sh -c "TRAVIS=true py.test -s -vv --cov=bigsi --cov-config .coveragerc bigsi/tests/"
 after_success:
+    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";  
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push phelimb/bigsi;
+    else
+    docker tag phelimb/bigsi:latest phelimb/bigsi:"$TRAVIS_BRANCH";
+    docker push phelimb/bigsi:"$TRAVIS_BRANCH";
     fi
 
