@@ -567,7 +567,10 @@ class RocksDBStorage(BaseStorage):
                 create_if_missing=False
             else:
                 create_if_missing=True
-            self.storage  = rocksdb.DB(self.db_file, rocksdb.Options(create_if_missing=create_if_missing,
+            self.storage  = rocksdb.DB(self.db_file,
+                 rocksdb.Options(create_if_missing=create_if_missing,
+                    target_file_size_multiplier=2,
+                    max_open_files=5000,
                 compression=rocksdb.CompressionType.no_compression))
         except AttributeError:
             raise ValueError(
