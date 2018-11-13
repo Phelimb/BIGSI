@@ -19,5 +19,6 @@ from bigsi.cmds.build import load_bloomfilter
 
 
 def insert(graph, bloomfilter, sample, bf_range):
+	## To do add warning that build is normally preferable
     graph.insert(load_bloomfilter(bloomfilter, bf_range=bf_range), sample)
     return {'result': 'success'}
