@@ -25,39 +25,20 @@ from bigsi.graph import BIGSI
 
 BFSIZE = int(os.environ.get("BFSIZE", 25000000))
 NUM_HASHES = int(os.environ.get("NUM_HASHES", 3))
-CREDIS = bool(os.environ.get("CREDIS", True))
-CELERY = bool(int(os.environ.get("CELERY", 0)))
-# if CREDIS:
-#     logger.info(
-#         "You're running with credis.")
-# if CELERY:
-#     logger.info(
-#         "You're running using celery background process. Please make sure celery is running in the background otherwise tasks may hang indefinitely ")
-CONN_CONFIG = []
-redis_envs = [env for env in os.environ if "REDIS" in env]
-if len(redis_envs) == 0:
-    CONN_CONFIG = [("localhost", 7000, 2)]
-else:
-    for i in range(int(len(redis_envs) / 2)):
-        hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
-        port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
-        CONN_CONFIG.append((hostname, port, 2))
+
 from bigsi.cmds.insert import insert
 from bigsi.cmds.search import search
 
-# from bigsi.cmds.stats import stats
+
 from bigsi.cmds.samples import samples
 
-# from bigsi.cmds.dump import dump
-# from bigsi.cmds.load import load
+
 from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
-from bigsi.cmds.rowjoin import rowjoin
 
-# from bigsi.cmds.bitcount import bitcount
-# from bigsi.cmds.jaccard_index import jaccard_index
+
 from bigsi.utils.cortex import GraphReader
 from bigsi.utils import seq_to_kmers
 import cProfile

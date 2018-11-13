@@ -1,36 +1,12 @@
-import sys
-import redis
-import math
-import uuid
-import time
-from collections import Counter
-import json
-import logging
 import pickle
 import shutil
 import struct
 import numpy as np
 from bigsi.utils import seq_to_kmers
 
-from bigsi.utils import min_lexo
-from bigsi.utils import bits
-from bigsi.utils import kmer_to_bits
-from bigsi.utils import bits_to_kmer
-from bigsi.utils import kmer_to_bytes
-from bigsi.utils import hash_key
-from bigsi.version import __version__
-
-
 from bigsi.decorators import convert_kmers_to_canonical
-
-
-# from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage as IndexStorage
 from bigsi.storage.graph.probabilistic import ProbabilisticRocksDBStorage as IndexStorage
-
-
 from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
-
-# from bigsi.storage import RocksDBStorage as MetaDataStorage
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.matrix import transpose
 from bigsi.scoring import Scorer
@@ -39,6 +15,7 @@ import logging
 
 logging.basicConfig()
 import rocksdb
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
