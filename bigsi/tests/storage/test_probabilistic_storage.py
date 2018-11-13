@@ -18,46 +18,22 @@ import pytest
 
 
 def test_create_and_delete():
-    storage = ProbabilisticRocksDBStorage(filename="d2b",
-                                             bloom_filter_size=100,
-                                             num_hashes=1,
-                                             mode="c")
+    storage = ProbabilisticRocksDBStorage(filename="d2b", bloom_filter_size=100, num_hashes=1, mode="c")
     storage.delete_all()
     with pytest.raises(Exception):
-        ProbabilisticRocksDBStorage(filename="d2b",
-                                             bloom_filter_size=100,
-                                             num_hashes=1,
-                                             mode="r")
-    storage = ProbabilisticRocksDBStorage(filename="d2b",
-                                             bloom_filter_size=100,
-                                             num_hashes=1,
-                                             mode="c")    
+        ProbabilisticRocksDBStorage(filename="d2b", bloom_filter_size=100, num_hashes=1, mode="r")
+    storage = ProbabilisticRocksDBStorage(filename="d2b", bloom_filter_size=100, num_hashes=1, mode="c")
     storage.delete_all()
+
 
 def test_add_contains_1():
-    colour=1
-    element="AAAAAA"
-    bloom_filter_size=100
-    num_hashes=1
-    storage = ProbabilisticRocksDBStorage(filename="db",
-                                             bloom_filter_size=bloom_filter_size,
-                                             num_hashes=num_hashes,
-                                             mode="c")
-    storage.bloom_filter_size = bloom_filter_size
-    storage.num_hashes = num_hashes
-
-    storage.bloomfilter.add(element, colour)
-    assert storage.bloomfilter.contains(element, colour)
-    storage.delete_all()
-
-@given(colour=ST_SAMPLE_COLOUR, element=ST_KMER,
-       bloom_filter_size=ST_BLOOM_FILTER_SIZE,
-       num_hashes=ST_NUM_HASHES)
-def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
-    storage = ProbabilisticRocksDBStorage(filename="db",
-                                             bloom_filter_size=bloom_filter_size,
-                                             num_hashes=num_hashes,
-                                             mode="c")
+    colour = 1
+    element = "AAAAAA"
+    bloom_filter_size = 100
+    num_hashes = 1
+    storage = ProbabilisticRocksDBStorage(
+        filename="db", bloom_filter_size=bloom_filter_size, num_hashes=num_hashes, mode="c"
+    )
     storage.bloom_filter_size = bloom_filter_size
     storage.num_hashes = num_hashes
 
@@ -66,14 +42,24 @@ def test_add_contains(colour, element, bloom_filter_size,  num_hashes):
     storage.delete_all()
 
 
-@given(colour=ST_SAMPLE_COLOUR, elements=ST_SEQ,
-       bloom_filter_size=ST_BLOOM_FILTER_SIZE,
-       num_hashes=ST_NUM_HASHES)
-def test_update_contains(colour, elements, bloom_filter_size,  num_hashes):
-    storage = ProbabilisticBerkeleyDBStorage(filename="db",
-                                             bloom_filter_size=bloom_filter_size,
-                                             num_hashes=num_hashes,
-                                             mode="c")
+@given(colour=ST_SAMPLE_COLOUR, element=ST_KMER, bloom_filter_size=ST_BLOOM_FILTER_SIZE, num_hashes=ST_NUM_HASHES)
+def test_add_contains(colour, element, bloom_filter_size, num_hashes):
+    storage = ProbabilisticRocksDBStorage(
+        filename="db", bloom_filter_size=bloom_filter_size, num_hashes=num_hashes, mode="c"
+    )
+    storage.bloom_filter_size = bloom_filter_size
+    storage.num_hashes = num_hashes
+
+    storage.bloomfilter.add(element, colour)
+    assert storage.bloomfilter.contains(element, colour)
+    storage.delete_all()
+
+
+@given(colour=ST_SAMPLE_COLOUR, elements=ST_SEQ, bloom_filter_size=ST_BLOOM_FILTER_SIZE, num_hashes=ST_NUM_HASHES)
+def test_update_contains(colour, elements, bloom_filter_size, num_hashes):
+    storage = ProbabilisticBerkeleyDBStorage(
+        filename="db", bloom_filter_size=bloom_filter_size, num_hashes=num_hashes, mode="c"
+    )
 
     elements = list(seq_to_kmers(elements, 31))
     storage.bloom_filter_size = bloom_filter_size
@@ -83,6 +69,7 @@ def test_update_contains(colour, elements, bloom_filter_size,  num_hashes):
     for k in elements:
         assert storage.bloomfilter.contains(k, colour)
     storage.delete_all()
+
 
 # TODO fix this test. Not sure if we should allow updates without
 # appending a new column

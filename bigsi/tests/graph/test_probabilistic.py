@@ -11,7 +11,6 @@ from hypothesis import given
 from hypothesis import example
 from hypothesis import settings
 import hypothesis.strategies as st
-from bigsi.bytearray import ByteArray
 import tempfile
 import os
 import redis

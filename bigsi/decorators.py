@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
+
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
@@ -39,11 +40,12 @@ def convert_kmers(func):
     def convert_kmers_inner(self, kmers, *args, **kwargs):
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
-        if not kwargs.get('min_lexo'):
+        if not kwargs.get("min_lexo"):
             # It is a list of kmers or a single kmer?
             kmers = convert_func(kmers)
         # kmers = kmers_or_bytes(self, kmers)
         return func(self, kmers, *args, **kwargs)
+
     return convert_kmers_inner
 
 
@@ -56,8 +58,9 @@ def convert_kmers_to_canonical(func):
         # logger.debug("Converting kmers to canonical")
         convert_func = choose_convert_func(kmers)
         # Are the kmers already converted
-        if not kwargs.get('canonical'):
+        if not kwargs.get("canonical"):
             # It is a list of kmers or a single kmer?
             kmers = convert_func(kmers)
         return func(self, kmers, *args, **kwargs)
+
     return convert_kmers_inner

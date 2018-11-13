@@ -4,8 +4,10 @@ from bigsi.graph import BIGSI as Graph
 import sys
 import logging
 import json
+
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
+
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 import numpy as np
@@ -14,6 +16,7 @@ from tempfile import mkdtemp
 
 import os
 import psutil
+
 process = psutil.Process(os.getpid())
 import time
 
@@ -36,7 +39,7 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, force=False):
                 graph._add_sample(s)
             except ValueError as e:
                 if force:
-                    graph._add_sample(s+str(i))
+                    graph._add_sample(s + str(i))
     for batch in indexes:
         logger.info("batch %i of %i" % (batch, max(indexes)))
         ugs = []
@@ -45,8 +48,8 @@ def merge(graph, uncompressed_graphs, indexes, cols_list, force=False):
             ugs.append(ug)
         X = np.concatenate(ugs, axis=1)
         for i, row in enumerate(X):
-            j = i + batch*10000
+            j = i + batch * 10000
             ba_out = bitarray(row.tolist())
             graph.graph[j] = ba_out.tobytes()
     graph.graph.storage.sync()
-    return {'graph': graph.graph.db_file, 'cols': cols}
+    return {"graph": graph.graph.db_file, "cols": cols}

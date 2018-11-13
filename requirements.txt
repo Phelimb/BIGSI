@@ -17,3 +17,5 @@ codecov
 pytest-cov
 psutil
 humanfriendly
+# dev
+black

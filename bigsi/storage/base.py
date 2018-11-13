@@ -1,6 +1,7 @@
 import redis
 import sys
 import os
+
 # from rediscluster import StrictRedisCluster
 from bigsi.utils import hash_key
 from bigsi.utils import chunks
@@ -11,12 +12,14 @@ import time
 import crc16
 import math
 import struct
+
 # from redis_protocol import encode as redis_encode
 # from redis.connection import Connection
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
+
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 try:
@@ -29,7 +32,6 @@ from credis import Connection
 
 
 class BaseStorage(object):
-
     def __init__(self, config):
         """ An abstract class used as an adapter for storages. """
         raise NotImplementedError
@@ -111,7 +113,6 @@ class BaseStorage(object):
 
 
 class BaseRedisStorage(BaseStorage):
-
     def __init__(self):
         pass
 
@@ -186,8 +187,7 @@ class BaseRedisStorage(BaseStorage):
 
 
 def proto(line):
-    result = "*%s\r\n$%s\r\n%s\r\n" % (str(len(line)),
-                                       str(len(line[0])), line[0])
+    result = "*%s\r\n$%s\r\n%s\r\n" % (str(len(line)), str(len(line[0])), line[0])
     for arg in line[1:]:
         result += "$%s\r\n%s\r\n" % (str(len(arg)), arg)
     return result
@@ -316,15 +316,15 @@ def proto(line):
 
 
 class RedisHashStorage(BaseRedisStorage):
-
     def __init__(self, config):
         super().__init__()
         if not redis:
             raise ImportError("redis-py is required to use Redis as storage.")
-        self.name = 'redis'
+        self.name = "redis"
         self.redis_cluster = True
-        self.storage = RedisCluster([redis.StrictRedis(
-            host=host, port=port, db=int(db)) for host, port, db in config['conn']])
+        self.storage = RedisCluster(
+            [redis.StrictRedis(host=host, port=port, db=int(db)) for host, port, db in config["conn"]]
+        )
 
     def __setitem__(self, key, val):
         name = self.get_name(key)
@@ -339,8 +339,7 @@ class RedisHashStorage(BaseRedisStorage):
         for conn, names_hashes in hk.items():
             names = [k for k in names_hashes.keys()]
             hashes = [hs for hs in names_hashes.values()]
-            _batch_insert_prob_redis(
-                conn, names, hashes, colour)
+            _batch_insert_prob_redis(conn, names, hashes, colour)
 
     def _group_kmers_by_hashkey_and_connection(self, all_hashes):
         d = dict((el, {}) for el in self.storage.connections)
@@ -364,8 +363,7 @@ class RedisHashStorage(BaseRedisStorage):
 
 def get_vals(r, names, list_of_list_kmers):
     pipe2 = r.pipeline()
-    [pipe2.hmget(name, kmers)
-     for name, kmers in zip(names, list_of_list_kmers)]
+    [pipe2.hmget(name, kmers) for name, kmers in zip(names, list_of_list_kmers)]
     vals = pipe2.execute()
     return vals
 
@@ -381,7 +379,7 @@ def _batch_insert_prob_redis(conn, names, all_hashes, colour, count=0):
                 for val, h in zip(values, hs):
                     ba = BitArray()
                     if val is None:
-                        val = b''
+                        val = b""
                     ba.frombytes(val)
                     ba.setbit(colour, 1)
                     pipe.hset(name, h, ba.tobytes())
@@ -389,10 +387,9 @@ def _batch_insert_prob_redis(conn, names, all_hashes, colour, count=0):
         except redis.WatchError:
             logger.warning("Retrying %s %s " % (r, name))
             if count < 5:
-                self._batch_insert(conn, hk, colour, count=count+1)
+                self._batch_insert(conn, hk, colour, count=count + 1)
             else:
-                logger.warning(
-                    "Failed %s %s. Too many retries. Contining regardless." % (r, name))
+                logger.warning("Failed %s %s. Too many retries. Contining regardless." % (r, name))
 
 
 def _openDBEnv(cachesize):
@@ -403,8 +400,10 @@ def _openDBEnv(cachesize):
         else:
             raise error("cachesize must be >= 1")
     e.set_lk_detect(bsddb.db.DB_LOCK_DEFAULT)
-    e.open('.', bsddb.db.DB_PRIVATE | bsddb.db.DB_CREATE |
-           bsddb.db.DB_THREAD | bsddb.db.DB_INIT_LOCK | bsddb.db.DB_INIT_MPOOL)
+    e.open(
+        ".",
+        bsddb.db.DB_PRIVATE | bsddb.db.DB_CREATE | bsddb.db.DB_THREAD | bsddb.db.DB_INIT_LOCK | bsddb.db.DB_INIT_MPOOL,
+    )
     return e
 
 
@@ -421,8 +420,7 @@ def _openDBEnv(cachesize):
 #     return e
 
 
-def hashopen(file, flag='c', mode=0o666, pgsize=None, ffactor=None, nelem=None,
-             cachesize=None, lorder=None, hflags=0):
+def hashopen(file, flag="c", mode=0o666, pgsize=None, ffactor=None, nelem=None, cachesize=None, lorder=None, hflags=0):
 
     flags = bsddb._checkflag(flag, file)
     e = _openDBEnv(cachesize)
@@ -441,7 +439,6 @@ def hashopen(file, flag='c', mode=0o666, pgsize=None, ffactor=None, nelem=None,
 
 
 class BerkeleyDBCollectionStorage(BaseStorage):
-
     def __init__(self, row_orded_filenames, rows_per_file=10000):
         self.dbs = {}
         self._create_berkeley_dbs(row_orded_filenames)
@@ -454,31 +451,27 @@ class BerkeleyDBCollectionStorage(BaseStorage):
 
     def __getitem__(self, key):
         assert isinstance(key, int)
-        f = self.dbs[int(math.floor(key/self.rows_per_file))]
+        f = self.dbs[int(math.floor(key / self.rows_per_file))]
         return BerkeleyDBStorage({"filename": f})[key]
 
 
 class BerkeleyDBStorage(BaseStorage):
-
     def __init__(self, filename=None, mode="r", cachesize=4, decode=None, store_int_as_string=False):
         if filename is None:
-            raise ValueError(
-                "You must supply a 'filename'")
+            raise ValueError("You must supply a 'filename'")
         self.db_file = filename
         self.mode = mode
         self.cachesize = cachesize
         try:
-            self.storage = hashopen(
-                self.db_file, flag=self.mode, cachesize=self.cachesize)
+            self.storage = hashopen(self.db_file, flag=self.mode, cachesize=self.cachesize)
         except AttributeError:
-            raise ValueError(
-                "Please install bsddb3 to use berkeley DB storage")
+            raise ValueError("Please install bsddb3 to use berkeley DB storage")
         self.decode = decode
 
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v=struct.unpack("Q", self.get(key))[0]
+        v = struct.unpack("Q", self.get(key))[0]
         v += 1
         self[key] = v
 
@@ -490,7 +483,7 @@ class BerkeleyDBStorage(BaseStorage):
 
     def items(self):
         for i in self.storage.keys():
-            yield (i.decode('utf-8'), self[i])
+            yield (i.decode("utf-8"), self[i])
 
     def count_keys(self):
         return len(self.keys())
@@ -548,46 +541,49 @@ class BerkeleyDBStorage(BaseStorage):
         self.sync()
         self.storage.close()
 
+
 import rocksdb
 import shutil
 import gc
 
-class RocksDBStorage(BaseStorage):
 
+class RocksDBStorage(BaseStorage):
     def __init__(self, filename=None, mode="r", cachesize=4, decode=None, store_int_as_string=False):
         if filename is None:
-            raise ValueError(
-                "You must supply a 'filename'")
+            raise ValueError("You must supply a 'filename'")
         self.db_file = filename
         self.mode = mode
         self.cachesize = cachesize
         self.delete_lock_file()
         try:
-            if mode=="r":
-                create_if_missing=False
+            if mode == "r":
+                create_if_missing = False
             else:
-                create_if_missing=True
-            self.storage  = rocksdb.DB(self.db_file,
-                 rocksdb.Options(create_if_missing=create_if_missing,
+                create_if_missing = True
+            self.storage = rocksdb.DB(
+                self.db_file,
+                rocksdb.Options(
+                    create_if_missing=create_if_missing,
                     max_open_files=5000,
-                compression=rocksdb.CompressionType.no_compression))
+                    compression=rocksdb.CompressionType.no_compression,
+                ),
+            )
         except AttributeError:
-            raise ValueError(
-                "Please install rocksdb to use rocks DB storage")
+            raise ValueError("Please install rocksdb to use rocks DB storage")
         self.decode = decode
 
     def delete_lock_file(self):
-        lock_file=os.path.join(self.db_file,'LOCK')
+        lock_file = os.path.join(self.db_file, "LOCK")
         try:
             os.remove(lock_file)
-        except (FileNotFoundError,NotADirectoryError,PermissionError):
+        except (FileNotFoundError, NotADirectoryError, PermissionError):
             pass
         gc.collect()
 
     def incr(self, key):
         if self.get(key) is None:
             self[key] = 0
-        v=struct.unpack("Q", self.get(key))[0]
+        v = struct.unpack("Q", self.get(key))[0]
         v += 1
         self[key] = v
 
@@ -597,14 +593,14 @@ class RocksDBStorage(BaseStorage):
     def close(self):
         self.delete_lock_file()
         del self.storage
-        gc.collect() 
+        gc.collect()
 
     def keys(self):
         return self.storage.iterkeys()
 
     def items(self):
         for i in self.keys():
-            yield (i.decode('utf-8'), self[i])
+            yield (i.decode("utf-8"), self[i])
 
     def count_keys(self):
         return len(self.keys())
@@ -613,8 +609,8 @@ class RocksDBStorage(BaseStorage):
         if isinstance(key, str):
             key = str.encode(key)
         elif isinstance(key, int):
-            key = struct.pack("Q", key)  
-        return key      
+            key = struct.pack("Q", key)
+        return key
 
     def convert_val(self, val):
         if isinstance(val, str):
@@ -625,10 +621,10 @@ class RocksDBStorage(BaseStorage):
 
     def __setitem__(self, key, val):
         key = self.convert_key(key)
-        self.storage.put(key,val)
+        self.storage.put(key, val)
 
     def __getitem__(self, key):
-        key=self.convert_key(key)
+        key = self.convert_key(key)
         v = self.storage.get(key)
         if self.decode:
             return v.decode(self.decode)
@@ -637,10 +633,9 @@ class RocksDBStorage(BaseStorage):
 
     def multiget(self, keys):
         keys = [self.convert_key(k) for k in keys]
-        vals_d= self.storage.multi_get(keys)
+        vals_d = self.storage.multi_get(keys)
         vals = [vals_d[k] for k in keys]
         return vals
-
 
     def __delitem__(self, key):
         if isinstance(key, str):
@@ -651,23 +646,23 @@ class RocksDBStorage(BaseStorage):
 
     def get(self, key, default=None):
         try:
-            v= self[key]
+            v = self[key]
             if v is None:
-            	return default
+                return default
             else:
-            	return v
+                return v
         except KeyError as e:
             return default
 
     def delete_all(self):
         self.close()
         try:
-	        shutil.rmtree(self.db_file)
+            shutil.rmtree(self.db_file)
         except FileNotFoundError:
-           pass
+            pass
 
     def getmemoryusage(self):
         return 0
 
     def sync(self):
-        gc.collect()         
+        gc.collect()

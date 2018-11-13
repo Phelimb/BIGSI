@@ -2,18 +2,19 @@ import hashlib
 import struct
 import sys
 import logging
-logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
 
-COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-BITS = {'A': '00', 'G': '01', 'C': '10', 'T': '11'}
-BASES = {'00': 'A', '01': 'G', '10': 'C', '11': 'T'}
+logger = logging.getLogger(__name__)
+logger.setLevel("DEBUG")
+
+COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
+BITS = {"A": "00", "G": "01", "C": "10", "T": "11"}
+BASES = {"00": "A", "01": "G", "10": "C", "11": "T"}
 
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]
 
 
 # def decode_kmer(bytes binary_kmer, int kmer_size):
@@ -80,14 +81,14 @@ def min_lexo(k):
 
 
 def seq_to_kmers(seq, kmer_size):
-    for i in range(len(seq)-kmer_size+1):
-        yield seq[i:i+kmer_size]
+    for i in range(len(seq) - kmer_size + 1):
+        yield seq[i : i + kmer_size]
 
 
 def seq_to_disjoint_kmers(seq, kmer_size):
     for i in range(0, len(seq), kmer_size):
-        if len(seq[i:i+kmer_size]) == kmer_size:
-            yield seq[i:i+kmer_size]
+        if len(seq[i : i + kmer_size]) == kmer_size:
+            yield seq[i : i + kmer_size]
 
 
 def bits(f):
@@ -100,15 +101,15 @@ def kmer_to_bits(kmer):
 
 def bits_to_kmer(bitstring, l):
     bases = []
-    for i in range(0, l*2, 2):
-        bases.append(BASES[bitstring[i:i+2]])
+    for i in range(0, l * 2, 2):
+        bases.append(BASES[bitstring[i : i + 2]])
     return "".join(bases)
 
 
 def kmer_to_bytes(kmer, bitpadding=0):
     bitstring = kmer_to_bits(kmer)
     if not bitpadding == 0:
-        bitstring = "".join([bitstring, '0'*bitpadding])[::-1]
-    list_of_bytes = [bitstring[i:i+8] for i in range(0, len(bitstring), 8)]
+        bitstring = "".join([bitstring, "0" * bitpadding])[::-1]
+    list_of_bytes = [bitstring[i : i + 8] for i in range(0, len(bitstring), 8)]
     _bytes = [int(byte, 2) for byte in list_of_bytes]
     return bytes(_bytes)

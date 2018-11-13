@@ -10,7 +10,6 @@ import pickle
 import shutil
 import struct
 import numpy as np
-from bigsi.graph.base import BaseGraph
 from bigsi.utils import seq_to_kmers
 
 from bigsi.utils import min_lexo
@@ -24,22 +23,20 @@ from bigsi.version import __version__
 
 from bigsi.decorators import convert_kmers_to_canonical
 
-from bigsi.bytearray import ByteArray
-
 
 # from bigsi.storage.graph.probabilistic import ProbabilisticBerkeleyDBStorage as IndexStorage
 from bigsi.storage.graph.probabilistic import ProbabilisticRocksDBStorage as IndexStorage
 
 
 from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
+
 # from bigsi.storage import RocksDBStorage as MetaDataStorage
-from bigsi.sketch import HyperLogLogJaccardIndex
-from bigsi.sketch import MinHashHashSet
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.matrix import transpose
 from bigsi.scoring import Scorer
 from bitarray import bitarray
 import logging
+
 logging.basicConfig()
 import rocksdb
 
@@ -49,9 +46,10 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 def load_bloomfilter(f):
     bloomfilter = bitarray()
-    with open(f, 'rb') as inf:
+    with open(f, "rb") as inf:
         bloomfilter.fromfile(inf)
     return bloomfilter
+
 
 # TODO - parameters should be set once and then read from metadata
 # bloom, search commands should only need to point to the DB and
@@ -64,21 +62,23 @@ def load_bloomfilter(f):
 # bigsi init fails if directory already exists
 import os
 import bsddb3
+
 DEFUALT_DB_DIRECTORY = "./db-bigsi/"
 
 import math
 from multiprocessing import Pool
-bone = (1).to_bytes(1, byteorder='big')
-MIN_UNIQUE_KMERS_IN_QUERY=50
+
+bone = (1).to_bytes(1, byteorder="big")
+MIN_UNIQUE_KMERS_IN_QUERY = 50
+
 
 def unpack_and_sum(bas):
     c = 0
     for ba in bas:
         if c == 0:
-            cumsum = np.fromstring(ba.unpack(one=bone),
-                                   dtype='i1').astype("i4")
+            cumsum = np.fromstring(ba.unpack(one=bone), dtype="i1").astype("i4")
         else:
-            l = np.fromstring(ba.unpack(one=bone), dtype='i1').astype("i4")
+            l = np.fromstring(ba.unpack(one=bone), dtype="i1").astype("i4")
             cumsum = np.add(cumsum, l)
         c += 1
     return cumsum
@@ -86,16 +86,16 @@ def unpack_and_sum(bas):
 
 def chunks(l, n):
     n = max(1, n)
-    return (l[i:i+n] for i in range(0, len(l), n))
+    return (l[i : i + n] for i in range(0, len(l), n))
 
 
 def unpack_bas(bas, j):
-#    logger.debug("ncores: %i" % j)
+    #    logger.debug("ncores: %i" % j)
     if j == 0:
         res = unpack_and_sum(bas)
         return res
     else:
-        n = math.ceil(float(len(bas))/j)
+        n = math.ceil(float(len(bas)) / j)
         p = Pool(j)
         res = p.map(unpack_and_sum, chunks(bas, n))
         p.close()
@@ -103,7 +103,6 @@ def unpack_bas(bas, j):
 
 
 class BIGSI(object):
-
     def __init__(self, db=DEFUALT_DB_DIRECTORY, cachesize=1, nproc=0, mode="c", metadata=None):
         self.mode = mode
         self.nproc = nproc
@@ -112,30 +111,29 @@ class BIGSI(object):
             if metadata is None:
                 self.metadata = self.load_metadata(mode)
             else:
-                self.metadata=metadata
+                self.metadata = metadata
         except (bsddb3.db.DBNoSuchFileError, bsddb3.db.DBError) as e:
             print(e)
             if isinstance(e, bsddb3.db.DBError):
-                raise OSError(
-                    "You don't have permission to access this directory %s ." % self.db)
+                raise OSError("You don't have permission to access this directory %s ." % self.db)
             else:
-                raise OSError(
-                    "Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
+                raise OSError("Cannot find a BIGSI at %s. Run `bigsi init` or BIGSI.create()" % db)
         else:
-            self.bloom_filter_size = struct.unpack("Q",self.metadata['bloom_filter_size'])[0]
-            self.num_hashes = struct.unpack("Q",self.metadata['num_hashes'])[0]
-            self.kmer_size = struct.unpack("Q",self.metadata['kmer_size'])[0]
+            self.bloom_filter_size = struct.unpack("Q", self.metadata["bloom_filter_size"])[0]
+            self.num_hashes = struct.unpack("Q", self.metadata["num_hashes"])[0]
+            self.kmer_size = struct.unpack("Q", self.metadata["kmer_size"])[0]
             self.scorer = Scorer(self.get_num_colours())
-            self.graph = IndexStorage(filename=self.graph_filename,
-                                                        bloom_filter_size=self.bloom_filter_size,
-                                                        num_hashes=self.num_hashes,
-                                                        mode=mode)
+            self.graph = IndexStorage(
+                filename=self.graph_filename,
+                bloom_filter_size=self.bloom_filter_size,
+                num_hashes=self.num_hashes,
+                mode=mode,
+            )
             self.graph.sync()
             self.metadata.sync()
 
     def load_metadata(self, mode="c"):
-        return MetaDataStorage(
-            filename=os.path.join(self.db, "metadata"), mode=mode)
+        return MetaDataStorage(filename=os.path.join(self.db, "metadata"), mode=mode)
 
     @property
     def graph_filename(self):
@@ -160,10 +158,10 @@ class BIGSI(object):
             if force:
                 logger.info("Clearing and recreating %s" % db)
                 cls(db, mode="c").delete_all()
-                return cls.create(db=db, k=k, m=m, h=h,
-                                  cachesize=cachesize, force=False)
+                return cls.create(db=db, k=k, m=m, h=h, cachesize=cachesize, force=False)
             raise FileExistsError(
-                "A BIGSI already exists at %s. Run with --force or BIGSI.create(force=True) to recreate." % db)
+                "A BIGSI already exists at %s. Run with --force or BIGSI.create(force=True) to recreate." % db
+            )
 
         else:
             logger.info("Initialising BIGSI at %s" % db)
@@ -173,7 +171,8 @@ class BIGSI(object):
             metadata["num_hashes"] = struct.pack("Q", int(h))
             metadata["kmer_size"] = struct.pack("Q", int(k))
             metadata.sync()
-            return cls(db=db, cachesize=cachesize, mode="c",metadata=metadata)
+            return cls(db=db, cachesize=cachesize, mode="c", metadata=metadata)
+
     ## Bdb
     # def build(self, bloomfilters, samples, lowmem=False):
     #     # Need to open with read and write access
@@ -191,49 +190,48 @@ class BIGSI(object):
     #         graph[i] = ba.tobytes()
     #     self.sync()
 
-    def build(self, bloomfilters, samples, lowmem=False,bf_range=None):
+    def build(self, bloomfilters, samples, lowmem=False, bf_range=None):
         # Need to open with read and write access
         if not len(bloomfilters) == len(samples):
-            raise ValueError(
-                "There must be the same number of bloomfilters and sample names")
+            raise ValueError("There must be the same number of bloomfilters and sample names")
         graph = self.load_graph(mode="w")
         bloom_filter_size = len(bloomfilters[0])
         logger.debug("Adding samples")
         [self._add_sample(s, sync=False) for s in samples]
         logger.debug("transpose")
-        bigsi = transpose(bloomfilters,lowmem=lowmem)
+        bigsi = transpose(bloomfilters, lowmem=lowmem)
         logger.debug("insert")
         batch = rocksdb.WriteBatch()
-        _len=len(bloomfilters[0])
+        _len = len(bloomfilters[0])
         for _iter, ba in enumerate(bigsi):
             if bf_range is not None:
-                i=int(bf_range[0])+_iter
+                i = int(bf_range[0]) + _iter
             else:
-                i=_iter
-            if (_iter % int(_len/min(100,_len)))==0:
-                logger.debug("Inserting row %i: %i%%" % (i, int(float(100*_iter)/_len)))            
+                i = _iter
+            if (_iter % int(_len / min(100, _len))) == 0:
+                logger.debug("Inserting row %i: %i%%" % (i, int(float(100 * _iter) / _len)))
                 graph.storage.write(batch)
                 batch = rocksdb.WriteBatch()
-            batch.put(struct.pack("Q", i) , ba.tobytes())
+            batch.put(struct.pack("Q", i), ba.tobytes())
         graph.storage.write(batch)
         self.sync()
 
     def row_merge(self, merged_bigsis):
         for bigsi in merged_bigsis:
             batch = rocksdb.WriteBatch()
-            cnt=0
-            it=bigsi.graph.storage.iteritems()
+            cnt = 0
+            it = bigsi.graph.storage.iteritems()
             it.seek_to_first()
-            for k,v in it:
+            for k, v in it:
                 if v:
-                    batch.put(k,v)
-                    cnt+=1
+                    batch.put(k, v)
+                    cnt += 1
                 ## Write every 1000 keys
                 if cnt >= 1000:
-                    self.graph.storage.write(batch) 
+                    self.graph.storage.write(batch)
                     batch = rocksdb.WriteBatch()
-                    cnt=0
-            self.graph.storage.write(batch)        
+                    cnt = 0
+            self.graph.storage.write(batch)
 
     def merge(self, merged_bigsi):
         logger.info("Starting merge")
@@ -248,8 +246,8 @@ class BIGSI(object):
         graph = self.load_graph(mode="w")
         # Update graph
         for i in range(self.bloom_filter_size):
-            r = graph.get_row(i)[:self.get_num_colours()]
-            r2 = merged_bigsi.graph.get_row(i)[:merged_bigsi.get_num_colours()]
+            r = graph.get_row(i)[: self.get_num_colours()]
+            r2 = merged_bigsi.graph.get_row(i)[: merged_bigsi.get_num_colours()]
             r.extend(r2)
             graph.set_row(i, r)
         graph.sync()
@@ -261,7 +259,7 @@ class BIGSI(object):
             try:
                 self._add_sample(sample, sync=False)
             except ValueError:
-                self._add_sample(sample+"_duplicate_in_merge", sync=False)
+                self._add_sample(sample + "_duplicate_in_merge", sync=False)
         self.metadata.sync()
 
     @convert_kmers_to_canonical
@@ -277,10 +275,8 @@ class BIGSI(object):
         try:
             self.load_graph()[0]
         except:
-            logger.error(
-                "No existing index. Run `init` and `build` before `insert` or `search`")
-            raise ValueError(
-                "No existing index. Run `init` and `build` before `insert` or `search`")
+            logger.error("No existing index. Run `init` and `build` before `insert` or `search`")
+            raise ValueError("No existing index. Run `init` and `build` before `insert` or `search`")
         colour = self._add_sample(sample)
         logger.info("Inserting sample %s into colour %i" % (sample, colour))
         self._insert(bloom_filter, colour)
@@ -292,14 +288,16 @@ class BIGSI(object):
         return self._search(self.seq_to_kmers(seq), threshold=threshold, score=score)
 
     def _validate_search_query(self, seq):
-        kmers=set()
+        kmers = set()
         for k in self.seq_to_kmers(seq):
             kmers.add(k)
-            if len(kmers)>MIN_UNIQUE_KMERS_IN_QUERY:
+            if len(kmers) > MIN_UNIQUE_KMERS_IN_QUERY:
                 return True
         else:
-            logger.warning("Query string should contain at least %i unique kmers. Your query contained %i unique kmers, and as a result the false discovery rate may be high. In future this will become an error." % (MIN_UNIQUE_KMERS_IN_QUERY,len(kmers)))
-
+            logger.warning(
+                "Query string should contain at least %i unique kmers. Your query contained %i unique kmers, and as a result the false discovery rate may be high. In future this will become an error."
+                % (MIN_UNIQUE_KMERS_IN_QUERY, len(kmers))
+            )
 
     def lookup(self, kmers):
         """Return sample names where these kmers is present"""
@@ -335,8 +333,7 @@ class BIGSI(object):
 
     def add_sample_metadata(self, sample, key, value, overwrite=False, sync=True):
         metadata_key = "ss_%s" % sample
-        self.metadata_hset(metadata_key, key, value,
-                           overwrite=overwrite, sync=sync)
+        self.metadata_hset(metadata_key, key, value, overwrite=overwrite, sync=sync)
 
     def lookup_sample_metadata(self, sample):
         metadata_key = "ss_%s" % sample
@@ -345,8 +342,9 @@ class BIGSI(object):
     def metadata_hset(self, metadata_key, key, value, overwrite=False, sync=True):
         metadata_values = self.metadata_hgetall(metadata_key)
         if key in metadata_values and not overwrite:
-            raise ValueError("%s is already in the metadata of %s with value %s " % (
-                key, metadata_key, metadata_values[key]))
+            raise ValueError(
+                "%s is already in the metadata of %s with value %s " % (key, metadata_key, metadata_values[key])
+            )
         else:
             metadata_values[key] = value
             self.metadata_set(metadata_key, metadata_values, sync=sync)
@@ -359,11 +357,11 @@ class BIGSI(object):
             self.sync()
 
     def sample_to_colour(self, sample):
-        return self.lookup_sample_metadata(sample).get('colour')
+        return self.lookup_sample_metadata(sample).get("colour")
 
     def colour_to_sample(self, colour):
         metadata = self.metadata
-        r = metadata["colour%i" % colour].decode('utf-8')
+        r = metadata["colour%i" % colour].decode("utf-8")
         if r:
             return r
         else:
@@ -442,13 +440,11 @@ class BIGSI(object):
     def _search_kmers_threshold_not_1_with_scoring(self, kmers, threshold):
         out = {}
         kmers = list(kmers)
-        result = self._search_kmers_threshold_not_1_without_scoring(
-            kmers, threshold, convert_colours=False)
+        result = self._search_kmers_threshold_not_1_without_scoring(kmers, threshold, convert_colours=False)
         kmer_lookups = [self.load_graph().lookup(kmer) for kmer in kmers]
         for colour, r in result.items():
             percent = r["percent_kmers_found"]
-            s = "".join([str(int(kmer_lookups[i][colour]))
-                         for i in range(len(kmers))])
+            s = "".join([str(int(kmer_lookups[i][colour])) for i in range(len(kmers))])
             sample = self.colour_to_sample(colour)
             out[sample] = self.scorer.score(s)
             out[sample]["percent_kmers_found"] = percent
@@ -461,7 +457,7 @@ class BIGSI(object):
         lkmers = len(bas)
 
         for i, f in enumerate(cumsum):
-            res = float(f)/lkmers
+            res = float(f) / lkmers
             if res >= threshold:
                 if convert_colours:
                     sample = self.colour_to_sample(i)
@@ -469,21 +465,19 @@ class BIGSI(object):
                     sample = i
                 if sample != "DELETED":
                     out[sample] = {}
-                    out[sample]["percent_kmers_found"] = 100*res
+                    out[sample]["percent_kmers_found"] = 100 * res
         return out
 
     def _search_kmers_threshold_1(self, kmers, score=False):
         """Special case where the threshold is 1 (can accelerate queries with AND)"""
         kmers = list(kmers)
-        ba = self.load_graph().lookup_all_present(
-            kmers)
+        ba = self.load_graph().lookup_all_present(kmers)
         out = {}
         for c in ba.colours():
             sample = self.colour_to_sample(c)
             if sample != "DELETED":
                 if score:
-                    out[sample] = self.scorer.score(
-                        "1"*(len(kmers)+self.kmer_size-1))  # Fix!
+                    out[sample] = self.scorer.score("1" * (len(kmers) + self.kmer_size - 1))  # Fix!
                 else:
                     out[sample] = {}
                 out[sample]["percent_kmers_found"] = 100
@@ -493,13 +487,11 @@ class BIGSI(object):
     def _lookup(self, kmer, canonical=False):
         assert not isinstance(kmer, list)
         num_colours = self.get_num_colours()
-        colour_presence_boolean_array = self.load_graph().lookup(
-            kmer)
+        colour_presence_boolean_array = self.load_graph().lookup(kmer)
         samples_present = []
         for i, present in enumerate(colour_presence_boolean_array):
             if present:
-                samples_present.append(
-                    self.colour_to_sample(i))
+                samples_present.append(self.colour_to_sample(i))
             if i > num_colours:
                 break
         return samples_present
@@ -517,15 +509,15 @@ class BIGSI(object):
                 colour = 0
             else:
                 colour = int(colour)
-            self.add_sample_metadata(sample_name, 'colour', colour, sync=sync)
+            self.add_sample_metadata(sample_name, "colour", colour, sync=sync)
             self.set_colour(colour, sample_name, sync=sync)
-            metadata.incr('num_colours')
+            metadata.incr("num_colours")
             if sync:
                 metadata.sync()
             return colour
 
     def get_num_colours(self):
-        return struct.unpack("Q",self.metadata.get('num_colours', struct.pack("Q",0)))[0]
+        return struct.unpack("Q", self.metadata.get("num_colours", struct.pack("Q", 0)))[0]
 
     def sync(self):
         self.graph.sync()

@@ -14,8 +14,9 @@ import gzip
 import struct
 import subprocess
 import math
-BITS = {'A': '00', 'G': '01', 'C': '10', 'T': '11'}
-BASES = {'00': 'A', '01': 'G', '10': 'C', '11': 'T'}
+
+BITS = {"A": "00", "G": "01", "C": "10", "T": "11"}
+BASES = {"00": "A", "01": "G", "10": "C", "11": "T"}
 
 
 def kmer_to_bits(kmer):
@@ -29,12 +30,12 @@ def decode_kmer(binary_kmer, kmer_size):
     # G and C are the wrong way around because we reverse the sequence.
     # This really is a nasty way to do this!
     assert kmer_size <= 31
-    binary_kmer_int = struct.unpack('Q', binary_kmer)[0]
+    binary_kmer_int = struct.unpack("Q", binary_kmer)[0]
 
     b = "{0:064b}".format(binary_kmer_int)[::-1]
     ret = []
     for j in range(kmer_size):
-        nuc = BASES[b[j * 2: (j + 1) * 2]]
+        nuc = BASES[b[j * 2 : (j + 1) * 2]]
         ret.append(nuc)
     ret = "".join(ret)
 
@@ -70,7 +71,7 @@ def encode_kmer(kmer):
     for j, nuc in enumerate(reversed(kmer)):
         v = codes[nuc]
         ret |= v << (2 * j)
-    return struct.pack('Q', ret)
+    return struct.pack("Q", ret)
 
 
 def reverse_complement(kmer):
@@ -140,7 +141,7 @@ class CortexRecord(object):
             if n in self.edges[colour][0]:
                 s[j + 4] = n
         s = "".join(s)
-        return ("{0} {1} {2}".format(self.kmer, self.coverages[colour], s))
+        return "{0} {1} {2}".format(self.kmer, self.coverages[colour], s)
 
     def get_adjacent_kmers(self, colour=0, direction=0):
         """
@@ -243,7 +244,8 @@ class GraphReader(object):
         edges = struct.unpack_from("B" * self.num_colours, buff, offset)
         # print(edges)
         record = CortexRecord(
-            self.kmer_size, kmer, coverages, edges, num_colours=self.num_colours, binary_kmer=self.binary_kmers)
+            self.kmer_size, kmer, coverages, edges, num_colours=self.num_colours, binary_kmer=self.binary_kmers
+        )
         return record
 
 
@@ -260,8 +262,7 @@ class LinksRecord(object):
         self.junctions = junctions
 
     def __str__(self):
-        return "{0}:{1}:{2}:{3}".format(self.direction, self.num_kmers, self.counts,
-                                        self.junctions)
+        return "{0}:{1}:{2}:{3}".format(self.direction, self.num_kmers, self.counts, self.junctions)
 
 
 class LinksFile(object):
@@ -391,8 +392,7 @@ class GraphTraverser(object):
                 for lr in self._links[c]:
                     if lr.direction == direction:
                         paths.append([0, lr.junctions])
-            adj = [
-                obj.value for obj in self._graph[c].get_adjacent_kmers(0, o)]
+            adj = [obj.value for obj in self._graph[c].get_adjacent_kmers(0, o)]
             # print(k, c, o, adj, contig)
             # print("paths = ")
             # for p in paths:

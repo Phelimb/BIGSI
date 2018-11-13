@@ -26,44 +26,40 @@ import pytest
 
 
 def test_get_required_bytes_per_bloomfilter():
-    m = 25*10**6
+    m = 25 * 10 ** 6
     num_bytes = get_required_bytes_per_bloomfilter(m)
-    assert num_bytes == 25*10**6 + (25*10**6)/8
+    assert num_bytes == 25 * 10 ** 6 + (25 * 10 ** 6) / 8
 
 
 def test_get_required_chunk_size():
-    m = 25*10**6
+    m = 25 * 10 ** 6
     N = 10
-    max_memory = 10**8  # 100MB
+    max_memory = 10 ** 8  # 100MB
     assert get_required_chunk_size(m=m, N=N, max_memory=max_memory)[0] == 3
 
-    m = 25*10**6
+    m = 25 * 10 ** 6
     N = 10
-    max_memory = 10**9  # 100MB
+    max_memory = 10 ** 9  # 100MB
     assert get_required_chunk_size(m=m, N=N, max_memory=max_memory)[0] == 10
 
 
 def generate_sample_names(N):
     samples = []
     for i in range(N):
-        samples.append(''.join(random.choice(
-            string.ascii_uppercase + string.digits) for _ in range(6)))
+        samples.append("".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
     return samples
 
 
 def test_build_chunks():
     N = 3
-    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
-    sample_names = generate_sample_names(
-        len(bloomfilter_filepaths))
+    bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
+    sample_names = generate_sample_names(len(bloomfilter_filepaths))
 
-    bigsi1 = BIGSI.create(db="./db-bigsi-no-max-mem/",
-                          m=1000, k=9, h=1, force=True)
-    build(bloomfilter_filepaths, sample_names, bigsi1, bf_range=(0,1000))
+    bigsi1 = BIGSI.create(db="./db-bigsi-no-max-mem/", m=1000, k=9, h=1, force=True)
+    build(bloomfilter_filepaths, sample_names, bigsi1, bf_range=(0, 1000))
 
     bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=1000, k=9, h=1, force=True)
-    build(bloomfilter_filepaths, sample_names,
-          bigsi2, max_memory=2000, bf_range=(0,1000))  # 20bytes
+    build(bloomfilter_filepaths, sample_names, bigsi2, max_memory=2000, bf_range=(0, 1000))  # 20bytes
 
     # Reload and test equal
     # bigsi1 = BIGSI("./db-bigsi-no-max-mem/")
@@ -79,11 +75,9 @@ def test_build_chunks():
 
 def test_cant_build_chunks_if_max_memory_less_than_bf():
     N = 3
-    bloomfilter_filepaths = ['bigsi/tests/data/test_kmers.bloom']*N
-    sample_names = generate_sample_names(
-        len(bloomfilter_filepaths))
+    bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
+    sample_names = generate_sample_names(len(bloomfilter_filepaths))
 
     bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=10, k=9, h=1, force=True)
     with pytest.raises(ValueError):
-        build(bloomfilter_filepaths, sample_names,
-              bigsi2, max_memory=1)  # 1byte (should fail)
+        build(bloomfilter_filepaths, sample_names, bigsi2, max_memory=1)  # 1byte (should fail)

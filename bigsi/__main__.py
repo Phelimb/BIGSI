@@ -6,17 +6,16 @@ import argparse
 import redis
 import json
 import math
-sys.path.append(
-    os.path.realpath(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..")))
+
+sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 from bigsi.version import __version__
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
+
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 
@@ -37,16 +36,18 @@ CELERY = bool(int(os.environ.get("CELERY", 0)))
 CONN_CONFIG = []
 redis_envs = [env for env in os.environ if "REDIS" in env]
 if len(redis_envs) == 0:
-    CONN_CONFIG = [('localhost', 7000, 2)]
+    CONN_CONFIG = [("localhost", 7000, 2)]
 else:
-    for i in range(int(len(redis_envs)/2)):
+    for i in range(int(len(redis_envs) / 2)):
         hostname = os.environ.get("REDIS_IP_%s" % str(i + 1))
         port = int(os.environ.get("REDIS_PORT_%s" % str(i + 1)))
         CONN_CONFIG.append((hostname, port, 2))
 from bigsi.cmds.insert import insert
 from bigsi.cmds.search import search
+
 # from bigsi.cmds.stats import stats
 from bigsi.cmds.samples import samples
+
 # from bigsi.cmds.dump import dump
 # from bigsi.cmds.load import load
 from bigsi.cmds.delete import delete
@@ -54,6 +55,7 @@ from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
 from bigsi.cmds.rowjoin import rowjoin
+
 # from bigsi.cmds.bitcount import bitcount
 # from bigsi.cmds.jaccard_index import jaccard_index
 from bigsi.utils.cortex import GraphReader
@@ -73,12 +75,13 @@ def do_cprofile(func):
             return result
         finally:
             profile.print_stats()
+
     return profiled_func
 
 
-API = hug.API('bigsi-%s' % str(__version__))
-STORAGE = os.environ.get("STORAGE", 'berkeleydb')
-BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", './db')
+API = hug.API("bigsi-%s" % str(__version__))
+STORAGE = os.environ.get("STORAGE", "berkeleydb")
+BDB_DB_FILENAME = os.environ.get("BDB_DB_FILENAME", "./db")
 CACHESIZE = int(os.environ.get("CACHESIZE", 1))
 # DEFAULT_GRAPH = GRAPH = Graph(BDB_DB_FILENAME)
 
@@ -92,40 +95,39 @@ def extract_kmers_from_ctx(ctx, k):
         for kmer in seq_to_kmers(i.kmer.canonical_value, k):
             yield kmer
 
+
 def bf_range_calc(index, i, N):
-    batch_size=math.ceil(index.bloom_filter_size/N)
-    i=list(range(0,index.bloom_filter_size,batch_size))[i-1]
-    j=i+batch_size        
-    return (i,j)    
+    batch_size = math.ceil(index.bloom_filter_size / N)
+    i = list(range(0, index.bloom_filter_size, batch_size))[i - 1]
+    j = i + batch_size
+    return (i, j)
 
-@hug.object(name='bigsi', version='0.1.1', api=API)
-@hug.object.urls('/', requires=())
+
+@hug.object(name="bigsi", version="0.1.1", api=API)
+@hug.object.urls("/", requires=())
 class bigsi(object):
-
     @hug.object.cli
-    @hug.object.post('/init', output_format=hug.output_format.json)
-    def init(self, db, k=31, m=25*10**6, h=3, force: hug.types.smart_boolean=False):
+    @hug.object.post("/init", output_format=hug.output_format.json)
+    def init(self, db, k=31, m=25 * 10 ** 6, h=3, force: hug.types.smart_boolean = False):
         bigsi = BIGSI.create(db=db, k=k, m=m, h=h, force=force)
-        return {'k': k, 'm': m, 'h': h, 'db': db}
+        return {"k": k, "m": m, "h": h, "db": db}
 
     @hug.object.cli
-    @hug.object.post('/insert', output_format=hug.output_format.json)
-    def insert(self, db: hug.types.text, bloomfilter, sample,
-              i:int=1,N:int=1):
+    @hug.object.post("/insert", output_format=hug.output_format.json)
+    def insert(self, db: hug.types.text, bloomfilter, sample, i: int = 1, N: int = 1):
         """Inserts a bloom filter into the graph
 
         e.g. bigsi insert ERR1010211.bloom ERR1010211
 
         """
-        index=BIGSI(db)
-        bf_range=bf_range_calc(index, i, N)
-        
-        return insert(graph=index, bloomfilter=bloomfilter, sample=sample,
-                     bf_range=bf_range)
+        index = BIGSI(db)
+        bf_range = bf_range_calc(index, i, N)
+
+        return insert(graph=index, bloomfilter=bloomfilter, sample=sample, bf_range=bf_range)
 
     @hug.object.cli
-    @hug.object.post('/bloom')
-    def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None,N:int=1):
+    @hug.object.post("/bloom")
+    def bloom(self, outfile, db=DEFUALT_DB_DIRECTORY, kmers=None, seqfile=None, ctx=None, N: int = 1):
         index = BIGSI(db, mode="r")
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
@@ -136,21 +138,26 @@ class bigsi(object):
             kmers = extract_kmers_from_ctx(ctx, index.kmer_size)
         if not kmers and not seqfile:
             return "--kmers or --seqfile must be provided"
-        batch_size=math.ceil(index.bloom_filter_size/N)
-        bf_range=range(0,index.bloom_filter_size,batch_size)
+        batch_size = math.ceil(index.bloom_filter_size / N)
+        bf_range = range(0, index.bloom_filter_size, batch_size)
 
-        bf = bloom(outfile=outfile, kmers=kmers,
-                   kmer_file=seqfile, graph=index,bf_range=bf_range, batch_size=batch_size)
+        bf = bloom(
+            outfile=outfile, kmers=kmers, kmer_file=seqfile, graph=index, bf_range=bf_range, batch_size=batch_size
+        )
 
     @hug.object.cli
-    @hug.object.post('/build', output_format=hug.output_format.json)
-    def build(self, db: hug.types.text,
-              bloomfilters: hug.types.multiple,
-              samples: hug.types.multiple = [],
-              max_memory: hug.types.text='',
-              lowmem: hug.types.smart_boolean=False,
-              i:int=1,N:int=1):
-        index=BIGSI(db)
+    @hug.object.post("/build", output_format=hug.output_format.json)
+    def build(
+        self,
+        db: hug.types.text,
+        bloomfilters: hug.types.multiple,
+        samples: hug.types.multiple = [],
+        max_memory: hug.types.text = "",
+        lowmem: hug.types.smart_boolean = False,
+        i: int = 1,
+        N: int = 1,
+    ):
+        index = BIGSI(db)
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
@@ -161,39 +168,45 @@ class bigsi(object):
             max_memory_bytes = None
         if i < 1:
             raise ValueError("Batch index is one-based. Use 1 for first batch, not 0.")
-        bf_range=bf_range_calc(index, i, N)
+        bf_range = bf_range_calc(index, i, N)
         print(bf_range)
 
-
-        return build(index=index,
-                     bloomfilter_filepaths=bloomfilters,
-                     samples=samples,
-                     max_memory=max_memory_bytes,
-                     lowmem=lowmem,
-                     bf_range=bf_range)
+        return build(
+            index=index,
+            bloomfilter_filepaths=bloomfilters,
+            samples=samples,
+            max_memory=max_memory_bytes,
+            lowmem=lowmem,
+            bf_range=bf_range,
+        )
 
     @hug.object.cli
-    @hug.object.post('/merge', output_format=hug.output_format.json)
-    def merge(self, db1: hug.types.text,
-              db2: hug.types.text):
+    @hug.object.post("/merge", output_format=hug.output_format.json)
+    def merge(self, db1: hug.types.text, db2: hug.types.text):
         BIGSI(db1).merge(BIGSI(db2))
         return {"result": "merged %s into %s." % (db2, db1)}
 
     @hug.object.cli
-    @hug.object.get('/search', examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
-                    output_format=hug.output_format.json,
-                    response_headers={"Access-Control-Allow-Origin": "*"})
+    @hug.object.get(
+        "/search",
+        examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
+        output_format=hug.output_format.json,
+        response_headers={"Access-Control-Allow-Origin": "*"},
+    )
     # @do_cprofile
-    def search(self, db: hug.types.text=None,
-               seq: hug.types.text=None,
-               seqfile: hug.types.text=None,
-               threshold: hug.types.float_number=1.0,
-               output_format: hug.types.one_of(("json", "tsv", "fasta"))='json',
-               pipe_out: hug.types.smart_boolean=False,
-               pipe_in: hug.types.smart_boolean=False,
-               cachesize: hug.types.number=4,
-               score: hug.types.smart_boolean=False,
-               nproc: hug.types.number=4):
+    def search(
+        self,
+        db: hug.types.text = None,
+        seq: hug.types.text = None,
+        seqfile: hug.types.text = None,
+        threshold: hug.types.float_number = 1.0,
+        output_format: hug.types.one_of(("json", "tsv", "fasta")) = "json",
+        pipe_out: hug.types.smart_boolean = False,
+        pipe_in: hug.types.smart_boolean = False,
+        cachesize: hug.types.number = 4,
+        score: hug.types.smart_boolean = False,
+        nproc: hug.types.number = 4,
+    ):
         if db is None:
             db = BDB_DB_FILENAME
         bigsi = BIGSI(db, cachesize=cachesize, nproc=nproc, mode="r")
@@ -206,31 +219,36 @@ class bigsi(object):
             return "-s or -f must be provided"
         if seq == "-" or pipe_in:
             _, fp = tempfile.mkstemp(text=True)
-            with open(fp, 'w') as openfile:
+            with open(fp, "w") as openfile:
                 for line in sys.stdin:
                     openfile.write(line)
             result = search(
-                seq=None, fasta_file=fp, threshold=threshold,
+                seq=None,
+                fasta_file=fp,
+                threshold=threshold,
                 graph=bigsi,
                 output_format=output_format,
                 pipe=pipe_out,
-                score=score)
+                score=score,
+            )
 
         else:
-            result = search(seq=seq,
-                            fasta_file=seqfile,
-                            threshold=threshold,
-                            graph=bigsi,
-                            output_format=output_format,
-                            pipe=pipe_out,
-                            score=score)
+            result = search(
+                seq=seq,
+                fasta_file=seqfile,
+                threshold=threshold,
+                graph=bigsi,
+                output_format=output_format,
+                pipe=pipe_out,
+                score=score,
+            )
 
         if not pipe_out:
             return result
 
     @hug.object.cli
-    @hug.object.delete('/', output_format=hug.output_format.json)
-    def delete(self, db: hug.types.text=None):
+    @hug.object.delete("/", output_format=hug.output_format.json)
+    def delete(self, db: hug.types.text = None):
         try:
             bigsi = BIGSI(db)
         except ValueError:
@@ -244,8 +262,10 @@ class bigsi(object):
     #     return stats(graph=get_graph())
 
     @hug.object.cli
-    @hug.object.get('/samples', output_format=hug.output_format.json)
-    def samples(self, sample_name: hug.types.text=None, db: hug.types.text=None, delete: hug.types.smart_boolean=False):
+    @hug.object.get("/samples", output_format=hug.output_format.json)
+    def samples(
+        self, sample_name: hug.types.text = None, db: hug.types.text = None, delete: hug.types.smart_boolean = False
+    ):
         return samples(sample_name, graph=get_graph(bdb_db_filename=db), delete=delete)
 
     # @hug.object.cli

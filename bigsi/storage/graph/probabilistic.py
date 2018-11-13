@@ -1,5 +1,6 @@
 from bigsi.storage.base import BaseStorage
 from bigsi.storage.graph.base import BaseGraphStorage
+
 # from bigsi.storage import InMemoryStorage
 # from bigsi.storage import RedisHashStorage
 # from bigsi.storage import RedisBitArrayStorage
@@ -7,10 +8,10 @@ from bigsi.storage.graph.base import BaseGraphStorage
 from bigsi.storage import BerkeleyDBStorage
 from bigsi.storage import RocksDBStorage
 from bigsi.utils import hash_key
-from bigsi.bytearray import ByteArray
 from bigsi.bitvector import BitArray
 from bitarray import bitarray
 import hashlib
+
 # from bitstring import BitArray
 import math
 import os
@@ -20,11 +21,13 @@ import sys
 from HLL import HyperLogLog
 import logging
 import time
+
 logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.utils import chunks
+
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 try:
@@ -74,7 +77,7 @@ class BloomFilterMatrix:
             for i in self.hashes(e):
                 bloomfilter[i] = True
         end = time.time()
-        logger.debug("Created bloom filter in %i seconds" % (end-start))
+        logger.debug("Created bloom filter in %i seconds" % (end - start))
         return bloomfilter
 
     def _get_all_indexes(self, elements):
@@ -83,8 +86,7 @@ class BloomFilterMatrix:
         for element in elements:
             indexes.update(self.hashes(element))
         end = time.time()
-        logger.debug("Generated %i hashes for %i elements in %i seconds" % (
-            len(indexes), len(elements), end-start))
+        logger.debug("Generated %i hashes for %i elements in %i seconds" % (len(indexes), len(elements), end - start))
         return indexes
 
     def contains(self, element, colour):
@@ -107,7 +109,7 @@ class BloomFilterMatrix:
         rows = self._get_rows(indexes)
         bas = []
         for i in range(0, len(rows), self.num_hashes):
-            bas.append(self._binary_and(rows[i:i + self.num_hashes]))
+            bas.append(self._binary_and(rows[i : i + self.num_hashes]))
         return bas
 
     def _lookup_element(self, element):
@@ -146,11 +148,9 @@ class BloomFilterMatrix:
 
 
 class BaseProbabilisticStorage(BaseStorage):
-
     def __init__(self, bloom_filter_size, num_hashes, **kwargs):
         super().__init__(**kwargs)
-        self.bloomfilter = BloomFilterMatrix(
-            size=bloom_filter_size, num_hashes=num_hashes, storage=self)
+        self.bloomfilter = BloomFilterMatrix(size=bloom_filter_size, num_hashes=num_hashes, storage=self)
 
     def set_bloom_filter_size(self, bloom_filter_size):
         self.bloomfilter.size = bloom_filter_size
@@ -168,7 +168,8 @@ class BaseProbabilisticStorage(BaseStorage):
     def lookup_all_present(self, elements):
         if not elements:
             raise ValueError(
-                "You're trying to lookup a null element is your sequence search shorter than the kmer size?")
+                "You're trying to lookup a null element is your sequence search shorter than the kmer size?"
+            )
         indexes = []
         for e in elements:
             indexes.extend([h for h in self.bloomfilter.hashes(e)])
@@ -183,13 +184,13 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def get_row(self, index):
         b = BitArray()
-        _row_bytes = self.get(index, b'')
+        _row_bytes = self.get(index, b"")
         b.frombytes(_row_bytes)
         return b
 
     def get_rows(self, indexes):
-        vals=self.multiget(indexes)
-        rows=[]
+        vals = self.multiget(indexes)
+        rows = []
         for v in vals:
             b = BitArray()
             b.frombytes(v)
@@ -201,7 +202,7 @@ class BaseProbabilisticStorage(BaseStorage):
 
     def items(self):
         for i in range(self.bloomfilter.size):
-            yield (i, self.get(i, b''))
+            yield (i, self.get(i, b""))
 
     def dump(self, outfile, num_colours):
         for indices in chunks(range(self.bloomfilter.size), min(self.bloomfilter.size, 10000)):
@@ -216,12 +217,16 @@ class BaseProbabilisticStorage(BaseStorage):
 
 
 class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage):
-
     def __init__(self, filename, bloom_filter_size, num_hashes, mode="r", cachesize=4, decode=None):
-        super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
-                         num_hashes=num_hashes, mode=mode,
-                         cachesize=cachesize, decode=decode)
-        self.name = 'probabilistic-bsddb'
+        super().__init__(
+            filename=filename,
+            bloom_filter_size=bloom_filter_size,
+            num_hashes=num_hashes,
+            mode=mode,
+            cachesize=cachesize,
+            decode=decode,
+        )
+        self.name = "probabilistic-bsddb"
         self.mode = mode
 
     def setbits(self, indexes, colour, bit):
@@ -236,13 +241,18 @@ class ProbabilisticBerkeleyDBStorage(BaseProbabilisticStorage, BerkeleyDBStorage
     def getbit(self, index, colour):
         return self.get_row(index).getbit(colour)
 
-class ProbabilisticRocksDBStorage(BaseProbabilisticStorage, RocksDBStorage):
 
+class ProbabilisticRocksDBStorage(BaseProbabilisticStorage, RocksDBStorage):
     def __init__(self, filename, bloom_filter_size, num_hashes, mode="r", cachesize=4, decode=None):
-        super().__init__(filename=filename, bloom_filter_size=bloom_filter_size,
-                         num_hashes=num_hashes, mode=mode,
-                         cachesize=cachesize, decode=decode)
-        self.name = 'probabilistic-rocksdb'
+        super().__init__(
+            filename=filename,
+            bloom_filter_size=bloom_filter_size,
+            num_hashes=num_hashes,
+            mode=mode,
+            cachesize=cachesize,
+            decode=decode,
+        )
+        self.name = "probabilistic-rocksdb"
         self.mode = mode
 
     def setbits(self, indexes, colour, bit):
