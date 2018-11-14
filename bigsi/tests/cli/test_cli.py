@@ -27,7 +27,9 @@ def test_bloom_cmd():
     Graph.close()
     f = "/tmp/test_kmers.bloom"
     response = hug.test.post(
-        bigsi.__main__, "bloom", {"db": Graph.db, "ctx": "bigsi/tests/data/test_kmers.ctx", "outfile": f}
+        bigsi.__main__,
+        "bloom",
+        {"db": Graph.db, "ctx": "bigsi/tests/data/test_kmers.ctx", "outfile": f},
     )
     a = bitarray()
     with open("/tmp/test_kmers.bloom/test_kmers.bloom_0_100", "rb") as inf:
@@ -58,20 +60,30 @@ def test_build_cmd():
     bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
     samples = []
     for i in range(N):
-        samples.append("".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
+        samples.append(
+            "".join(
+                random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
+            )
+        )
     response = hug.test.post(
-        bigsi.__main__, "build", {"db": f, "bloomfilters": bloomfilter_filepaths, "samples": samples}
+        bigsi.__main__,
+        "build",
+        {"db": f, "bloomfilters": bloomfilter_filepaths, "samples": samples},
     )
     # TODO fix below
     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-    response = hug.test.get(bigsi.__main__, "search", {"db": f, "seq": seq, "score": True})
+    response = hug.test.get(
+        bigsi.__main__, "search", {"db": f, "seq": seq, "score": True}
+    )
     #
     assert response.data.get(seq).get("results")
 
     assert response.data.get(seq).get("results") != {}
     # assert "score" in list(response.data.get(seq).get('results').values())[0]
     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG"
-    response = hug.test.get(bigsi.__main__, "search", {"db": f, "seq": seq, "threshold": 0.1, "score": True})
+    response = hug.test.get(
+        bigsi.__main__, "search", {"db": f, "seq": seq, "threshold": 0.1, "score": True}
+    )
 
     assert response.data.get(seq).get("results")
     assert "score" in list(response.data.get(seq).get("results").values())[0]
@@ -107,14 +119,22 @@ def test_insert_search_cmd():
     bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
     samples = []
     for i in range(N):
-        samples.append("".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
+        samples.append(
+            "".join(
+                random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
+            )
+        )
     response = hug.test.post(
-        bigsi.__main__, "build", {"db": f, "bloomfilters": bloomfilter_filepaths, "samples": samples}
+        bigsi.__main__,
+        "build",
+        {"db": f, "bloomfilters": bloomfilter_filepaths, "samples": samples},
     )
 
     # Returns a Response object
     response = hug.test.post(
-        bigsi.__main__, "insert", {"db": f, "bloomfilter": "bigsi/tests/data/test_kmers.bloom", "sample": "s3"}
+        bigsi.__main__,
+        "insert",
+        {"db": f, "bloomfilter": "bigsi/tests/data/test_kmers.bloom", "sample": "s3"},
     )
     assert response.data.get("result") == "success"
     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"

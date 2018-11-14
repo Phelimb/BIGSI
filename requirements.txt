@@ -10,6 +10,7 @@ bitarray
 redis
 biopython
 celery
+crc16
 # Tests
 psutil
 hypothesis
