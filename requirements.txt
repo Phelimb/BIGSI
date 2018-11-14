@@ -6,6 +6,7 @@ bsddb3
 python-rocksdb
 mmh3
 bitstring
+bitarray
 redis
 biopython
 celery
