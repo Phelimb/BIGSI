@@ -1,6 +1,3 @@
-# from bigsi.storage.base import InMemoryStorage
-# from bigsi.storage.base import RedisHashStorage
-# from bigsi.storage.base import RedisBitArrayStorage
-# from bigsi.storage.base import SimpleRedisStorage
-from bigsi.storage.base import BerkeleyDBStorage
-from bigsi.storage.base import RocksDBStorage
+from bigsi.storage.berkeleydb import BerkeleyDBStorage
+from bigsi.storage.redis import RedisStorage
+from bigsi.storage.rocksdb import RocksDBStorage

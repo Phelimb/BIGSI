@@ -5,10 +5,6 @@ import numpy as np
 from bigsi.utils import seq_to_kmers
 
 from bigsi.decorators import convert_kmers_to_canonical
-from bigsi.storage.graph.probabilistic import (
-    ProbabilisticRocksDBStorage as IndexStorage,
-)
-from bigsi.storage import BerkeleyDBStorage as MetaDataStorage
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 from bigsi.matrix import transpose
 from bigsi.scoring import Scorer
