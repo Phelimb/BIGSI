@@ -106,28 +106,29 @@ class BIGSI(object):
     def __init__(self, config=None):
         if config is None:
             config = DEFAULT_CONFIG
-        backend_config = config["bitarray-backend"]
-        metadata_config = config["metadata-backend"]
-        self.storage_type = backend_config["type"]
+        self.storage_type = config["type"]
         if self.storage_type == "rocksdb":
-            self.storage = RocksdbBigsiStorage(backend_config)
-            self.metadata = RocksdbMetadataStorage(backend_config)
+            self.storage = RocksdbBigsiStorage(config)
+        elif self.storage_type == "berkeleydb":
+            self.storage = BerkeleydbBigsiStorage(config)
+        elif self.storage_type == "redis":
+            self.storage = RedisBigsiStorage(config)
 
     @convert_kmers_to_canonical
     def bloom(self, kmers):
-        bloomfilter = BloomFilter(m=self.metadata.bloom_filter_size, h=self.num_hashes)
+        bloomfilter = BloomFilter(m=self.storage.bloom_filter_size, h=self.num_hashes)
         bloomfilter.update(kmers)
         return bloomfilter
 
     def build(self, bloomfilters, samples):
         self.__validate_build_params(bloomfilters, samples)
-        self.metadata.insert_samples(samples)
+        self.storage.insert_samples(samples)
         bigsi = transpose(bloomfilters, lowmem=self.config.get("lowmem", False))
         self.storage.set_rows(bigsi)
 
     def insert(self, bloomfilter, sample):
         logger.warning("Build and merge is preferable to insert in most cases")
-        colour = self.metadata.insert_sample(sample)
+        colour = self.storage.insert_sample(sample)
         self.storage.insert_column(bloom_filter, colour)
 
     def __validate_merge(bigsi):
@@ -141,8 +142,8 @@ class BIGSI(object):
         self.merge_metadata(bigsi)
 
     def merge_graph(self, bigsi):
-        for i in range(self.metadata.bloom_filter_size):
-            r = self.storage.get_row(i)[: self.metadata.num_colours]
+        for i in range(self.storage.bloom_filter_size):
+            r = self.storage.get_row(i)[: self.storage.num_colours]
             r2 = bigsi.storage.get_row(i)[: bigsi.metadata.num_colours]
             r.extend(r2)
             self.storage.set_row(i, r)
@@ -188,7 +189,7 @@ class BIGSI(object):
             )
 
     def __seq_to_kmers(self, seq):
-        return seq_to_kmers(seq, self.metadata.kmer_size)
+        return seq_to_kmers(seq, self.storage.kmer_size)
 
     def __search_kmers_threshold_not_1(self, kmers, threshold, score):
         # if score:
@@ -202,7 +203,7 @@ class BIGSI(object):
         for i, f in enumerate(col_sum):
             res = float(f) / len(kmers)
             if res >= threshold:
-                sample = self.metadata.colour_to_sample(i)
+                sample = self.storage.colour_to_sample(i)
                 if sample != "DELETED":
                     out[sample] = {}
                     out[sample]["percent_kmers_found"] = 100 * res
@@ -213,7 +214,7 @@ class BIGSI(object):
         bitarray = self.storage.batch_lookup_and_bitwise_and_presence(kmers)
         out = {}
         for c in bitarray:
-            sample = self.metadata.colour_to_sample(c)
+            sample = self.storage.colour_to_sample(c)
             if sample != "DELETED":
                 if score:
                     out[sample] = self.scorer.score(

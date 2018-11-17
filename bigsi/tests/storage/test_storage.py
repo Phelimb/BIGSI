@@ -7,30 +7,36 @@ from bigsi.storage import RocksDBStorage
 from bitarray import bitarray
 import pytest
 
-STORAGES = [RedisStorage(), BerkeleyDBStorage(), RocksDBStorage()]
+
+def get_storages():
+    return [RedisStorage(), BerkeleyDBStorage(), RocksDBStorage()]
 
 
 def test_get_set():
-    for storage in STORAGES:
+    for storage in get_storages():
+        storage.delete_all()
         storage["test"] = b"123"
         assert storage["test"] == b"123"
 
 
 def test_get_set_integer():
-    for storage in STORAGES:
+    for storage in get_storages():
+        storage.delete_all()
         storage.set_integer("test", 112)
         assert storage.get_integer("test") == 112
 
 
 def test_get_set_string():
-    for storage in STORAGES:
+    for storage in get_storages():
+        storage.delete_all()
         storage.set_string("test", "abc")
         assert storage.get_string("test") == "abc"
 
 
 def test_get_set_bitarray():
     ba = bitarray("110101111010")
-    for storage in STORAGES:
+    for storage in get_storages():
+        storage.delete_all()
         storage.set_bitarray("test", ba)
         assert storage.get_bitarray("test") == ba
         assert storage.get_bit("test", 1) == True
@@ -41,7 +47,7 @@ def test_get_set_bitarray():
 
 
 def test_delete():
-    for storage in STORAGES:
+    for storage in get_storages():
         storage.set_string("test", "1231")
         assert storage.get_string("test") == "1231"
         storage.delete_all()
