@@ -40,10 +40,10 @@ def test_get_set_bitarray():
         assert storage.get_bit("test", 0) == False
 
 
-# def test_delete():
-#     for storage in STORAGES:
-#         storage.set_string("test", "1231")
-#         assert storage.get_string("test") == "1231"
-#         storage.delete_all()
-#         with pytest.raises(BaseException):
-#             storage.get_string("test") == None
+def test_delete():
+    for storage in STORAGES:
+        storage.set_string("test", "1231")
+        assert storage.get_string("test") == "1231"
+        storage.delete_all()
+        with pytest.raises(BaseException):
+            storage.get_string("test") == None
