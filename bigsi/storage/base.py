@@ -1,34 +1,5 @@
-import redis
-import sys
-import os
-
-# from rediscluster import StrictRedisCluster
-from bigsi.utils import hash_key
-from bigsi.utils import chunks
-from bigsi.bitvector import BitArray
-import shutil
-import logging
-import time
-import crc16
-import math
+from bitarray import bitarray
 import struct
-
-# from redis_protocol import encode as redis_encode
-# from redis.connection import Connection
-logging.basicConfig(level=logging.DEBUG)
-
-logger = logging.getLogger(__name__)
-from bigsi.utils import DEFAULT_LOGGING_LEVEL
-
-logger.setLevel(DEFAULT_LOGGING_LEVEL)
-
-try:
-    import bsddb3 as bsddb
-except ImportError:
-    bsddb = None
-
-
-from credis import Connection
 
 
 class BaseStorage(object):
@@ -49,82 +20,122 @@ class BaseStorage(object):
         except KeyError:
             return default
 
-    def set_bit(self):
-        raise NotImplementedError("Implemented in subclass")
-
-    def get_bit(self):
-        raise NotImplementedError("Implemented in subclass")
-
-    def __convert_to_integer_key(self, key):
+    def convert_to_integer_key(self, key):
         return key + ":int"
 
-    def __convert_to_string_key(self, key):
+    def convert_to_string_key(self, key):
         return key + ":string"
 
-    def __convert_to_bitarray_key(self, key):
+    def convert_to_bitarray_key(self, key):
         return key + ":bitarray"
 
+    def convert_to_bitarray_len_key(self, key):
+        return key + ":length_of_bitarray"
+
     def set_integer(self, key, value):
-        key = self.__convert_to_integer_key(key)
+        key = self.convert_to_integer_key(key)
         self[key] = struct.pack("Q", int(value))
 
     def get_integer(self, key):
-        key = self.__convert_to_integer_key(key)
+        key = self.convert_to_integer_key(key)
         return struct.unpack("Q", self[key])[0]
 
-    def set_bitarray(self):
+    def set_string(self, key, value):
+        assert isinstance(value, str)
+        key = self.convert_to_string_key(key)
+        self[key] = value.encode("utf-8")
+
+    def get_string(self, key):
+        key = self.convert_to_string_key(key)
+        return self[key].decode("utf-8")
+
+    def set_bitarray_length(self, key, value):
+        assert isinstance(value, bitarray)
+        lkey = self.convert_to_bitarray_len_key(key)
+        self.set_integer(lkey, len(value))
+
+    def get_bitarray_length(self, key):
+        lkey = self.convert_to_bitarray_len_key(key)
+        return self.get_integer(lkey)
+
+    def set_bitarray(self, key, value):
+        assert isinstance(value, bitarray)
+        _key = self.convert_to_bitarray_key(key)
+        self[_key] = value.tobytes()
+        self.set_bitarray_length(key, value)
+
+    def set_bitarray(self, keys, values):
+        # Takes advantage of batching in storage engine if available
         raise NotImplementedError("Implemented in subclass")
 
-    def get_bitarray(self):
+    def get_bitarray(self, key):
+        _key = self.convert_to_bitarray_key(key)
+        value = bitarray()
+        value.frombytes(self[_key])
+        return value[: self.get_bitarray_length(key)]
+
+    def get_bitarrays(self, keys):
+        # Takes advantage of batching in storage engine if available
         raise NotImplementedError("Implemented in subclass")
 
-    def set_string(self):
+    def set_bit(self, key, pos, bit):
+        ba = self.get_bitarray(key)
+        ba[pos] = bit
+        self.set_bitarray(key, ba)
+
+    def set_bits(self, keys, positions, bits):
+        # Takes advantage of batching in storage engine if available
         raise NotImplementedError("Implemented in subclass")
 
-    def get_string(self):
+    def get_bit(self, key, pos):
+        return self.get_bitarray(key)[pos]
+
+    def get_bits(self, keys, positions):
+        # Takes advantage of batching in storage engine if available
         raise NotImplementedError("Implemented in subclass")
 
     def delete_all(self):
         raise NotImplementedError("Implemented in subclass")
 
-    def incr(self, key):
-        raise NotImplementedError("Implemented in subclass")
 
-    def dumps(self):
-        d = {}
-        for k, v in self.items():
-            d[k] = v
-        return d
-
-    def loads(self, dump):
-        for k, v in dump.items():
-            self[k] = v
-
-
-class BigsiStorageMixin:
+class BitMatrix:
 
     ### Doesn't know the concept of a kmer
-    def get_row():
-        ## returns raw bytes
-        pass
+    def __init(self, number_of_rows):
+        self.number_of_rows = number_of_rows
 
-    def get_rows():
-        ## list of raw bytes
-        pass
+    def get_row(self, row_index):
+        return self.get_bitarray(row_index)
 
-    def set_row():
-        ##
-        pass
+    def get_rows(self, row_indexes):
+        # Takes advantage of batching in storage engine if available
+        return self.get_bitarrays(row_indexes)
 
-    def set_rows():
-        ###
-        pass
+    def set_row(self, row_index, bitarray):
+        return self.set_bitarray(row_index, bitarray)
 
-    def get_column():
-        pass
+    def set_rows(self, row_indexes, bitarrays):
+        # Takes advantage of batching in storage engine if available
+        return self.set_bitarrays(row_indexes, bitarrays)
 
-    def insert_column():
-        pass
+    def get_column(self, column_index):
+        ## This is very slow, as we index row-wise. Need to know the number of rows, so must be done elsewhere
+        return bitarray(
+            "".join(
+                [
+                    str(int(i))
+                    for i in self.get_bits(
+                        list(range(row_indexes)), [column_index] * len(row_indexes)
+                    )
+                ]
+            )
+        )
+
+    def insert_column(self, column_index, bitarray):
+        ## This is very slow, as we index row-wise
+        self.set_bits(
+            list(range(row_indexes)), list(range(len(bitarray))), list(bitarray)
+        )
 
 
 class MetadataStorageMixin:
