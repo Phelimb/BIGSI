@@ -17,6 +17,7 @@ def test_get_set():
         storage.delete_all()
         storage["test"] = b"123"
         assert storage["test"] == b"123"
+        storage.delete_all()
 
 
 def test_get_set_integer():
@@ -24,6 +25,7 @@ def test_get_set_integer():
         storage.delete_all()
         storage.set_integer("test", 112)
         assert storage.get_integer("test") == 112
+        storage.delete_all()
 
 
 def test_get_set_string():
@@ -31,6 +33,7 @@ def test_get_set_string():
         storage.delete_all()
         storage.set_string("test", "abc")
         assert storage.get_string("test") == "abc"
+        storage.delete_all()
 
 
 def test_get_set_bitarray():
@@ -44,6 +47,14 @@ def test_get_set_bitarray():
         storage.set_bit("test", 0, 0)
         assert storage.get_bitarray("test") == bitarray("010101111010")
         assert storage.get_bit("test", 0) == False
+        storage.delete_all()
+
+
+def test_increment():
+    for storage in get_storages():
+        storage.delete_all()
+        assert storage.incr("testinc") == 1
+        assert storage.incr("testinc") == 2
 
 
 def test_delete():
@@ -53,3 +64,4 @@ def test_delete():
         storage.delete_all()
         with pytest.raises(BaseException):
             storage.get_string("test") == None
+        storage.delete_all()

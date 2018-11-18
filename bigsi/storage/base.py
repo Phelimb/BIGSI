@@ -48,10 +48,10 @@ class BaseStorage(object):
         return [self.convert_to_bitarray_len_key(key) for key in keys]
 
     def int_to_bytes(self, value):
-        return struct.pack("Q", int(value))
+        return str(value).encode("utf-8")
 
     def bytes_to_int(self, value):
-        return struct.unpack("Q", value)[0]
+        return int(value.decode("utf-8"))
 
     def batch_set(self, keys, values):
         for k, v in zip(keys, values):
@@ -152,54 +152,13 @@ class BaseStorage(object):
     def delete_all(self):
         raise NotImplementedError("Implemented in subclass")
 
-
-class BitMatrix(object):
-
-    ### Doesn't know the concept of a kmer
-    def __init__(self, number_of_rows):
-        self.number_of_rows = number_of_rows
-
-    def get_row(self, row_index):
-        return self.get_bitarray(row_index)
-
-    def get_rows(self, row_indexes):
-        # Takes advantage of batching in storage engine if available
-        return self.get_bitarrays(row_indexes)
-
-    def set_row(self, row_index, bitarray):
-        return self.set_bitarray(row_index, bitarray)
-
-    def set_rows(self, row_indexes, bitarrays):
-        # Takes advantage of batching in storage engine if available
-        return self.set_bitarrays(row_indexes, bitarrays)
-
-    def get_column(self, column_index):
-        ## This is very slow, as we index row-wise. Need to know the number of rows, so must be done elsewhere
-        return bitarray(
-            "".join(
-                [
-                    str(int(i))
-                    for i in self.get_bits(
-                        list(range(self.number_of_rows)),
-                        [column_index] * self.number_of_rows,
-                    )
-                ]
-            )
-        )
-
-    def get_columns(self, column_indexes):
-        for column_index in column_indexes:
-            yield self.get_column(column_index)
-
-    def insert_column(self, column_index, bitarray):
-        ## This is very slow, as we index row-wise
-        self.set_bits(
-            list(range(len(bitarray))), [column_index] * len(bitarray), list(bitarray)
-        )
-
-
-class MetadataStorageMixin:
-
-    # todo make property
-    def bloomfilter():
-        pass
+    def incr(self, key):
+        try:
+            i = self.get_integer(key)
+            i += 1
+            self.set_integer(key, i)
+            return i
+        except KeyError:
+            i = 1
+            self.set_integer(key, i)
+            return i

@@ -80,18 +80,13 @@ def unpack_bas(bas, j):
 from bigsi.constants import DEFAULT_CONFIG
 
 
-class MetadataStorage:
+class ProbabilisticMultiColourDeBruijnGraph:
+
+    """
+    
+    """
+
     def __init__(self):
-        pass
-
-
-class RocksdbBigsiStorage:
-    def __init__(self, config):
-        pass
-
-
-class RocksdbMetadataStorage:
-    def __init__(self, config):
         pass
 
 
@@ -129,7 +124,7 @@ class BIGSI(object):
     def insert(self, bloomfilter, sample):
         logger.warning("Build and merge is preferable to insert in most cases")
         colour = self.storage.insert_sample(sample)
-        self.storage.insert_column(bloom_filter, colour)
+        self.storage.insert_column(colour, bloom_filter)
 
     def __validate_merge(bigsi):
         assert self.metadata["bloom_filter_size"] == bigsi.metadata["bloom_filter_size"]
@@ -143,11 +138,10 @@ class BIGSI(object):
 
     def merge_graph(self, bigsi):
         for i in range(self.storage.bloom_filter_size):
-            r = self.storage.get_row(i)[: self.storage.num_colours]
-            r2 = bigsi.storage.get_row(i)[: bigsi.metadata.num_colours]
+            r = self.storage.get_row(i)
+            r2 = bigsi.storage.get_row(i)
             r.extend(r2)
             self.storage.set_row(i, r)
-        self.storage.sync()
 
     def merge_metadata(self, bigsi):
         for c in range(bigsi.metadata.num_colours):

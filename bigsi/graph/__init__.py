@@ -1,1 +1,3 @@
-from bigsi.graph.probabilistic import BIGSI
+from bigsi.graph.index import BIGSI
+
+#
