@@ -17,7 +17,6 @@ setup(
         "bigsi.storage",
         "bigsi.matrix",
         "bigsi.scoring",
-        "bigsi.storage.graph",
     ],
     keywords="DBG coloured de bruijn graphs sequence search signture files signature index bitsliced",
     license="MIT",

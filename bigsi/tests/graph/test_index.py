@@ -13,18 +13,67 @@ def get_storages():
 
 
 def test_lookup():
+    bloomfilter_size = 250
+    number_hash_functions = 3
     kmers1 = ["ATC", "ATG", "ATA", "ATT"]
     kmers2 = ["ATC", "ATG", "ATA", "TTT"]
-    bloomfilter_size = 25
-    number_hash_functions = 3
+    bloomfilter1 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers1)
+    bloomfilter2 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers2)
+    bloomfilters = [bloomfilter1, bloomfilter2]
     for storage in get_storages():
-        bloomfilter1 = BloomFilter(bloomfilter_size, number_hash_functions).update(
-            kmers1
+
+        ksi = KmerSignatureIndex.create(
+            storage, bloomfilters, bloomfilter_size, number_hash_functions
         )
-        bloomfilter2 = BloomFilter(bloomfilter_size, number_hash_functions).update(
-            kmers2
+
+        assert ksi.lookup(["ATC"]) == {"ATC": bitarray("11")}
+        assert ksi.lookup(["ATC", "ATC", "ATT"]) == {
+            "ATC": bitarray("11"),
+            "ATT": bitarray("10"),
+        }
+        assert ksi.lookup(["ATC", "ATC", "ATT", "TTT"]) == {
+            "ATC": bitarray("11"),
+            "ATT": bitarray("10"),
+            "TTT": bitarray("01"),
+        }
+
+
+def test_lookup2():
+    bloomfilter_size = 250
+    number_hash_functions = 2
+    kmers1 = ["ATC", "ATG", "ATA", "ATT"]
+    kmers2 = ["ATC", "ATG", "ATA", "TTT"]
+    bloomfilter1 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers1)
+    bloomfilter2 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers2)
+    bloomfilters = [bloomfilter1, bloomfilter2]
+    for storage in get_storages():
+
+        ksi = KmerSignatureIndex.create(
+            storage, bloomfilters, bloomfilter_size, number_hash_functions
         )
-        bloomfilters = [bloomfilter1, bloomfilter2]
+
+        assert ksi.lookup(["ATC"]) == {"ATC": bitarray("11")}
+        assert ksi.lookup(["ATC", "ATC", "ATT"]) == {
+            "ATC": bitarray("11"),
+            "ATT": bitarray("10"),
+        }
+        assert ksi.lookup(["ATC", "ATC", "ATT", "TTT"]) == {
+            "ATC": bitarray("11"),
+            "ATT": bitarray("10"),
+            "TTT": bitarray("01"),
+        }
+
+
+def test_lookup3():
+    bloomfilter_size = 250
+    number_hash_functions = 1
+    kmers1 = ["ATC", "ATG", "ATA", "ATT"]
+    kmers2 = ["ATC", "ATG", "ATA", "TTT"]
+    bloomfilter1 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers1)
+    bloomfilter2 = BloomFilter(bloomfilter_size, number_hash_functions).update(kmers2)
+    bloomfilters = [bloomfilter1, bloomfilter2]
+    for storage in get_storages():
+
         ksi = KmerSignatureIndex.create(
             storage, bloomfilters, bloomfilter_size, number_hash_functions
         )

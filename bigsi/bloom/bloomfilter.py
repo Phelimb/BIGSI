@@ -3,14 +3,14 @@ from bitarray import bitarray
 
 
 def _hash(element, seed, m):
-    _hash = mmh3.hash(element, seed) % m
-    return _hash
+    return mmh3.hash(element, seed) % m
 
 
 def generate_hashes(element, number_hash_functions, bloomfilter_size):
-    for seed in range(number_hash_functions):
-        res = _hash(element, seed, bloomfilter_size)
-        yield res
+    hashes = {
+        _hash(element, seed, bloomfilter_size) for seed in range(number_hash_functions)
+    }
+    return hashes
 
 
 class BloomFilter:

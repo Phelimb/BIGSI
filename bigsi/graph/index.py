@@ -32,6 +32,12 @@ class KmerSignatureIndex:
         bitmatrix = BitMatrix.create(storage, rows)
         return cls(bitmatrix, bloomfilter_size, number_hash_functions)
 
+    def lookup(self, kmers):
+        kmer_to_hashes = self.__kmers_to_hashes(kmers)
+        hashes = {h for sublist in kmer_to_hashes.values() for h in sublist}
+        rows = self.__batch_get_rows(hashes)
+        return self.__bitwise_and_kmers(kmer_to_hashes, rows)
+
     def __kmers_to_hashes(self, kmers):
         d = {}
         for k in set(kmers):
@@ -49,9 +55,3 @@ class KmerSignatureIndex:
             subset_rows = [rows[h] for h in hashes]
             d[k] = reduce(lambda x, y: x & y, subset_rows)
         return d
-
-    def lookup(self, kmers):
-        kmer_to_hashes = self.__kmers_to_hashes(kmers)
-        hashes = {h for sublist in kmer_to_hashes.values() for h in sublist}
-        rows = self.__batch_get_rows(hashes)
-        return self.__bitwise_and_kmers(kmer_to_hashes, rows)
