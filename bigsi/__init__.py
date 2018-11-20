@@ -1,5 +1,5 @@
 # from bigsi import version
 from bigsi.utils import *
-from bigsi.graph.index import BIGSI
+from bigsi.graph.bigsi import BIGSI
 
 # from main import *
