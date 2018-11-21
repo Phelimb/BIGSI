@@ -9,7 +9,6 @@ from bigsi.tests.base import ST_KMER_SIZE
 from bigsi.tests.base import ST_BLOOM_FILTER_SIZE
 from bigsi.tests.base import ST_NUM_HASHES
 from bigsi.tests.base import CONFIGS
-from bigsi.utils import make_hash
 from bigsi.utils import reverse_comp
 from hypothesis import given
 from hypothesis import example
