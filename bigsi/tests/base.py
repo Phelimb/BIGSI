@@ -4,39 +4,27 @@ import os
 import itertools
 
 
-ROCKS_DB_CONFIG = {
-    "bitarray-backend": {
-        "type": "rocksdb",
-        "filename": "test-rocksdb",
-        "options": {"max_open_files": 5000, "create_if_missing": True},
-    },
-    "metadata-backend": {
-        "type": "rocksdb",
-        "filename": "test-rocksdb",
-        "options": {"max_open_files": 5000, "create_if_missing": True},
-    },
-    "k": 31,
-    "m": 25,
-    "h": 3,
+ROCKS_DB_STORAGE_CONFIG = {
+    "filename": "test-rocksdb",
+    "options": {"max_open_files": 5000, "create_if_missing": True},
 }
 
-REDIS_CONFIG = {
-    "bitarray-backend": {"type": "redis", "host": "localhost", "port": 6379},
-    "metadata-backend": {"type": "redis", "host": "localhost", "port": 6379},
-    "k": 31,
-    "m": 25,
-    "h": 3,
-}
+BERKELEY_DB_STORAGE_CONFIG = {"filename": "test-berkeleydb"}
+
+REDIS_STORAGE_CONFIG = {"host": "localhost", "port": 6379}
+PARAMETERS = {"k": 3, "m": 25, "h": 3}
+ROCKS_DB_CONFIG = {"type": "rocksdb", "storage": ROCKS_DB_STORAGE_CONFIG, **PARAMETERS}
+
+REDIS_CONFIG = {"type": "redis", "storage": REDIS_STORAGE_CONFIG, **PARAMETERS}
 
 BERKELEY_DB_CONFIG = {
-    "bitarray-backend": {"type": "berkeley-db"},
-    "metadata-backend": {"type": "berkeley-db"},
-    "k": 31,
-    "m": 25,
-    "h": 3,
+    "type": "berkeleydb",
+    "storage": BERKELEY_DB_STORAGE_CONFIG,
+    **PARAMETERS,
 }
 
-CONFIGS = [ROCKS_DB_CONFIG]
+
+CONFIGS = [REDIS_CONFIG, BERKELEY_DB_CONFIG, ROCKS_DB_CONFIG]
 L = ["".join(x) for x in itertools.product("ATCG", repeat=9)]
 ST_KMER = st.sampled_from(L)
 # ST_KMER_SIZE = st.integers(min_value=11, max_value=31)

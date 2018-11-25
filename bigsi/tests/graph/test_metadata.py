@@ -17,7 +17,7 @@ def test_add_sample_metadata():
         colour = sm.add_sample(sample_name)
         assert sm.samples_to_colours([sample_name]) == {sample_name: 0}
         assert sm.colours_to_samples([0]) == {0: sample_name}
-        assert sm.number_of_samples == 1
+        assert sm.num_samples == 1
         assert sm.sample_name_exists(sample_name)
         assert not sm.sample_name_exists("sample_name2")
 
@@ -25,7 +25,7 @@ def test_add_sample_metadata():
         colour = sm.add_sample(sample_name)
         assert sm.sample_to_colour(sample_name) == 1
         assert sm.colour_to_sample(1) == sample_name
-        assert sm.number_of_samples == 2
+        assert sm.num_samples == 2
 
 
 def test_delete_sample():

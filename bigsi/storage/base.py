@@ -1,5 +1,6 @@
 from bitarray import bitarray
 import struct
+import gc
 
 
 class BaseStorage(object):
@@ -162,3 +163,10 @@ class BaseStorage(object):
             i = 1
             self.set_integer(key, i)
             return i
+
+    def sync(self):
+        pass
+
+    def close(self):
+        del self.storage
+        gc.collect()

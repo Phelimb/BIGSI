@@ -4,6 +4,7 @@ import rocksdb
 import shutil
 import copy
 import gc
+import os
 
 
 class RocksDB(rocksdb.DB):
@@ -48,3 +49,19 @@ class RocksDBStorage(BaseStorage):
     def batch_get(self, keys):
         result = self.storage.multi_get(keys)
         return [result[k] for k in keys]
+
+    def sync(self):
+        gc.collect()
+
+    def close(self):
+        self.__delete_lock_file()
+        del self.storage
+        gc.collect()
+
+    def __delete_lock_file(self):
+        lock_file = os.path.join(self.storage_config["filename"], "LOCK")
+        try:
+            os.remove(lock_file)
+        except (FileNotFoundError, NotADirectoryError, PermissionError):
+            pass
+        gc.collect()

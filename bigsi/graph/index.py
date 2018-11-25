@@ -3,6 +3,10 @@ from bigsi.bloom import BloomFilter
 from bigsi.matrix import transpose
 from bigsi.matrix import BitMatrix
 from functools import reduce
+from bigsi.utils import convert_query_kmer
+
+BLOOMFILTER_SIZE_KEY = "ksi:bloomfilter_size"
+NUM_HASH_FUNCTS_KEY = "ksi:num_hashes"
 
 
 class KmerSignatureIndex:
@@ -11,39 +15,41 @@ class KmerSignatureIndex:
     Methods for managing kmer signature indexes
     """
 
-    def __init__(self, bitmatrix, bloomfilter_size, number_hash_functions):
-        self.bitmatrix = bitmatrix
-        self.bloomfilter_size = bloomfilter_size
-        self.number_hash_functions = number_hash_functions
+    def __init__(self, storage):
+        self.bitmatrix = BitMatrix(storage)
+        self.bloomfilter_size = storage.get_integer(BLOOMFILTER_SIZE_KEY)
+        self.num_hashes = storage.get_integer(NUM_HASH_FUNCTS_KEY)
 
     @classmethod
-    def create(
-        cls,
-        storage,
-        bloomfilters,
-        bloomfilter_size,
-        number_hash_functions,
-        lowmem=False,
-    ):
+    def create(cls, storage, bloomfilters, bloomfilter_size, num_hashes, lowmem=False):
         bloomfilters = [
             bf.bitarray if isinstance(bf, BloomFilter) else bf for bf in bloomfilters
         ]
+        storage.set_integer(BLOOMFILTER_SIZE_KEY, bloomfilter_size)
+        storage.set_integer(NUM_HASH_FUNCTS_KEY, num_hashes)
         rows = list(transpose(bloomfilters, lowmem=lowmem))
         bitmatrix = BitMatrix.create(storage, rows)
-        return cls(bitmatrix, bloomfilter_size, number_hash_functions)
+        return cls(storage)
 
     def lookup(self, kmers):
+        if isinstance(kmers, str):
+            kmers = [kmers]
         kmer_to_hashes = self.__kmers_to_hashes(kmers)
         hashes = {h for sublist in kmer_to_hashes.values() for h in sublist}
         rows = self.__batch_get_rows(hashes)
         return self.__bitwise_and_kmers(kmer_to_hashes, rows)
 
+    def insert_bloom(self, bloomfilter, column_index):
+        self.bitmatrix.insert_column(bloomfilter, column_index)
+
     def __kmers_to_hashes(self, kmers):
         d = {}
         for k in set(kmers):
             d[k] = set(
-                generate_hashes(k, self.number_hash_functions, self.bloomfilter_size)
-            )
+                generate_hashes(
+                    convert_query_kmer(k), self.num_hashes, self.bloomfilter_size
+                )
+            )  ## use canonical kmer to generate lookup, but report query kmer
         return d
 
     def __batch_get_rows(self, row_indexes):

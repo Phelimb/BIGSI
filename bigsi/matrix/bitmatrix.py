@@ -12,12 +12,13 @@ class BitMatrix(object):
 
     def __init__(self, storage):
         self.storage = storage
-        self.number_of_rows = self.storage.get_integer(NUM_ROWS_KEY)
+        self.num_rows = self.storage.get_integer(NUM_ROWS_KEY)
 
     @classmethod
     def create(cls, storage, rows):
         storage.set_bitarrays(range(len(rows)), rows)
         storage.set_integer(NUM_ROWS_KEY, len(rows))
+        storage.sync()
         return cls(storage)
 
     def get_row(self, row_index):
@@ -41,8 +42,7 @@ class BitMatrix(object):
                 [
                     str(int(i))
                     for i in self.storage.get_bits(
-                        list(range(self.number_of_rows)),
-                        [column_index] * self.number_of_rows,
+                        list(range(self.num_rows)), [column_index] * self.num_rows
                     )
                 ]
             )
@@ -52,8 +52,10 @@ class BitMatrix(object):
         for column_index in column_indexes:
             yield self.get_column(column_index)
 
-    def insert_column(self, column_index, bitarray):
+    def insert_column(self, bitarray, column_index):
         ## This is very slow, as we index row-wise
         self.storage.set_bits(
-            list(range(len(bitarray))), [column_index] * len(bitarray), list(bitarray)
+            list(range(len(bitarray))),
+            [column_index] * len(bitarray),
+            bitarray.tolist(),
         )

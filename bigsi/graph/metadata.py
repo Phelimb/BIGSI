@@ -10,7 +10,7 @@ class SampleMetadata:
         return "colour_count"
 
     @property
-    def number_of_samples(self):
+    def num_samples(self):
         try:
             return self.__get_integer(self.colour_count_key)
             # we could distinguish between the number of samples,
@@ -21,10 +21,14 @@ class SampleMetadata:
 
     def add_sample(self, sample_name):
         self.__validate_sample_name(sample_name)
-        colour = self.number_of_samples
+        colour = self.num_samples
         self.__set_sample_colour(sample_name, colour)
         self.__set_colour_sample(colour, sample_name)
-        self.__increment_colour_count()
+        return self.__increment_colour_count()
+
+    def add_samples(self, sample_names):
+        for sample_name in sample_names:
+            self.add_sample(sample_name)
 
     def delete_sample(self, sample_name):
         ## Deleting samples just changes it's name to a reserved deleted string

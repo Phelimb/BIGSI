@@ -25,3 +25,6 @@ class BerkeleyDBStorage(BaseStorage):
         except FileNotFoundError:
             pass
         BerkeleyDBStorage.__init__(self, storage_config=self.storage_config)
+
+    def sync(self):
+        self.storage.sync()
