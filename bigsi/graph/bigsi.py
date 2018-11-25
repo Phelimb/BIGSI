@@ -1,3 +1,7 @@
+import logging
+import math
+from multiprocessing import Pool
+import numpy as np
 from bigsi.constants import DEFAULT_CONFIG
 from bigsi.graph.metadata import SampleMetadata
 from bigsi.graph.index import KmerSignatureIndex
@@ -8,7 +12,8 @@ from bigsi.utils import seq_to_kmers
 from bigsi.utils import bitwise_and
 from bigsi.utils import non_zero_bitarrary_positions
 from bigsi.storage import get_storage
-import logging
+from bigsi.constants import DEFAULT_NPROC
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,71 @@ def validate_build_params(bloomfilters, samples):
 
 
 MIN_UNIQUE_KMERS_IN_QUERY = 0
+
+B_ONE = (1).to_bytes(1, byteorder="big")
+
+
+def unpack_and_sum(bitarrays):
+    c = 0
+    for bitarry in bitarrays:
+        if c == 0:
+            cumsum = np.fromstring(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
+        else:
+            l = np.fromstring(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
+            cumsum = np.add(cumsum, l)
+        c += 1
+    return cumsum
+
+
+def chunks(l, n):
+    n = max(1, n)
+    return (l[i : i + n] for i in range(0, len(l), n))
+
+
+def unpack_bitarrays(bitarrays, j):
+    logger.debug("ncores: %i" % j)
+    if j == 0:
+        res = unpack_and_sum(bitarrays)
+        return res
+    else:
+        n = math.ceil(float(len(bitarrays)) / j)
+        p = Pool(j)
+        res = p.map(unpack_and_sum, chunks(bitarrays, n))
+        p.close()
+        return np.sum(res, axis=0)
+
+
+import json
+
+
+class BigsiQueryResult:
+    PERCENT_KMERS_FOUND_KEY = "percent_kmers_found"
+    NUM_KMERS_KEY = "num_kmers"
+    NUM_KMERS_FOUND_KEY = "num_kmers_found"
+    SAMPLE_KEY = "sample_name"
+
+    def __init__(self, sample_name, num_kmers_found, num_kmers):
+        self.sample_name = sample_name
+        self.num_kmers_found = num_kmers_found
+        self.num_kmers = num_kmers
+        self.percent_kmers_found = round(100 * float(num_kmers_found) / num_kmers, 2)
+
+    def todict(self):
+        return {
+            self.PERCENT_KMERS_FOUND_KEY: self.percent_kmers_found,
+            self.NUM_KMERS_KEY: self.num_kmers,
+            self.NUM_KMERS_FOUND_KEY: self.num_kmers_found,
+            self.SAMPLE_KEY: self.sample_name,
+        }
+
+    def tojson(self):
+        return json.dumps(self.todict())
+
+    def __repr__(self):
+        return self.tojson()
+
+    def __eq__(self, ob):
+        return self.todict() == ob.todict()
 
 
 class BIGSI(SampleMetadata, KmerSignatureIndex):
@@ -38,6 +108,10 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     @property
     def kmer_size(self):
         return self.config["k"]
+
+    @property
+    def nproc(self):
+        return self.config.get("nproc", DEFAULT_NPROC)
 
     @classmethod
     def bloom(cls, config, kmers):
@@ -60,37 +134,53 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     def search(self, seq, threshold=1.0, score=False):
         self.__validate_search_query(seq)
         assert threshold <= 1
-        kmers = self.seq_to_kmers(seq)
+        kmers = set(self.seq_to_kmers(seq))
         kmers_to_colours = self.lookup(kmers)
+        min_kmers = math.ceil(len(kmers) * threshold)
         if threshold == 1.0:
-            return self.exact_filter(kmers_to_colours)
+            results = self.exact_filter(kmers_to_colours)
         else:
-            return self.inexact_filter(kmers_to_colours, threshold)
+            results = self.inexact_filter(kmers_to_colours, min_kmers)
+        results.sort(key=lambda x: x.num_kmers_found, reverse=True)
+        return results
 
     def exact_filter(self, kmers_to_colours):
         colours_with_all_kmers = non_zero_bitarrary_positions(
             bitwise_and(kmers_to_colours.values())
         )
-        samples = self.colours_to_samples(colours_with_all_kmers)
-        return {
-            s: {
-                "percent_kmers": 100,
-                "num_kmers": len(kmers_to_colours),
-                "num_kmers_found": len(kmers_to_colours),
-            }
+        samples = self.get_sample_list(colours_with_all_kmers)
+        return [
+            BigsiQueryResult(
+                sample_name=s,
+                num_kmers=len(kmers_to_colours),
+                num_kmers_found=len(kmers_to_colours),
+            )
             for s in samples
-        }
+        ]
 
-    # def inexact_filter(seq, threshold):
-    #     colours_to_percent_kmers=self.percent_kmers(kmers_to_colours)
-    #     colours=self.colours_above_threshold(colours_to_percent_kmers)
-    #     self.colours_to_samples
-    #     return self.__search(self.__seq_to_kmers(seq), threshold=threshold, score=score)
+    def get_sample_list(self, colours):
+        colours_to_samples = self.colours_to_samples(colours)
+        return [colours_to_samples[i] for i in colours]
 
-    # @convert_kmers_to_canonical
-    # def __search(self, kmers, threshold=1, score=False):
-    #     assert isinstance(kmers, list)
-    #     return self.search_kmers(kmers, threshold=threshold, score=score)
+    def inexact_filter(self, kmers_to_colours, min_kmers):
+        num_kmers = unpack_bitarrays(list(kmers_to_colours.values()), self.nproc)
+        colours = range(self.num_samples)
+        colours_to_kmers_found = dict(zip(colours, num_kmers))
+        colours_to_kmers_found_above_threshold = self.__colours_above_threshold(
+            colours_to_kmers_found, min_kmers
+        )
+        results = [
+            BigsiQueryResult(
+                sample_name=self.colour_to_sample(colour),
+                num_kmers_found=int(num_kmers_found),
+                num_kmers=len(kmers_to_colours),
+            )
+            for colour, num_kmers_found in colours_to_kmers_found_above_threshold.items()
+        ]
+        return results
+
+    def __colours_above_threshold(self, colours_to_percent_kmers, min_kmers):
+        return {k: v for k, v in colours_to_percent_kmers.items() if v > min_kmers}
 
     def insert(self, bloomfilter, sample):
         logger.warning("Build and merge is preferable to insert in most cases")
@@ -100,30 +190,15 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     def delete(self):
         self.storage.delete_all()
 
-    # def __validate_merge(bigsi):
-    #     assert self.metadata["bloom_filter_size"] == bigsi.metadata["bloom_filter_size"]
-    #     assert self.metadata["num_hashes"] == bigsi.metadata["num_hashes"]
-    #     assert self.metadata["kmer_size"] == bigsi.metadata["kmer_size"]
+    def __validate_merge(self, bigsi):
+        assert self.bloomfilter_size == bigsi.bloomfilter_size
+        assert self.num_hashes == bigsi.num_hashes
+        assert self.kmer_size == bigsi.kmer_size
 
-    # def merge(self, bigsi):
-    #     self.__validate_merge(bigsi)
-    #     self.merge_storage(bigsi)
-    #     self.merge_metadata(bigsi)
-
-    # def merge_graph(self, bigsi):
-    #     for i in range(self.storage.bloom_filter_size):
-    #         r = self.storage.get_row(i)
-    #         r2 = bigsi.storage.get_row(i)
-    #         r.extend(r2)
-    #         self.storage.set_row(i, r)
-
-    # def merge_metadata(self, bigsi):
-    #     for c in range(bigsi.metadata.num_colours):
-    #         sample = bigsi.colour_to_sample(c)
-    #         try:
-    #             self.add_sample(sample)
-    #         except ValueError:
-    #             self.add_sample(sample + "_duplicate_in_merge")
+    def merge(self, bigsi):
+        self.__validate_merge(bigsi)
+        self.merge_indexes(bigsi)
+        self.merge_metadata(bigsi)
 
     # def __search_kmers(self, kmers, threshold=1, score=False):
     #     if threshold == 1:

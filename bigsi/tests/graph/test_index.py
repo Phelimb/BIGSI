@@ -105,3 +105,36 @@ def test_lookup3():
             "ATT": bitarray("10"),
             "TTT": bitarray("01"),
         }
+
+
+def test_merge():
+    bloomfilter_size = 250
+    number_hash_functions = 1
+    kmers1 = ["ATC", "ATG", "ATA", "ATT"]
+    kmers2 = ["ATC", "ATG", "ATA", "TTT"]
+    bloomfilter1 = BloomFilter(bloomfilter_size, number_hash_functions).update(
+        convert_query_kmers(kmers1)
+    )
+    bloomfilter2 = BloomFilter(bloomfilter_size, number_hash_functions).update(
+        convert_query_kmers(kmers2)
+    )
+    bloomfilters = [bloomfilter1, bloomfilter2]
+    for storage in get_storages():
+        storage.delete_all()
+        ksi1 = KmerSignatureIndex.create(
+            storage, bloomfilters, bloomfilter_size, number_hash_functions
+        )
+        ksi2 = KmerSignatureIndex.create(
+            storage, bloomfilters, bloomfilter_size, number_hash_functions
+        )
+        ksi1.merge_indexes(ksi2)
+        assert ksi1.lookup(["ATC"]) == {"ATC": bitarray("11" * 2)}
+        assert ksi1.lookup(["ATC", "ATC", "ATT"]) == {
+            "ATC": bitarray("11" * 2),
+            "ATT": bitarray("10" * 2),
+        }
+        assert ksi1.lookup(["ATC", "ATC", "ATT", "TTT"]) == {
+            "ATC": bitarray("11" * 2),
+            "ATT": bitarray("10" * 2),
+            "TTT": bitarray("01" * 2),
+        }

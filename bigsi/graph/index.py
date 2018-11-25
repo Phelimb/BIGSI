@@ -16,6 +16,7 @@ class KmerSignatureIndex:
     """
 
     def __init__(self, storage):
+        self.storage = storage
         self.bitmatrix = BitMatrix(storage)
         self.bloomfilter_size = storage.get_integer(BLOOMFILTER_SIZE_KEY)
         self.num_hashes = storage.get_integer(NUM_HASH_FUNCTS_KEY)
@@ -41,6 +42,13 @@ class KmerSignatureIndex:
 
     def insert_bloom(self, bloomfilter, column_index):
         self.bitmatrix.insert_column(bloomfilter, column_index)
+
+    def merge_indexes(self, ksi):
+        for i in range(self.bloomfilter_size):
+            r1 = self.bitmatrix.get_row(i)
+            r2 = ksi.bitmatrix.get_row(i)
+            r1.extend(r2)
+            self.bitmatrix.set_row(i, r1)
 
     def __kmers_to_hashes(self, kmers):
         d = {}

@@ -73,6 +73,14 @@ class SampleMetadata:
             c: self.colour_to_sample(c) for c in colours if self.colour_to_sample(c)
         }
 
+    def merge_metadata(self, sm):
+        for c in range(sm.num_samples):
+            sample = sm.colour_to_sample(c)
+            try:
+                self.add_sample(sample)
+            except ValueError:
+                self.add_sample(sample + "_duplicate_in_merge")
+
     def __set_integer(self, key, value):
         __key = self.__add_key_prefix(key)
         self.storage.set_integer(__key, value)

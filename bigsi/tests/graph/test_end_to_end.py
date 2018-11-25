@@ -63,70 +63,84 @@ def test_unique_sample_names():
 
 
 def test_exact_search():
+    config = CONFIGS[0]
+    kmers_1 = seq_to_kmers("ATACACAAT", config["k"])
+    kmers_2 = seq_to_kmers("ACAGAGAAC", config["k"])
+    bloom1 = BIGSI.bloom(config, kmers_1)
+    bloom2 = BIGSI.bloom(config, kmers_2)
     for config in CONFIGS:
         get_storage(config).delete_all()
-        kmers_1 = seq_to_kmers("ATACACAAT", 3)
-        kmers_2 = seq_to_kmers("ACAGAGAAC", 3)
-        bloom1 = BIGSI.bloom(config, kmers_1)
-        bloom2 = BIGSI.bloom(config, kmers_2)
-        bigsi = BIGSI.build(config, [bloom1, bloom2], ["0", "1"])
-        bigsi.search("ATACACAAT") == {
-            0: {"percent_kmers": 100, "num_kmers": 6, "num_kmers_found": 6}
+        bigsi = BIGSI.build(config, [bloom1, bloom2], ["a", "b"])
+        assert bigsi.search("ATACACAAT")[0].todict() == {
+            "percent_kmers_found": 100,
+            "num_kmers": 6,
+            "num_kmers_found": 6,
+            "sample_name": "a",
         }
-        bigsi.search("ACAGAGAAC") == {
-            1: {"percent_kmers": 100, "num_kmers": 6, "num_kmers_found": 6}
+        assert bigsi.search("ACAGAGAAC")[0].todict() == {
+            "percent_kmers_found": 100,
+            "num_kmers": 6,
+            "num_kmers_found": 6,
+            "sample_name": "b",
         }
-        bigsi.search("ACAGTTAAC") == {}
+        assert bigsi.search("ACAGTTAAC") == []
+        bigsi.delete()
 
 
-# import copy
+def test_inexact_search():
+    config = CONFIGS[0]
+    kmers_1 = seq_to_kmers("ATACACAAT", config["k"])
+    kmers_2 = seq_to_kmers("ATACACAAC", config["k"])
+    bloom1 = BIGSI.bloom(config, kmers_1)
+    bloom2 = BIGSI.bloom(config, kmers_2)
+
+    for config in CONFIGS:
+        get_storage(config).delete_all()
+        with pytest.raises(BaseException):
+            BIGSI(config)
+        bigsi = BIGSI.build(config, [bloom1, bloom2], ["a", "b"])
+        assert bigsi.search("ACAGTTAAC", 0.5) == []
+        assert bigsi.lookup("AAT") == {"AAT": bitarray("10")}
+
+        results = bigsi.search("ATACACAAT", 0.5)
+        assert results[0].todict() == {
+            "percent_kmers_found": 100.0,
+            "num_kmers": 6,
+            "num_kmers_found": 6,
+            "sample_name": "a",
+        }
+        assert (
+            results[0].tojson()
+            == '{"percent_kmers_found": 100.0, "num_kmers": 6, "num_kmers_found": 6, "sample_name": "a"}'
+        )
+        assert results[1].todict() == {
+            "percent_kmers_found": 83.33,
+            "num_kmers": 6,
+            "num_kmers_found": 5,
+            "sample_name": "b",
+        }
+        bigsi.delete()
 
 
-# def combine_samples(samples1, samples2):
-#     combined_samples = copy.copy(samples1)
-#     for x in samples2:
-#         if x in combined_samples:
-#             z = x + "_duplicate_in_merge"
-#         else:
-#             z = x
-#         combined_samples.append(z)
-#     return combined_samples
+def test_merge():
+    for config in CONFIGS:
+        get_storage(config).delete_all()
+    config = CONFIGS[0]
+    kmers_1 = seq_to_kmers("ATACACAAT", config["k"])
+    kmers_2 = seq_to_kmers("ATACACAAC", config["k"])
+    bloom1 = BIGSI.bloom(config, kmers_1)
+    bloom2 = BIGSI.bloom(config, kmers_2)
 
+    bigsi1 = BIGSI.build(CONFIGS[0], [bloom1], ["a"])
+    bigsi2 = BIGSI.build(CONFIGS[1], [bloom2], ["b"])
+    bigsic = BIGSI.build(CONFIGS[2], [bloom1, bloom2], ["a", "b"])
 
-# # @given(kmers1=st.lists(ST_KMER, min_size=1, max_size=9), kmers2=st.lists(ST_KMER, min_size=1, max_size=9))
-# # @settings(max_examples=1)
-# # def test_merge(kmers1, kmers2):
-# def test_merge():
-#     kmers1 = ["AAAAAAAAA"] * 3
-#     kmers2 = ["AAAAAAAAT"] * 9
-#     bigsi1 = BIGSI.create(db="./db-bigsi1/", m=10, k=9, h=1, force=True)
-#     blooms1 = []
-#     for s in kmers1:
-#         blooms1.append(bigsi1.bloom([s]))
-#     samples1 = [str(i) for i in range(len(kmers1))]
-#     bigsi1.build(blooms1, samples1)
+    bigsi1.merge(bigsi2)
 
-#     bigsi2 = BIGSI.create(db="./db-bigsi2/", m=10, k=9, h=1, force=True)
-#     blooms2 = []
-#     for s in kmers2:
-#         blooms2.append(bigsi2.bloom([s]))
-#     samples2 = [str(i) for i in range(len(kmers2))]
-#     bigsi2.build(blooms2, samples2)
-
-#     combined_samples = combine_samples(samples1, samples2)
-#     bigsicombined = BIGSI.create(db="./db-bigsi-c/", m=10, k=9, h=1, force=True)
-#     # bigsicombined = BIGSI(db="./db-bigsi-c/", mode="c")
-#     bigsicombined.build(blooms1 + blooms2, combined_samples)
-
-#     bigsi1.merge(bigsi2)
-#     # bigsi1 = BIGSI(db="./db-bigsi1/")
-#     for i in range(10):
-#         assert bigsi1.graph[i] == bigsicombined.graph[i]
-#     for k, v in bigsicombined.metadata.items():
-#         assert bigsi1.metadata[k] == v
-#     bigsi1.delete_all()
-#     bigsi2.delete_all()
-#     bigsicombined.delete_all()
+    assert bigsi1.search("ATACACAAT", 0.5) == bigsic.search("ATACACAAT", 0.5)
+    bigsi1.delete()
+    bigsi2.delete()
+    bigsic.delete()
 
 
 # def test_row_merge():

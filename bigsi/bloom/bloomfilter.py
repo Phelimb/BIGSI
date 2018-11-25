@@ -13,7 +13,7 @@ def generate_hashes(element, number_hash_functions, bloomfilter_size):
     return hashes
 
 
-class BloomFilter:
+class BloomFilter(object):
     def __init__(self, m, h):
         self.m = m
         self.h = h
