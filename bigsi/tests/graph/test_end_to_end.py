@@ -43,6 +43,7 @@ def test_insert():
         assert bigsi.sample_to_colour("1") == 0
         assert bigsi.colour_to_sample(1) == "2"
         assert bigsi.sample_to_colour("2") == 1
+        bigsi.delete()
 
 
 def test_unique_sample_names():
@@ -88,6 +89,8 @@ def test_exact_search():
 
 
 def test_inexact_search():
+    for config in CONFIGS:
+        get_storage(config).delete_all()
     config = CONFIGS[0]
     kmers_1 = seq_to_kmers("ATACACAAT", config["k"])
     kmers_2 = seq_to_kmers("ATACACAAC", config["k"])
@@ -198,10 +201,3 @@ def test_merge():
 #     # bigsi1.delete_all()
 #     # bigsi2.delete_all()
 #     # bigsicombined.delete_all()
-
-
-# # @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-
-
-# #        score=st.sampled_from([True, False]))
-# # @example(Graph=BIGSI, x=['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAATA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG'], score=False)

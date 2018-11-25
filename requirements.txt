@@ -5,12 +5,11 @@ numpy
 bsddb3
 python-rocksdb
 mmh3
-bitstring
 bitarray
 redis
 biopython
-celery
-crc16
+pyyaml
+
 # Tests
 psutil
 hypothesis

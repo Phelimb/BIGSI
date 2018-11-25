@@ -1,3 +1,3 @@
-# from bigsi.graph.bigsi import BIGSI
+from bigsi.graph.bigsi import BIGSI
 
 #

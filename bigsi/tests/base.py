@@ -13,13 +13,21 @@ BERKELEY_DB_STORAGE_CONFIG = {"filename": "test-berkeleydb"}
 
 REDIS_STORAGE_CONFIG = {"host": "localhost", "port": 6379}
 PARAMETERS = {"k": 3, "m": 1000, "h": 3}
-ROCKS_DB_CONFIG = {"type": "rocksdb", "storage": ROCKS_DB_STORAGE_CONFIG, **PARAMETERS}
+ROCKS_DB_CONFIG = {
+    "storage-engine": "rocksdb",
+    "storage-config": ROCKS_DB_STORAGE_CONFIG,
+    **PARAMETERS,
+}
 
-REDIS_CONFIG = {"type": "redis", "storage": REDIS_STORAGE_CONFIG, **PARAMETERS}
+REDIS_CONFIG = {
+    "storage-engine": "redis",
+    "storage-config": REDIS_STORAGE_CONFIG,
+    **PARAMETERS,
+}
 
 BERKELEY_DB_CONFIG = {
-    "type": "berkeleydb",
-    "storage": BERKELEY_DB_STORAGE_CONFIG,
+    "storage-engine": "berkeleydb",
+    "storage-config": BERKELEY_DB_STORAGE_CONFIG,
     **PARAMETERS,
 }
 

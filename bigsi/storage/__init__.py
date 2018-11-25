@@ -8,4 +8,4 @@ def get_storage(config):
         "rocksdb": RocksDBStorage,
         "berkeleydb": BerkeleyDBStorage,
         "redis": RedisStorage,
-    }[config["type"]](config["storage"])
+    }[config["storage-engine"]](config["storage-config"])

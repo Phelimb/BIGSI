@@ -12,12 +12,13 @@ logger.setLevel(DEFAULT_LOGGING_LEVEL)
 
 from pyseqfile import Reader
 from bigsi.utils import seq_to_kmers
-from bigsi.storage.graph.probabilistic import BloomFilterMatrix
 
 
 def bloom_file_name(f, bf_range):
     f = os.path.realpath(f)
-    return os.path.join(f, "_".join([os.path.basename(f), str(bf_range[0]), str(bf_range[1])]))
+    return os.path.join(
+        f, "_".join([os.path.basename(f), str(bf_range[0]), str(bf_range[1])])
+    )
 
 
 def kmer_reader(f):
@@ -34,22 +35,13 @@ def kmer_reader(f):
     sys.stderr.write(str(count))
 
 
-def insert_kmers(mc, kmers, colour, sample, count_only=False):
-    if not count_only:
-        graph.insert_kmers(kmers, colour)
-    graph.add_to_kmers_count(kmers, sample)
-
-
-def bloom(outfile, kmers, kmer_file, graph, bf_range, batch_size):
+def bloom(config, outfile, kmer_file):
     outfile = os.path.realpath(outfile)
-    if kmer_file is not None:
-        kmers = {}.fromkeys(kmer_reader(kmer_file)).keys()
-    bloomfilter = graph.bloom(kmers)
-    for i in bf_range:
-        j = i + batch_size
-        off = bloom_file_name(outfile, (i, j))
-        directory = os.path.dirname(off)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(off, "wb") as of:
-            bloomfilter[i:j].tofile(of)
+    kmers = {}.fromkeys(kmer_reader(kmer_file)).keys()
+    bloomfilter = BIGSI.bloom(config, kmers)
+    off = bloom_file_name(outfile, (i, j))
+    directory = os.path.dirname(off)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    with open(off, "wb") as of:
+        bloomfilter[i:j].tofile(of)
