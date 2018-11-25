@@ -4,6 +4,9 @@ from bigsi.graph.index import KmerSignatureIndex
 from bigsi.decorators import convert_kmers_to_canonical
 from bigsi.bloom import BloomFilter
 from bigsi.utils import convert_query_kmers
+from bigsi.utils import seq_to_kmers
+from bigsi.utils import bitwise_and
+from bigsi.utils import non_zero_bitarrary_positions
 from bigsi.storage import get_storage
 import logging
 
@@ -17,6 +20,9 @@ def validate_build_params(bloomfilters, samples):
         )
 
 
+MIN_UNIQUE_KMERS_IN_QUERY = 0
+
+
 class BIGSI(SampleMetadata, KmerSignatureIndex):
     def __init__(self, config=None):
         if config is None:
@@ -25,6 +31,9 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         self.storage = get_storage(config)
         SampleMetadata.__init__(self, self.storage)
         KmerSignatureIndex.__init__(self, self.storage)
+        self.min_unique_kmers_in_query = (
+            MIN_UNIQUE_KMERS_IN_QUERY
+        )  ## TODO this can be inferred and set at build time
 
     @property
     def kmer_size(self):
@@ -47,6 +56,41 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         )
         storage.close()  ## Need to delete LOCK files before re init
         return cls(config)
+
+    def search(self, seq, threshold=1.0, score=False):
+        self.__validate_search_query(seq)
+        assert threshold <= 1
+        kmers = self.seq_to_kmers(seq)
+        kmers_to_colours = self.lookup(kmers)
+        if threshold == 1.0:
+            return self.exact_filter(kmers_to_colours)
+        else:
+            return self.inexact_filter(kmers_to_colours, threshold)
+
+    def exact_filter(self, kmers_to_colours):
+        colours_with_all_kmers = non_zero_bitarrary_positions(
+            bitwise_and(kmers_to_colours.values())
+        )
+        samples = self.colours_to_samples(colours_with_all_kmers)
+        return {
+            s: {
+                "percent_kmers": 100,
+                "num_kmers": len(kmers_to_colours),
+                "num_kmers_found": len(kmers_to_colours),
+            }
+            for s in samples
+        }
+
+    # def inexact_filter(seq, threshold):
+    #     colours_to_percent_kmers=self.percent_kmers(kmers_to_colours)
+    #     colours=self.colours_above_threshold(colours_to_percent_kmers)
+    #     self.colours_to_samples
+    #     return self.__search(self.__seq_to_kmers(seq), threshold=threshold, score=score)
+
+    # @convert_kmers_to_canonical
+    # def __search(self, kmers, threshold=1, score=False):
+    #     assert isinstance(kmers, list)
+    #     return self.search_kmers(kmers, threshold=threshold, score=score)
 
     def insert(self, bloomfilter, sample):
         logger.warning("Build and merge is preferable to insert in most cases")
@@ -81,16 +125,6 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     #         except ValueError:
     #             self.add_sample(sample + "_duplicate_in_merge")
 
-    # def search(self, seq, threshold=1, score=False):
-    #     assert threshold <= 1
-    #     self.__validate_search_query(seq)
-    #     return self.__search(self.__seq_to_kmers(seq), threshold=threshold, score=score)
-
-    # @convert_kmers_to_canonical
-    # def __search(self, kmers, threshold=1, score=False):
-    #     assert isinstance(kmers, list)
-    #     return self.search_kmers(kmers, threshold=threshold, score=score)
-
     # def __search_kmers(self, kmers, threshold=1, score=False):
     #     if threshold == 1:
     #         ## Special case optimisation when T==100% (we don't need to unpack the bit arrays)
@@ -100,20 +134,20 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     #             kmers, threshold=threshold, score=score
     #         )
 
-    # def __validate_search_query(self, seq):
-    #     kmers = set()
-    #     for k in self.__seq_to_kmers(seq):
-    #         kmers.add(k)
-    #         if len(kmers) > MIN_UNIQUE_KMERS_IN_QUERY:
-    #             return True
-    #     else:
-    #         logger.warning(
-    #             "Query string should contain at least %i unique kmers. Your query contained %i unique kmers, and as a result the false discovery rate may be high. In future this will become an error."
-    #             % (MIN_UNIQUE_KMERS_IN_QUERY, len(kmers))
-    #         )
+    def __validate_search_query(self, seq):
+        kmers = set()
+        for k in self.seq_to_kmers(seq):
+            kmers.add(k)
+            if len(kmers) > self.min_unique_kmers_in_query:
+                return True
+        else:
+            logger.warning(
+                "Query string should contain at least %i unique kmers. Your query contained %i unique kmers, and as a result the false discovery rate may be high. In future this will become an error."
+                % (self.min_unique_kmers_in_query, len(kmers))
+            )
 
-    # def __seq_to_kmers(self, seq):
-    #     return seq_to_kmers(seq, self.storage.kmer_size)
+    def seq_to_kmers(self, seq):
+        return seq_to_kmers(seq, self.kmer_size)
 
     # def __search_kmers_threshold_not_1(self, kmers, threshold, score):
     #     # if score:

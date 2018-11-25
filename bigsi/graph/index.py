@@ -2,8 +2,8 @@ from bigsi.bloom import generate_hashes
 from bigsi.bloom import BloomFilter
 from bigsi.matrix import transpose
 from bigsi.matrix import BitMatrix
-from functools import reduce
 from bigsi.utils import convert_query_kmer
+from bigsi.utils import bitwise_and
 
 BLOOMFILTER_SIZE_KEY = "ksi:bloomfilter_size"
 NUM_HASH_FUNCTS_KEY = "ksi:num_hashes"
@@ -59,5 +59,5 @@ class KmerSignatureIndex:
         d = {}
         for k, hashes in kmer_to_hashes.items():
             subset_rows = [rows[h] for h in hashes]
-            d[k] = reduce(lambda x, y: x & y, subset_rows)
+            d[k] = bitwise_and(subset_rows)
         return d

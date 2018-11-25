@@ -2,6 +2,8 @@ from bigsi.tests.base import CONFIGS
 from bigsi import BIGSI
 from bigsi.storage import get_storage
 from bitarray import bitarray
+import pytest
+from bigsi.utils import seq_to_kmers
 
 
 def test_create():
@@ -11,72 +13,70 @@ def test_create():
         samples = ["1"]
         bigsi = BIGSI.build(config, bloomfilters, samples)
         assert bigsi.kmer_size == 3
-        assert bigsi.bloomfilter_size == 25
+        assert bigsi.bloomfilter_size == 1000
         assert bigsi.num_hashes == 3
         assert bigsi.num_samples == 1
         assert bigsi.lookup("ATC") == {"ATC": bitarray("1")}
+        assert bigsi.colour_to_sample(0) == "1"
+        assert bigsi.sample_to_colour("1") == 0
         bigsi.delete()
 
 
 def test_insert():
     for config in CONFIGS:
-        print(config)
         get_storage(config).delete_all()
         bloomfilters = [BIGSI.bloom(config, ["ATC", "ATA"])]
         samples = ["1"]
         bigsi = BIGSI.build(config, bloomfilters, samples)
         bloomfilter_2 = BIGSI.bloom(config, ["ATC", "ATT"])
-        print(bloomfilters[0], bloomfilter_2)
         bigsi.insert(bloomfilter_2, "2")
         assert bigsi.kmer_size == 3
-        assert bigsi.bloomfilter_size == 25
+        assert bigsi.bloomfilter_size == 1000
         assert bigsi.num_hashes == 3
         assert bigsi.num_samples == 2
-        print(bigsi.lookup(["ATC", "ATA", "ATT"]))
         assert bigsi.lookup(["ATC", "ATA", "ATT"]) == {
             "ATC": bitarray("11"),
             "ATA": bitarray("10"),
             "ATT": bitarray("01"),
         }
+        assert bigsi.colour_to_sample(0) == "1"
+        assert bigsi.sample_to_colour("1") == 0
+        assert bigsi.colour_to_sample(1) == "2"
+        assert bigsi.sample_to_colour("2") == 1
 
 
-# def test_unique_sample_names():
-#     Graph, sample = BIGSI, "0"
-#     seq, k, h = "AATTTTTATTTTTTTTTTTTTAATTAATATT", 11, 1
-#     m = 10
-#     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-#     kmers = seq_to_kmers(seq, k)
-#     bigsi = Graph.create(m=m, k=k, h=h, force=True)
-#     assert bigsi.kmer_size == k
-#     bloom = bigsi.bloom(kmers)
-#     assert len(bloom) == m
-#     bigsi.build([bloom], [sample])
-#     with pytest.raises(ValueError):
-#         bigsi.insert(bloom, sample)
-#     assert sample in bigsi.search(seq)
-#     assert bigsi.search(seq).get(sample).get("percent_kmers_found") == 100
-#     bigsi.delete_all()
+def test_unique_sample_names():
+
+    for config in CONFIGS:
+        get_storage(config).delete_all()
+        bloom = BIGSI.bloom(config, ["ATC", "ATA"])
+        bigsi = BIGSI.build(config, [bloom], ["1"])
+        with pytest.raises(ValueError):
+            bigsi.insert(bloom, "1")
+        assert bigsi.num_samples == 1
+        assert bigsi.lookup(["ATC", "ATA", "ATT"]) == {
+            "ATC": bitarray("1"),
+            "ATA": bitarray("1"),
+            "ATT": bitarray("0"),
+        }
+        bigsi.delete()
 
 
-# # def test_cant_write_to_read_only_index():
-# #     Graph, sample = BIGSI, "sfewe"
-# #     seq, k, h = 'AATTTTTATTTTTTTTTTTTTAATTAATATT', 11, 1
-# #     m = 10
-# #     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-# #     kmers = seq_to_kmers(seq, k)
-# #     bigsi = Graph.create(m=m, k=k, h=h, force=True)
-# #     assert bigsi.kmer_size == k
-# #     bloom = bigsi.bloom(kmers)
-# #     bigsi.build([bloom], [sample])
-# #     os.chmod(bigsi.graph_filename, S_IREAD | S_IRGRP | S_IROTH)
-# #     # Can write to a read only DB
-# #     bigsi = Graph(mode="r")
-# #     with pytest.raises(bsddb3.db.DBAccessError):
-# #         bigsi.insert(bloom, "1234")
-# #     assert sample in bigsi.search(seq)
-# #     assert bigsi.search(seq).get(sample).get('percent_kmers_found') == 100
-# #     os.chmod(bigsi.graph_filename, S_IWUSR | S_IREAD)
-# #     bigsi.delete_all()
+def test_exact_search():
+    for config in CONFIGS:
+        get_storage(config).delete_all()
+        kmers_1 = seq_to_kmers("ATACACAAT", 3)
+        kmers_2 = seq_to_kmers("ACAGAGAAC", 3)
+        bloom1 = BIGSI.bloom(config, kmers_1)
+        bloom2 = BIGSI.bloom(config, kmers_2)
+        bigsi = BIGSI.build(config, [bloom1, bloom2], ["0", "1"])
+        bigsi.search("ATACACAAT") == {
+            0: {"percent_kmers": 100, "num_kmers": 6, "num_kmers_found": 6}
+        }
+        bigsi.search("ACAGAGAAC") == {
+            1: {"percent_kmers": 100, "num_kmers": 6, "num_kmers_found": 6}
+        }
+        bigsi.search("ACAGTTAAC") == {}
 
 
 # import copy
@@ -189,156 +189,5 @@ def test_insert():
 # # @example(Graph=BIGSI, sample='0', seq='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
 
-# def test_insert_lookup_kmers():
-#     Graph, sample, seq = BIGSI, "0", "AAAAAAAAAAAATCAAAAAAAAAAAAAAAAA"
-#     m, h, k = 10, 2, 31
-
-#     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-#     kmers = list(seq_to_kmers(seq, k))
-#     bigsi = Graph.create(m=m, k=k, h=h, force=True)
-#     bloom = bigsi.bloom(kmers)
-#     bigsi.build([bloom], [sample])
-#     for kmer in kmers:
-#         # assert sample not in bigsi.lookup(kmer+"T")[kmer+"T"]
-#         ba = bitarray()
-#         ba.frombytes(bigsi.lookup_raw(kmer))
-#         assert ba[0] == True
-#         assert sample in bigsi.lookup(kmer)[kmer]
-#     assert [sample] in bigsi.lookup(kmers).values()
-#     bigsi.delete_all()
-
-
-# # TODO update for insert to take bloomfilter
-# # @example(Graph=BIGSI, kmer='AAAAAAAAA')
-# # def test_insert_get_kmer(Graph, kmer):
-# def test_insert_get_kmer():
-#     Graph, kmer = BIGSI, "AAAAAAAAA"
-#     bigsi = Graph.create(m=10, force=True)
-#     bloom = bigsi.bloom([kmer])
-#     bigsi.build([bloom], ["1"])
-#     assert bigsi.colours(kmer)[kmer] == [0]
-#     bigsi.insert(bloom, "2")
-#     assert bigsi.colours(kmer)[kmer] == [0, 1]
-#     bigsi.delete_all()
-
-
-# # def test_query_kmer(Graph, kmer):
-# def test_query_kmer():
-#     Graph, kmer = BIGSI, "AAAAAAAAA"
-#     bigsi = Graph.create(m=100, force=True)
-#     bloom1 = bigsi.bloom([kmer])
-#     bigsi.build([bloom1], ["1234"])
-#     assert bigsi.lookup(kmer) == {kmer: ["1234"]}
-#     bigsi.insert(bloom1, "1235")
-#     assert bigsi.lookup(kmer) == {kmer: ["1234", "1235"]}
-#     bigsi.delete_all()
-
-
-# @given(
-#     s=ST_SAMPLE_NAME,
-#     key=st.text(min_size=1),
-#     value=st.text(min_size=1),
-#     value2=st.one_of(
-#         st.text(min_size=1),
-#         st.dictionaries(keys=st.text(min_size=1), values=st.text(min_size=1)),
-#         st.lists(st.integers()),
-#         st.sets(st.integers()),
-#     ),
-# )
-# @settings(max_examples=2)
-# def test_add_metadata(Graph, s, key, value, value2):
-#     kmer = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-#     bigsi = Graph.create(m=100, force=True)
-#     bloom1 = bigsi.bloom([kmer])
-#     bigsi.build([bloom1], [s])
-#     bigsi.add_sample_metadata(s, key, value)
-#     assert bigsi.lookup_sample_metadata(s).get(key) == value
-#     with pytest.raises(ValueError):
-#         bigsi.add_sample_metadata(s, key, value2)
-#     assert bigsi.lookup_sample_metadata(s).get(key) == value
-#     # Key already exists
-#     bigsi.add_sample_metadata(s, key, value2, overwrite=True)
-#     assert bigsi.lookup_sample_metadata(s).get(key) == value2
-
-#     bigsi.delete_all()
-
-
 # #        score=st.sampled_from([True, False]))
 # # @example(Graph=BIGSI, x=['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAATA', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG'], score=False)
-# def test_query_kmers():
-#     Graph = BIGSI
-#     x = [
-#         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-#         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT",
-#         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAATA",
-#         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC",
-#         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG",
-#     ]
-#     score = False
-#     m = 100
-#     h = 2
-#     k = 9
-#     logger.debug("Testing graph with params (k=%i,m=%i,h=%i)" % (k, m, h))
-#     logger.debug("Testing graph kmers %s" % ",".join(x))
-#     k1, k2, k3, k4, k5 = x
-#     print("first create call")
-#     bigsi = Graph.create(m=m, k=k, h=h, force=True)
-
-#     bloom1 = bigsi.bloom([k1, k2, k5])
-#     bloom2 = bigsi.bloom([k1, k3, k5])
-#     bloom3 = bigsi.bloom([k4, k3, k5])
-
-#     bigsi.build([bloom1, bloom2, bloom3], ["1234", "1235", "1236"])
-
-#     assert bigsi.get_num_colours() == 3
-#     bigsi.num_colours = bigsi.get_num_colours()
-#     logger.debug("Searching graph score %s" % str(score))
-
-#     assert (
-#         bigsi._search([k1, k2], threshold=0.5, score=score)
-#         .get("1234")
-#         .get("percent_kmers_found")
-#         >= 100
-#     )
-#     assert (
-#         bigsi._search([k1, k2], threshold=0.5, score=score)
-#         .get("1235")
-#         .get("percent_kmers_found")
-#         >= 50
-#     )
-
-#     assert (
-#         bigsi._search([k1, k2], score=score).get("1234").get("percent_kmers_found")
-#         >= 100
-#     )
-
-#     assert (
-#         bigsi._search([k1, k3], threshold=0.5, score=score)
-#         .get("1234")
-#         .get("percent_kmers_found")
-#         >= 50
-#     )
-#     assert (
-#         bigsi._search([k1, k3], threshold=0.5, score=score)
-#         .get("1235")
-#         .get("percent_kmers_found")
-#         >= 100
-#     )
-#     assert (
-#         bigsi._search([k1, k3], threshold=0.5, score=score)
-#         .get("1236")
-#         .get("percent_kmers_found")
-#         >= 50
-#     )
-
-#     assert (
-#         bigsi._search([k5], score=score).get("1234").get("percent_kmers_found") >= 100
-#     )
-#     assert (
-#         bigsi._search([k5], score=score).get("1235").get("percent_kmers_found") >= 100
-#     )
-#     assert (
-#         bigsi._search([k5], score=score).get("1236").get("percent_kmers_found") >= 100
-#     )
-
-#     bigsi.delete_all()

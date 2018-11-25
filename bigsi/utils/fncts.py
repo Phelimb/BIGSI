@@ -2,6 +2,8 @@ import hashlib
 import struct
 import sys
 import logging
+from functools import reduce
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
@@ -9,6 +11,14 @@ logger.setLevel("DEBUG")
 COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
 BITS = {"A": "00", "G": "01", "C": "10", "T": "11"}
 BASES = {"00": "A", "01": "G", "10": "C", "11": "T"}
+
+
+def bitwise_and(bitarrays):
+    return reduce(lambda x, y: x & y, bitarrays)
+
+
+def non_zero_bitarrary_positions(bitarray):
+    return np.where(bitarray)[0].tolist()
 
 
 def chunks(l, n):
