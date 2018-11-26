@@ -1,90 +1,72 @@
-# import os
-# import hug
-# import redis
-# from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
+import glob
+import hug
+import os
+import string
+import random
+from bitarray import bitarray
 
-# import bigsi.__main__
-# import json
-# from bigsi.tests.base import ST_SEQ
-# from bigsi.tests.base import ST_KMER
-# from bigsi.tests.base import ST_SAMPLE_NAME
-# from bigsi.tests.base import ST_GRAPH
-# from bigsi import BIGSI
-# import hypothesis.strategies as st
-# from hypothesis import given
-# from hypothesis import settings
+from bigsi import BIGSI
+import bigsi.__main__
 
-# import random
-# import tempfile
-# from bigsi.utils import seq_to_kmers
-# from bitarray import bitarray
-# import numpy as np
-# import pytest
+CONFIG_FILES = glob.glob("bigsi/tests/configs/*")
 
 
-# def test_bloom_cmd():
-#     Graph = BIGSI.create(m=100, force=True)
-#     Graph.close()
-#     f = "/tmp/test_kmers.bloom"
-#     response = hug.test.post(
-#         bigsi.__main__,
-#         "bloom",
-#         {
-#             "config": path_to_config_file,
-#             "ctx": "bigsi/tests/data/test_kmers.ctx",
-#             "outfile": f,
-#         },
-#     )
-#     a = bitarray()
-#     with open("/tmp/test_kmers.bloom/test_kmers.bloom_0_100", "rb") as inf:
-#         a.fromfile(inf)
-#     assert sum(a) > 0
-
-#     os.remove("/tmp/test_kmers.bloom/test_kmers.bloom_0_100")
+def test_bloom_cmd():
+    for config_file in CONFIG_FILES:
+        f = "/tmp/test_kmers.bloom"
+        response = hug.test.post(
+            bigsi.__main__,
+            "bloom",
+            {
+                "config": config_file,
+                "ctx": "bigsi/tests/data/test_kmers.ctx",
+                "outfile": f,
+            },
+        )
+        a = bitarray()
+        with open("/tmp/test_kmers.bloom/test_kmers.bloom", "rb") as inf:
+            a.fromfile(inf)
+        assert sum(a) > 0
+        os.remove("/tmp/test_kmers.bloom/test_kmers.bloom")
 
 
-# import string
+def test_build_cmd():
+    for config_file in CONFIG_FILES:
+        N = 3
+        bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
+        samples = []
+        for i in range(N):
+            samples.append(
+                "".join(
+                    random.choice(string.ascii_uppercase + string.digits)
+                    for _ in range(6)
+                )
+            )
+        response = hug.test.post(
+            bigsi.__main__,
+            "build",
+            {
+                "config": config_file,
+                "bloomfilters": bloomfilter_filepaths,
+                "samples": samples,
+            },
+        )
+        # TODO fix below
+        seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
+        response = hug.test.get(
+            bigsi.__main__, "search", {"config": config_file, "seq": seq}
+        )
 
-
-# def test_build_cmd():
-#     Graph = BIGSI.create(m=100, force=True)
-#     f = Graph.db
-#     Graph.close()
-
-#     response = hug.test.delete(bigsi.__main__, "", {"db": f})
-#     response = hug.test.post(bigsi.__main__, "init", {"db": f, "m": 1000, "h": 1})
-#     N = 3
-#     bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
-#     samples = []
-#     for i in range(N):
-#         samples.append(
-#             "".join(
-#                 random.choice(string.ascii_uppercase + string.digits) for _ in range(6)
-#             )
-#         )
-#     response = hug.test.post(
-#         bigsi.__main__,
-#         "build",
-#         {"db": f, "bloomfilters": bloomfilter_filepaths, "samples": samples},
-#     )
-#     # TODO fix below
-#     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-#     response = hug.test.get(
-#         bigsi.__main__, "search", {"db": f, "seq": seq, "score": True}
-#     )
-#     #
-#     assert response.data.get(seq).get("results")
-
-#     assert response.data.get(seq).get("results") != {}
-#     # assert "score" in list(response.data.get(seq).get('results').values())[0]
-#     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG"
-#     response = hug.test.get(
-#         bigsi.__main__, "search", {"db": f, "seq": seq, "threshold": 0.1, "score": True}
-#     )
-
-#     assert response.data.get(seq).get("results")
-#     assert "score" in list(response.data.get(seq).get("results").values())[0]
-#     response = hug.test.delete(bigsi.__main__, "", {"db": f})
+        assert response.data
+        # assert "score" in list(response.data.get(seq).get('results').values())[0]
+        seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG"
+        response = hug.test.get(
+            bigsi.__main__,
+            "search",
+            {"config": config_file, "seq": seq, "threshold": 0.1},
+        )
+        assert len(response.data) == 3
+        response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
 # # TODO, insert takes a bloom filters

@@ -19,13 +19,13 @@ from bigsi.cmds.bloom import bloom_file_name
 import tempfile
 
 
-def load_bloomfilter(f, bf_range=None):
-    ff = bloom_file_name(f, bf_range)
+def load_bloomfilter(f):
+    ff = bloom_file_name(f)
     logger.debug("Loading %s " % ff)
     bloomfilter = bitarray()
     with open(ff, "rb") as inf:
         bloomfilter.fromfile(inf)
-    return bloomfilter[0 : bf_range[1] - bf_range[0]]
+    return bloomfilter
 
 
 def get_required_bytes_per_bloomfilter(m):
@@ -40,7 +40,7 @@ def get_required_chunk_size(N, m, max_memory):
     return chunk_size, num_chunks
 
 
-def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False, bf_range=None):
+def build(config, bloomfilter_filepaths, samples, max_memory=None):
     # Max memory is in bytes
     if max_memory is None:
         chunk_size = len(bloomfilter_filepaths)
@@ -58,23 +58,28 @@ def build(bloomfilter_filepaths, samples, index, max_memory=None, lowmem=False, 
         samples = [x[1] for x in v]
         logger.info("Building index: %i/%i" % (i, num_chunks))
         if i == 0:
-            build_main(bloomfilter_filepaths, samples, index, lowmem=lowmem, bf_range=bf_range)
+            index = build_main(config, bloomfilter_filepaths, samples)
         else:
-            tmp_index = build_tmp(bloomfilter_filepaths, samples, index, i, lowmem=lowmem, bf_range=bf_range)
+            tmp_index = build_tmp(config, bloomfilter_filepaths, samples, i)
             index.merge(tmp_index)
-            tmp_index.delete_all()
+            tmp_index.delete()
     return {"result": "success"}
 
 
-def build_main(bloomfilter_filepaths, samples, index, lowmem=False, bf_range=None):
+def build_main(config, bloomfilter_filepaths, samples):
     bloomfilters = []
     for f in bloomfilter_filepaths:
-        bloomfilters.append(load_bloomfilter(f, bf_range))
-    index.build(bloomfilters, samples, lowmem=lowmem, bf_range=bf_range)
+        bloomfilters.append(load_bloomfilter(f))
+    return BIGSI.build(config, bloomfilters, samples)
 
 
-def build_tmp(bloomfilter_filepaths, samples, indext, i, lowmem=False, bf_range=None):
-    index_dir = indext.db + "%i.tmp" % i
-    index = BIGSI.create(db=index_dir, k=indext.kmer_size, m=indext.bloom_filter_size, h=indext.num_hashes, force=True)
-    build_main(bloomfilter_filepaths, samples, index, lowmem=lowmem, bf_range=bf_range)
-    return index
+import copy
+
+
+def build_tmp(config, bloomfilter_filepaths, samples, i):
+    tmpconfig = copy.copy(config)
+    if config["storage-engine"] == "redis":
+        config["storage-config"]["db"] = i
+    else:
+        config["storage-config"]["filename"] = config["filename"] + "%i.tmp" % i
+    return build_main(config, bloomfilter_filepaths, samples, index)

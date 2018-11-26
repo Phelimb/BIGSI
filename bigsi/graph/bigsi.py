@@ -126,7 +126,11 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         validate_build_params(bloomfilters, samples)
         sm = SampleMetadata(storage).add_samples(samples)
         ksi = KmerSignatureIndex.create(
-            storage, bloomfilters, config["m"], config["h"], config.get("lowmem", False)
+            storage,
+            bloomfilters,
+            config["m"],
+            config["h"],
+            config.get("low_mem_build", False),
         )
         storage.close()  ## Need to delete LOCK files before re init
         return cls(config)
@@ -141,7 +145,6 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
             results = self.exact_filter(kmers_to_colours)
         else:
             results = self.inexact_filter(kmers_to_colours, min_kmers)
-        results.sort(key=lambda x: x.num_kmers_found, reverse=True)
         return results
 
     def exact_filter(self, kmers_to_colours):
@@ -154,7 +157,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
                 sample_name=s,
                 num_kmers=len(kmers_to_colours),
                 num_kmers_found=len(kmers_to_colours),
-            )
+            ).todict()
             for s in samples
         ]
 
@@ -177,7 +180,8 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
             )
             for colour, num_kmers_found in colours_to_kmers_found_above_threshold.items()
         ]
-        return results
+        results.sort(key=lambda x: x.num_kmers_found, reverse=True)
+        return [r.todict() for r in results]
 
     def __colours_above_threshold(self, colours_to_percent_kmers, min_kmers):
         return {k: v for k, v in colours_to_percent_kmers.items() if v > min_kmers}

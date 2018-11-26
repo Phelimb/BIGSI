@@ -14,9 +14,17 @@ import gzip
 import struct
 import subprocess
 import math
+from bigsi.utils import seq_to_kmers
 
 BITS = {"A": "00", "G": "01", "C": "10", "T": "11"}
 BASES = {"00": "A", "01": "G", "10": "C", "11": "T"}
+
+
+def extract_kmers_from_ctx(ctx, k):
+    gr = GraphReader(ctx)
+    for i in gr:
+        for kmer in seq_to_kmers(i.kmer.canonical_value, k):
+            yield kmer
 
 
 def kmer_to_bits(kmer):
@@ -119,7 +127,9 @@ class CortexRecord(object):
     consists of a kmer, its edges and coverages in the colours.
     """
 
-    def __init__(self, kmer_size, kmer, coverages, edges, num_colours=1, binary_kmer=False):
+    def __init__(
+        self, kmer_size, kmer, coverages, edges, num_colours=1, binary_kmer=False
+    ):
         if binary_kmer:
             self.kmer = kmer
         else:
@@ -244,7 +254,12 @@ class GraphReader(object):
         edges = struct.unpack_from("B" * self.num_colours, buff, offset)
         # print(edges)
         record = CortexRecord(
-            self.kmer_size, kmer, coverages, edges, num_colours=self.num_colours, binary_kmer=self.binary_kmers
+            self.kmer_size,
+            kmer,
+            coverages,
+            edges,
+            num_colours=self.num_colours,
+            binary_kmer=self.binary_kmers,
         )
         return record
 
@@ -262,7 +277,9 @@ class LinksRecord(object):
         self.junctions = junctions
 
     def __str__(self):
-        return "{0}:{1}:{2}:{3}".format(self.direction, self.num_kmers, self.counts, self.junctions)
+        return "{0}:{1}:{2}:{3}".format(
+            self.direction, self.num_kmers, self.counts, self.junctions
+        )
 
 
 class LinksFile(object):
