@@ -17,13 +17,12 @@ from bigsi.graph import BIGSI
 
 from bigsi.cmds.insert import insert
 from bigsi.cmds.search import search
-from bigsi.cmds.samples import samples
 from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
-from bigsi.utils.cortex import extract_kmers_from_ctx
 
+from bigsi.utils.cortex import extract_kmers_from_ctx
 from bigsi.utils import seq_to_kmers
 
 
@@ -103,7 +102,6 @@ class bigsi(object):
     @hug.object.cli
     @hug.object.post("/merge", output_format=hug.output_format.json)
     def merge(self, config: hug.types.text, merge_config: hug.types.text):
-        print(config, merge_config)
         config = get_config_from_file(config)
         merge_config = get_config_from_file(merge_config)
         index1 = BIGSI(config)
@@ -118,7 +116,6 @@ class bigsi(object):
         output_format=hug.output_format.json,
         response_headers={"Access-Control-Allow-Origin": "*"},
     )
-    # @do_cprofile
     def search(
         self,
         config: hug.types.text = None,
@@ -139,33 +136,6 @@ class bigsi(object):
             pass
         else:
             return bigsi.delete()
-
-    # @hug.object.cli
-    # @hug.object.get('/graph', output_format=hug.output_format.json)
-    # def stats(self):
-    #     return stats(graph=get_graph())
-
-    @hug.object.cli
-    @hug.object.get("/samples", output_format=hug.output_format.json)
-    def samples(
-        self,
-        sample_name: hug.types.text = None,
-        db: hug.types.text = None,
-        delete: hug.types.smart_boolean = False,
-    ):
-        return samples(sample_name, graph=get_graph(bdb_db_filename=db), delete=delete)
-
-    # @hug.object.cli
-    # @hug.object.post('/dump', output_format=hug.output_format.json)
-    # def dump(self, filepath):
-    #     r = dump(graph=get_graph(), file=filepath)
-    #     return r
-
-    # @hug.object.cli
-    # @hug.object.post('/load', output_format=hug.output_format.json)
-    # def load(self, filepath):
-    #     r = load(graph=get_graph(), file=filepath)
-    #     return r
 
 
 def main():
