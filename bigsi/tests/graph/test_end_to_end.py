@@ -1,8 +1,10 @@
+import pytest
+import json
+from bitarray import bitarray
+
 from bigsi.tests.base import CONFIGS
 from bigsi import BIGSI
 from bigsi.storage import get_storage
-from bitarray import bitarray
-import pytest
 from bigsi.utils import seq_to_kmers
 
 
@@ -72,13 +74,13 @@ def test_exact_search():
     for config in CONFIGS:
         get_storage(config).delete_all()
         bigsi = BIGSI.build(config, [bloom1, bloom2], ["a", "b"])
-        assert bigsi.search("ATACACAAT")[0].todict() == {
+        assert bigsi.search("ATACACAAT")[0] == {
             "percent_kmers_found": 100,
             "num_kmers": 6,
             "num_kmers_found": 6,
             "sample_name": "a",
         }
-        assert bigsi.search("ACAGAGAAC")[0].todict() == {
+        assert bigsi.search("ACAGAGAAC")[0] == {
             "percent_kmers_found": 100,
             "num_kmers": 6,
             "num_kmers_found": 6,
@@ -106,17 +108,17 @@ def test_inexact_search():
         assert bigsi.lookup("AAT") == {"AAT": bitarray("10")}
 
         results = bigsi.search("ATACACAAT", 0.5)
-        assert results[0].todict() == {
+        assert results[0] == {
             "percent_kmers_found": 100.0,
             "num_kmers": 6,
             "num_kmers_found": 6,
             "sample_name": "a",
         }
         assert (
-            results[0].tojson()
+            json.dumps(results[0])
             == '{"percent_kmers_found": 100.0, "num_kmers": 6, "num_kmers_found": 6, "sample_name": "a"}'
         )
-        assert results[1].todict() == {
+        assert results[1] == {
             "percent_kmers_found": 83.33,
             "num_kmers": 6,
             "num_kmers_found": 5,
