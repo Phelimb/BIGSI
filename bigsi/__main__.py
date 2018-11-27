@@ -48,18 +48,15 @@ def get_config_from_file(config_file):
 class bigsi(object):
     @hug.object.cli
     @hug.object.post("/insert", output_format=hug.output_format.json)
-    def insert(self, db: hug.types.text, bloomfilter, sample, i: int = 1, N: int = 1):
+    def insert(self, config: hug.types.text, bloomfilter, sample):
         """Inserts a bloom filter into the graph
 
         e.g. bigsi insert ERR1010211.bloom ERR1010211
 
         """
-        index = BIGSI(db)
-        bf_range = bf_range_calc(index, i, N)
-
-        return insert(
-            graph=index, bloomfilter=bloomfilter, sample=sample, bf_range=bf_range
-        )
+        config = get_config_from_file(config)
+        index = BIGSI(config)
+        return insert(index=index, bloomfilter=bloomfilter, sample=sample)
 
     @hug.object.cli
     @hug.object.post("/bloom")
@@ -105,9 +102,14 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post("/merge", output_format=hug.output_format.json)
-    def merge(self, db1: hug.types.text, db2: hug.types.text):
-        BIGSI(db1).merge(BIGSI(db2))
-        return {"result": "merged %s into %s." % (db2, db1)}
+    def merge(self, config: hug.types.text, merge_config: hug.types.text):
+        print(config, merge_config)
+        config = get_config_from_file(config)
+        merge_config = get_config_from_file(merge_config)
+        index1 = BIGSI(config)
+        index2 = BIGSI(merge_config)
+        merge(index1, index2)
+        return {"result": "merged %s into %s." % (merge_config, config)}
 
     @hug.object.cli
     @hug.object.get(
