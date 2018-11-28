@@ -1,3 +1,5 @@
+import logging
+
 from bigsi.bloom import generate_hashes
 from bigsi.bloom import BloomFilter
 from bigsi.matrix import transpose
@@ -7,6 +9,7 @@ from bigsi.utils import bitwise_and
 
 BLOOMFILTER_SIZE_KEY = "ksi:bloomfilter_size"
 NUM_HASH_FUNCTS_KEY = "ksi:num_hashes"
+logger = logging.getLogger(__name__)
 
 
 class KmerSignatureIndex:
@@ -28,8 +31,10 @@ class KmerSignatureIndex:
         ]
         storage.set_integer(BLOOMFILTER_SIZE_KEY, bloomfilter_size)
         storage.set_integer(NUM_HASH_FUNCTS_KEY, num_hashes)
-        rows = list(transpose(bloomfilters, lowmem=lowmem))
-        bitmatrix = BitMatrix.create(storage, rows)
+        logger.debug("Transpose bitarrays")
+        rows = transpose(bloomfilters, lowmem=lowmem)
+        logger.debug("Insert rows")
+        bitmatrix = BitMatrix.create(storage, rows, num_rows=bloomfilter_size)
         return cls(storage)
 
     def lookup(self, kmers):

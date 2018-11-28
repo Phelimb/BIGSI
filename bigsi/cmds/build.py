@@ -47,7 +47,7 @@ def build(config, bloomfilter_filepaths, samples, max_memory=None):
         num_chunks = 1
     else:
         chunk_size, num_chunks = get_required_chunk_size(
-            N=len(samples), m=index.bloom_filter_size, max_memory=max_memory
+            N=len(samples), m=config["h"], max_memory=max_memory
         )
     if chunk_size < 1:
         raise ValueError("Max memory must be at least 8 * Bloomfilter size in bytes")

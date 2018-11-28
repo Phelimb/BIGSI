@@ -1,6 +1,9 @@
 from bitarray import bitarray
 import struct
 import gc
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseStorage(object):
@@ -36,17 +39,17 @@ class BaseStorage(object):
         return str(key) + "_length"
 
     def convert_integer_batch_keys(self, keys):
-        return [
+        return (
             self.convert_key_to_bytes(self.convert_to_integer_key(key)) for key in keys
-        ]
+        )
 
     def convert_bitarray_batch_keys(self, keys):
-        return [
+        return (
             self.convert_key_to_bytes(self.convert_to_bitarray_key(key)) for key in keys
-        ]
+        )
 
     def convert_bitarray_length_batch_keys(self, keys):
-        return [self.convert_to_bitarray_len_key(key) for key in keys]
+        return (self.convert_to_bitarray_len_key(key) for key in keys)
 
     def int_to_bytes(self, value):
         return str(value).encode("utf-8")
@@ -71,7 +74,7 @@ class BaseStorage(object):
 
     def set_integers(self, keys, values):
         _keys = self.convert_integer_batch_keys(keys)
-        self.batch_set(_keys, [self.int_to_bytes(v) for v in values])
+        self.batch_set(_keys, (self.int_to_bytes(v) for v in values))
 
     def get_integers(self, keys):
         _keys = self.convert_integer_batch_keys(keys)
@@ -102,11 +105,13 @@ class BaseStorage(object):
         self.set_bitarray_length(key, len(value))
 
     def set_bitarrays(self, keys, values):
+        logger.debug("set bitarrays")
         _keys = self.convert_bitarray_batch_keys(keys)
-        self.batch_set(_keys, [v.tobytes() for v in values])
+        self.batch_set(_keys, (v.tobytes() for v in values))
 
+        logger.debug("set bitarray metadata")
         _lkeys = self.convert_bitarray_length_batch_keys(keys)
-        self.set_integers(_lkeys, [len(v) for v in values])
+        self.set_integers(_lkeys, (len(v) for v in values))
 
     def load_bitarray(self, _bytes):
         ba = bitarray()

@@ -8,7 +8,7 @@ from Cython.Build import cythonize
 
 setup(
     name="bigsi",
-    version="0.2",
+    version="0.3",
     packages=[
         "bigsi",
         "bigsi.cmds",

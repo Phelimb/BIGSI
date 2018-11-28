@@ -23,7 +23,7 @@ def test_get_set():
     ] * 5
     for storage in get_storages():
         storage.delete_all()
-        bm = BitMatrix.create(storage, rows)
+        bm = BitMatrix.create(storage, rows, len(rows))
         bm.set_rows(range(25), rows)
         assert list(bm.get_rows(range(3))) == rows[:3]
         assert bm.get_column(0) == bitarray("00101" * 5)
@@ -44,7 +44,7 @@ def test_get_insert_column():
     ] * 5
     for storage in get_storages():
         storage.delete_all()
-        bm = BitMatrix.create(storage, rows)
+        bm = BitMatrix.create(storage, rows, len(rows))
         assert bm.get_column(0) == bitarray("00101" * 5)
         bm.insert_column(bitarray("1" * 25), 0)
         assert bm.get_column(0) == bitarray("1" * 25)

@@ -124,7 +124,9 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
     def build(cls, config, bloomfilters, samples):
         storage = get_storage(config)
         validate_build_params(bloomfilters, samples)
+        logger.debug("Insert sample metadata")
         sm = SampleMetadata(storage).add_samples(samples)
+        logger.debug("Create signature index")
         ksi = KmerSignatureIndex.create(
             storage,
             bloomfilters,

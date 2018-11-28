@@ -1,4 +1,5 @@
 from bigsi.storage.base import BaseStorage
+from bigsi.utils import batch
 from bigsi.constants import DEFAULT_ROCKS_DB_STORAGE_CONFIG
 import rocksdb
 import shutil
@@ -28,6 +29,7 @@ class RocksDBStorage(BaseStorage):
         self.storage = RocksDB(
             self.storage_config["filename"], rocksdb.Options(**options)
         )
+        self.write_batch_size = int(self.storage_config.get("write_batch_size", 10000))
 
     def __repr__(self):
         return "rocksdb storage"
@@ -41,12 +43,15 @@ class RocksDBStorage(BaseStorage):
         RocksDBStorage.__init__(self, self.storage_config)
 
     def batch_set(self, keys, values):
-        batch = rocksdb.WriteBatch()
-        for k, v in zip(keys, values):
-            batch.put(k, v)
-        self.storage.write(batch)
+        for batchiter in batch(zip(keys, values), self.write_batch_size):
+            writebatch = rocksdb.WriteBatch()
+            for k, v in batchiter:
+                writebatch.put(k, v)
+            self.storage.write(writebatch)
+        self.storage.write(writebatch)
 
     def batch_get(self, keys):
+        keys = list(keys)
         result = self.storage.multi_get(keys)
         return [result[k] for k in keys]
 

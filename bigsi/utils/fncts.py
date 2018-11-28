@@ -4,6 +4,7 @@ import sys
 import logging
 from functools import reduce
 import numpy as np
+from itertools import islice, chain
 
 logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
@@ -11,6 +12,13 @@ logger.setLevel("DEBUG")
 COMPLEMENT = {"A": "T", "C": "G", "G": "C", "T": "A"}
 BITS = {"A": "00", "G": "01", "C": "10", "T": "11"}
 BASES = {"00": "A", "01": "G", "10": "C", "11": "T"}
+
+
+def batch(iterable, size):
+    sourceiter = iter(iterable)
+    while True:
+        batchiter = islice(sourceiter, size)
+        yield chain([next(batchiter)], batchiter)
 
 
 def bitwise_and(bitarrays):

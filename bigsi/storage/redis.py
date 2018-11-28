@@ -2,6 +2,7 @@ from bigsi.storage.base import BaseStorage
 from bigsi.constants import DEFAULT_REDIS_STORAGE_CONFIG
 import redis
 from bitarray import bitarray
+from bigsi.utils import batch
 
 
 class RedisStorage(BaseStorage):
@@ -11,6 +12,7 @@ class RedisStorage(BaseStorage):
         self.storage_config = storage_config
         self.storage = redis.StrictRedis(**storage_config)
         self.pipe = self.storage.pipeline()
+        self.write_batch_size = int(self.storage_config.get("write_batch_size", 10000))
 
     def __repr__(self):
         return "redis Storage"
@@ -24,8 +26,10 @@ class RedisStorage(BaseStorage):
         return result
 
     def batch_set(self, keys, values):
-        for k, v in zip(keys, values):
-            self.pipe.set(k, v)
+        for batchiter in batch(zip(keys, values), self.write_batch_size):
+            for k, v in batchiter:
+                self.pipe.set(k, v)
+            self.__execute_pipeline()
         self.__execute_pipeline()
 
     def batch_get(self, keys):

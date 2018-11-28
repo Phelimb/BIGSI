@@ -22,6 +22,8 @@ from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
 
+from bigsi.storage import get_storage
+
 from bigsi.utils.cortex import extract_kmers_from_ctx
 from bigsi.utils import seq_to_kmers
 
@@ -130,12 +132,7 @@ class bigsi(object):
     @hug.object.delete("/", output_format=hug.output_format.json)
     def delete(self, config: hug.types.text = None):
         config = get_config_from_file(config)
-        try:
-            bigsi = BIGSI(config)
-        except ValueError:
-            pass
-        else:
-            return bigsi.delete()
+        get_storage(config).delete_all()
 
 
 def main():

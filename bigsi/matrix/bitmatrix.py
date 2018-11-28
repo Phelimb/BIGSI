@@ -15,9 +15,9 @@ class BitMatrix(object):
         self.num_rows = self.storage.get_integer(NUM_ROWS_KEY)
 
     @classmethod
-    def create(cls, storage, rows):
-        storage.set_bitarrays(range(len(rows)), rows)
-        storage.set_integer(NUM_ROWS_KEY, len(rows))
+    def create(cls, storage, rows, num_rows):
+        storage.set_bitarrays(range(num_rows), rows)
+        storage.set_integer(NUM_ROWS_KEY, num_rows)
         storage.sync()
         return cls(storage)
 
