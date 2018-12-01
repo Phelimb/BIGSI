@@ -1,19 +1,19 @@
-git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
 cython
+hug
 numpy
 mmh3
 bitarray
 redis
 biopython
 pyyaml
+humanfriendly
 
 # Tests
 psutil
-hypothesis
 pytest
 codecov
 pytest-cov
 psutil
-humanfriendly
+
 # dev
 black

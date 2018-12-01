@@ -2,13 +2,10 @@
 from setuptools import setup
 import os
 
-with open("requirements.txt") as f:
-    required = f.read().splitlines()
-from Cython.Build import cythonize
 
 setup(
     name="bigsi",
-    version="0.3",
+    version="0.3.1",
     packages=[
         "bigsi",
         "bigsi.bloom",
@@ -26,7 +23,17 @@ setup(
     description="BItsliced Genomic Signature Index - Efficient indexing and search in very large collections of WGS data",
     author="Phelim Bradley",
     author_email="wave@phel.im",
-    install_requires=required[4:],
+    install_requires=[
+        "cython",
+        "hug",
+        "numpy",
+        "mmh3",
+        "bitarray",
+        "redis",
+        "biopython",
+        "pyyaml",
+        "humanfriendly",
+    ],
     entry_points={"console_scripts": ["bigsi = bigsi.__main__:main"]},
     classifiers=[
         # How mature is this project? Common values are
