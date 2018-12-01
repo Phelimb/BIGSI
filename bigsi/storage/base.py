@@ -35,9 +35,6 @@ class BaseStorage(object):
     def convert_to_bitarray_key(self, key):
         return str(key) + ":bitarray"
 
-    def convert_to_bitarray_len_key(self, key):
-        return str(key) + "_length"
-
     def convert_integer_batch_keys(self, keys):
         return (
             self.convert_key_to_bytes(self.convert_to_integer_key(key)) for key in keys
@@ -47,9 +44,6 @@ class BaseStorage(object):
         return (
             self.convert_key_to_bytes(self.convert_to_bitarray_key(key)) for key in keys
         )
-
-    def convert_bitarray_length_batch_keys(self, keys):
-        return (self.convert_to_bitarray_len_key(key) for key in keys)
 
     def int_to_bytes(self, value):
         return str(value).encode("utf-8")
@@ -89,29 +83,15 @@ class BaseStorage(object):
         key = self.convert_to_string_key(key)
         return self[key].decode("utf-8")
 
-    def set_bitarray_length(self, key, value):
-        assert isinstance(value, int)
-        lkey = self.convert_to_bitarray_len_key(key)
-        self.set_integer(lkey, value)
-
-    def get_bitarray_length(self, key):
-        lkey = self.convert_to_bitarray_len_key(key)
-        return self.get_integer(lkey)
-
     def set_bitarray(self, key, value):
         assert isinstance(value, bitarray)
         _key = self.convert_to_bitarray_key(key)
         self[_key] = value.tobytes()
-        self.set_bitarray_length(key, len(value))
 
     def set_bitarrays(self, keys, values):
         logger.debug("set bitarrays")
         _keys = self.convert_bitarray_batch_keys(keys)
         self.batch_set(_keys, (v.tobytes() for v in values))
-
-        logger.debug("set bitarray metadata")
-        _lkeys = self.convert_bitarray_length_batch_keys(keys)
-        self.set_integers(_lkeys, (len(v) for v in values))
 
     def load_bitarray(self, _bytes):
         ba = bitarray()
@@ -120,19 +100,13 @@ class BaseStorage(object):
 
     def get_bitarray(self, key):
         _key = self.convert_to_bitarray_key(key)
-        value = self.load_bitarray(self[_key])[: self.get_bitarray_length(key)]
+        value = self.load_bitarray(self[_key])
         return value
 
     def get_bitarrays(self, keys):
         # Takes advantage of batching in storage engine if available
         _keys = self.convert_bitarray_batch_keys(keys)
-        _lkeys = self.convert_bitarray_length_batch_keys(keys)
-        lengths = self.get_integers(_lkeys)
-        results = []
-        for result, length in zip(self.batch_get(_keys), lengths):
-            ba = self.load_bitarray(result)[:length]
-            results.append(ba)
-        return results
+        return (self.load_bitarray(result) for result in self.batch_get(_keys))
 
     def set_bit(self, key, pos, bit):
         ba = self.get_bitarray(key)

@@ -10,6 +10,7 @@ from bigsi.utils import seq_to_kmers
 
 def test_create():
     for config in CONFIGS:
+        print(config)
         get_storage(config).delete_all()
         bloomfilters = [BIGSI.bloom(config, ["ATC", "ATA"])]
         samples = ["1"]

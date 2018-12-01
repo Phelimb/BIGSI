@@ -48,7 +48,6 @@ class RocksDBStorage(BaseStorage):
             for k, v in batchiter:
                 writebatch.put(k, v)
             self.storage.write(writebatch)
-        self.storage.write(writebatch)
 
     def batch_get(self, keys):
         keys = list(keys)

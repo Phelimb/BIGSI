@@ -34,7 +34,9 @@ class KmerSignatureIndex:
         logger.debug("Transpose bitarrays")
         rows = transpose(bloomfilters, lowmem=lowmem)
         logger.debug("Insert rows")
-        bitmatrix = BitMatrix.create(storage, rows, num_rows=bloomfilter_size)
+        bitmatrix = BitMatrix.create(
+            storage, rows, num_rows=bloomfilter_size, num_cols=len(bloomfilters)
+        )
         return cls(storage)
 
     def lookup(self, kmers):
@@ -54,6 +56,7 @@ class KmerSignatureIndex:
             r2 = ksi.bitmatrix.get_row(i)
             r1.extend(r2)
             self.bitmatrix.set_row(i, r1)
+        self.bitmatrix.set_num_cols(self.bitmatrix.num_cols + ksi.bitmatrix.num_cols)
 
     def __kmers_to_hashes(self, kmers):
         d = {}

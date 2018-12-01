@@ -41,11 +41,11 @@ def test_get_set_bitarray():
     for storage in get_storages():
         storage.delete_all()
         storage.set_bitarray("test", ba)
-        assert storage.get_bitarray("test") == ba
+        assert storage.get_bitarray("test")[:12] == ba
         assert storage.get_bit("test", 1) == True
         assert storage.get_bit("test", 2) == False
         storage.set_bit("test", 0, 0)
-        assert storage.get_bitarray("test") == bitarray("010101111010")
+        assert storage.get_bitarray("test")[:12] == bitarray("010101111010")
         assert storage.get_bit("test", 0) == False
         storage.delete_all()
 

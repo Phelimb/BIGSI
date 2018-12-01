@@ -30,7 +30,6 @@ class RedisStorage(BaseStorage):
             for k, v in batchiter:
                 self.pipe.set(k, v)
             self.__execute_pipeline()
-        self.__execute_pipeline()
 
     def batch_get(self, keys):
         for k in keys:
@@ -38,11 +37,8 @@ class RedisStorage(BaseStorage):
         return self.__execute_pipeline()
 
     def set_bit(self, key, pos, bit):
-        length = self.get_bitarray_length(key)
         _key = self.convert_to_bitarray_key(key)
         self.storage.setbit(_key, pos, bit)
-        if pos + 1 > length:
-            self.set_bitarray_length(key, pos + 1)
 
     def get_bit(self, key, pos):
         _key = self.convert_to_bitarray_key(key)
