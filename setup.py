@@ -11,6 +11,7 @@ setup(
     version="0.3",
     packages=[
         "bigsi",
+        "bigsi.bloom",
         "bigsi.cmds",
         "bigsi.utils",
         "bigsi.graph",
