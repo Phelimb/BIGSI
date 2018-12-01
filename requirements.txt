@@ -1,9 +1,6 @@
 git+git://github.com/timothycrosley/hug.git@e6e85e4e4332fba6d01273b3719c1c11abc644e0
-git+https://github.com/phelimb/pyseqfile
 cython
 numpy
-bsddb3
-python-rocksdb
 mmh3
 bitarray
 redis

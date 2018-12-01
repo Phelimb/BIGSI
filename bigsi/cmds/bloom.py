@@ -9,8 +9,6 @@ logger = logging.getLogger(__name__)
 from bigsi.utils import DEFAULT_LOGGING_LEVEL
 
 logger.setLevel(DEFAULT_LOGGING_LEVEL)
-
-from pyseqfile import Reader
 from bigsi.utils import seq_to_kmers
 
 
