@@ -37,10 +37,12 @@ API = hug.API("bigsi-%s" % str(__version__))
 
 def get_config_from_file(config_file):
     if config_file is None:
-        config = DEFAULT_CONFIG
-    else:
-        with open(config_file, "r") as infile:
-            config = yaml.load(infile)
+        if os.environ.get("BIGSI_CONFIG"):
+            config_file = os.environ.get("BIGSI_CONFIG")
+        else:
+            return DEFAULT_CONFIG
+    with open(config_file, "r") as infile:
+        config = yaml.load(infile)
     return config
 
 
@@ -61,7 +63,7 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post("/bloom")
-    def bloom(self, outfile, config=None, ctx=None):
+    def bloom(self, ctx, outfile, config=None):
         """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
 
         e.g. index insert ERR1010211.ctx
@@ -78,9 +80,9 @@ class bigsi(object):
     @hug.object.post("/build", output_format=hug.output_format.json)
     def build(
         self,
-        config: hug.types.text,
         bloomfilters: hug.types.multiple,
         samples: hug.types.multiple = [],
+        config: hug.types.text = None,
     ):
         config = get_config_from_file(config)
 
@@ -120,9 +122,9 @@ class bigsi(object):
     )
     def search(
         self,
-        config: hug.types.text = None,
-        seq: hug.types.text = None,
+        seq: hug.types.text,
         threshold: hug.types.float_number = 1.0,
+        config: hug.types.text = None,
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
