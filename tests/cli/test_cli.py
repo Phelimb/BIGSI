@@ -8,7 +8,20 @@ from bitarray import bitarray
 from bigsi import BIGSI
 import bigsi.__main__
 
-CONFIG_FILES = glob.glob("tests/configs/*")
+CONFIG_FILES = ["tests/configs/redis.yaml"]
+
+try:
+    import rocksdb
+except ModuleNotFoundError:
+    pass
+else:
+    CONFIG_FILES.append("tests/configs/rocks.yaml")
+try:
+    import bsddb3
+except ModuleNotFoundError:
+    pass
+else:
+    CONFIG_FILES.append("tests/configs/berkeleydb.yaml")
 
 
 def test_bloom_cmd():
@@ -151,17 +164,3 @@ def test_merge_search_cmd():
         bigsi.__main__, "search", {"config": CONFIG_FILES[0], "seq": seq}
     )
     assert len([r["sample_name"] for r in response.data]) == 6
-
-    response = hug.test.post(
-        bigsi.__main__,
-        "merge",
-        {"config": CONFIG_FILES[0], "merge_config": CONFIG_FILES[2]},
-    )
-    assert response.data.get("result")
-    seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-    response = hug.test.get(
-        bigsi.__main__, "search", {"config": CONFIG_FILES[0], "seq": seq}
-    )
-    assert len([r["sample_name"] for r in response.data]) == 9
-
-    response = hug.test.delete(bigsi.__main__, "", {"config": config_file})

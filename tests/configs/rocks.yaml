@@ -1,20 +1,12 @@
-# h: 3
-# k: 31
-# m: 1000
-# nproc: 1
-
-# storage-engine: rocksdb
-# storage-config:
-#   filename: test-rocksdb
-#   options:
-#     create_if_missing: true
-#     max_open_files: 5000
-
 h: 3
 k: 31
 m: 1000
 nproc: 1
-storage-engine: berkeleydb
+
+storage-engine: rocksdb
 storage-config:
-  filename: test-berkeleydb
-  cachesize: 4
+  filename: test-rocksdb
+  options:
+    create_if_missing: true
+    max_open_files: 5000
+
