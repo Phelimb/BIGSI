@@ -32,7 +32,8 @@ BERKELEY_DB_CONFIG = {
 }
 
 
-CONFIGS = [REDIS_CONFIG, ROCKS_DB_CONFIG, BERKELEY_DB_CONFIG]
+# CONFIGS = [REDIS_CONFIG, ROCKS_DB_CONFIG, BERKELEY_DB_CONFIG]
+CONFIGS = [REDIS_CONFIG, BERKELEY_DB_CONFIG]
 L = ["".join(x) for x in itertools.product("ATCG", repeat=9)]
 ST_KMER = st.sampled_from(L)
 # ST_KMER_SIZE = st.integers(min_value=11, max_value=31)
