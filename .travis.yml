@@ -2,21 +2,21 @@ sudo: required
 cache: pip
 env:
   global:
-  - COMMIT=${TRAVIS_COMMIT::7}
+  - COMMIT=${TRAVIS_COMMIT::8}
 services:
   - docker
+  - redis
 before_install:
-  - docker build --build-arg TRAVIS=true -t phelimb/bigsi .
+  - pip install .
 script:
-  - sudo docker run phelimb/bigsi /bin/sh -c "TRAVIS=true py.test -s -vv --cov=bigsi --cov-config .coveragerc bigsi/tests/"
+  - py.test -s -vv --cov=bigsi --cov-config .coveragerc tests/
 after_success:
+    docker build --build-arg TRAVIS=true -t phelimb/bigsi:${COMMIT} .;
     docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";  
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker tag phelimb/bigsi:${COMMIT} phelimb/bigsi:latest
     docker push phelimb/bigsi;
     else
-    docker tag phelimb/bigsi:latest phelimb/bigsi:"$TRAVIS_BRANCH-$COMMIT";
-    docker push phelimb/bigsi:"$TRAVIS_BRANCH-$COMMIT";
-    docker tag phelimb/bigsi:latest phelimb/bigsi:"$TRAVIS_BRANCH";
-    docker push phelimb/bigsi:"$TRAVIS_BRANCH";    
+    docker push phelimb/bigsi:${COMMIT};    
     fi
 

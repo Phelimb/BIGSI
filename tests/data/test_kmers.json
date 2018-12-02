@@ -1,1 +1,1 @@
-{"shape": [1000, 3], "uncompressed_graphs": {"0": "/Users/phelimb/git/atlas-seq/bigsi/tests/data/test_kmers_rows_0_to_1000.npy"}, "cols": ["bigsi/tests/data/test_kmers.bloom", "bigsi/tests/data/test_kmers.bloom", "bigsi/tests/data/test_kmers.bloom"]}
+{"shape": [1000, 3], "uncompressed_graphs": {"0": "/Users/phelimb/git/atlas-seq/tests/data/test_kmers_rows_0_to_1000.npy"}, "cols": ["tests/data/test_kmers.bloom", "tests/data/test_kmers.bloom", "tests/data/test_kmers.bloom"]}

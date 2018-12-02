@@ -2,7 +2,7 @@ import pytest
 import json
 from bitarray import bitarray
 
-from bigsi.tests.base import CONFIGS
+from tests.base import CONFIGS
 from bigsi import BIGSI
 from bigsi.storage import get_storage
 from bigsi.utils import seq_to_kmers
@@ -10,7 +10,6 @@ from bigsi.utils import seq_to_kmers
 
 def test_create():
     for config in CONFIGS:
-        print(config)
         get_storage(config).delete_all()
         bloomfilters = [BIGSI.bloom(config, ["ATC", "ATA"])]
         samples = ["1"]
@@ -150,15 +149,15 @@ def test_merge():
 
 
 # def test_row_merge():
-#     primary_db = "bigsi/tests/data/merge/test-bigsi-1"
+#     primary_db = "tests/data/merge/test-bigsi-1"
 #     try:
 #         shutil.rmtree(primary_db)
 #     except:
 #         pass
-#     shutil.copytree("bigsi/tests/data/merge/test-bigsi-1-init", primary_db)
-#     bigsi1 = BIGSI("bigsi/tests/data/merge/test-bigsi-1")
-#     bigsi2 = BIGSI("bigsi/tests/data/merge/test-bigsi-2")
-#     bigsi3 = BIGSI("bigsi/tests/data/merge/test-bigsi-3")
+#     shutil.copytree("tests/data/merge/test-bigsi-1-init", primary_db)
+#     bigsi1 = BIGSI("tests/data/merge/test-bigsi-1")
+#     bigsi2 = BIGSI("tests/data/merge/test-bigsi-2")
+#     bigsi3 = BIGSI("tests/data/merge/test-bigsi-3")
 #     assert bigsi1.graph[1] != None
 #     assert bigsi2.graph[2] == None
 #     assert bigsi2.graph[101] != None

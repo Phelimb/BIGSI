@@ -52,7 +52,7 @@
 
 # def test_build_chunks():
 #     N = 3
-#     bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
+#     bloomfilter_filepaths = ["tests/data/test_kmers.bloom"] * N
 #     sample_names = generate_sample_names(len(bloomfilter_filepaths))
 
 #     bigsi1 = BIGSI.create(db="./db-bigsi-no-max-mem/", m=1000, k=9, h=1, force=True)
@@ -77,7 +77,7 @@
 
 # def test_cant_build_chunks_if_max_memory_less_than_bf():
 #     N = 3
-#     bloomfilter_filepaths = ["bigsi/tests/data/test_kmers.bloom"] * N
+#     bloomfilter_filepaths = ["tests/data/test_kmers.bloom"] * N
 #     sample_names = generate_sample_names(len(bloomfilter_filepaths))
 
 #     bigsi2 = BIGSI.create(db="./db-bigsi-max-mem/", m=10, k=9, h=1, force=True)
