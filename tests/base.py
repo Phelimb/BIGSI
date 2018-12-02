@@ -10,8 +10,8 @@ ROCKS_DB_STORAGE_CONFIG = {
 }
 
 BERKELEY_DB_STORAGE_CONFIG = {"filename": "test-berkeleydb"}
-
-REDIS_STORAGE_CONFIG = {"host": "localhost", "port": 6379}
+REDIS_TEST_HOST = os.environ.get("REDIS_TEST_HOST", "localhost")
+REDIS_STORAGE_CONFIG = {"host": REDIS_TEST_HOST, "port": 6379}
 PARAMETERS = {"k": 3, "m": 1000, "h": 3}
 ROCKS_DB_CONFIG = {
     "storage-engine": "rocksdb",
