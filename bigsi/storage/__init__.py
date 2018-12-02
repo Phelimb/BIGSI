@@ -1,6 +1,13 @@
-from bigsi.storage.berkeleydb import BerkeleyDBStorage
 from bigsi.storage.redis import RedisStorage
-from bigsi.storage.rocksdb import RocksDBStorage
+
+try:
+    from bigsi.storage.berkeleydb import BerkeleyDBStorage
+except ModuleNotFoundError:
+    pass
+try:
+    from bigsi.storage.rocksdb import RocksDBStorage
+except ModuleNotFoundError:
+    pass
 
 
 def get_storage(config):
