@@ -1,16 +1,14 @@
-from bigsi.storage import RedisStorage
-from bigsi.storage import BerkeleyDBStorage
-from bigsi.storage import RocksDBStorage
 from bigsi.matrix import BitMatrix
 from bigsi.bloom import BloomFilter
 from bigsi.graph.index import KmerSignatureIndex
 from bitarray import bitarray
 import pytest
 from bigsi.utils import convert_query_kmers
+from tests.base import get_test_storages
 
 
 def get_storages():
-    return [RedisStorage(), BerkeleyDBStorage(), RocksDBStorage()]
+    return get_test_storages()
 
 
 def test_lookup1():

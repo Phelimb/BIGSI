@@ -2,7 +2,10 @@ import hypothesis.strategies as st
 from bigsi import BIGSI
 import os
 import itertools
+from bigsi.storage import get_storage
+import logging
 
+logger = logging.getLogger(__name__)
 
 ROCKS_DB_STORAGE_CONFIG = {
     "filename": "test-rocksdb",
@@ -31,9 +34,31 @@ BERKELEY_DB_CONFIG = {
     **PARAMETERS,
 }
 
+CONFIGS = [REDIS_CONFIG]
+try:
+    import rocksdb
+except ModuleNotFoundError:
+    pass
+else:
+    CONFIGS.append(ROCKS_DB_CONFIG)
+try:
+    import bsddb3
+except ModuleNotFoundError:
+    pass
+else:
+    CONFIGS.append(BERKELEY_DB_CONFIG)
 
-# CONFIGS = [REDIS_CONFIG, ROCKS_DB_CONFIG, BERKELEY_DB_CONFIG]
-CONFIGS = [REDIS_CONFIG, BERKELEY_DB_CONFIG]
+
+def get_test_storages():
+    test_storages = []
+    for config in CONFIGS:
+        try:
+            test_storages.append(get_storage(config))
+        except:
+            logger.warning("Skipping %s" % config["storage-engine"])
+    return test_storages
+
+
 L = ["".join(x) for x in itertools.product("ATCG", repeat=9)]
 ST_KMER = st.sampled_from(L)
 # ST_KMER_SIZE = st.integers(min_value=11, max_value=31)

@@ -1,12 +1,12 @@
-from bigsi.storage import RedisStorage
-from bigsi.storage import BerkeleyDBStorage
-from bigsi.storage import RocksDBStorage
 from bigsi.graph.metadata import SampleMetadata
 import pytest
 
 
+from tests.base import get_test_storages
+
+
 def get_storages():
-    return [RedisStorage(), BerkeleyDBStorage(), RocksDBStorage()]
+    return get_test_storages()
 
 
 def test_add_sample_metadata():
