@@ -34,7 +34,8 @@ BERKELEY_DB_CONFIG = {
     **PARAMETERS,
 }
 
-CONFIGS = [REDIS_CONFIG]
+# CONFIGS = [REDIS_CONFIG]
+CONFIGS = []
 try:
     import rocksdb
 except ModuleNotFoundError:
