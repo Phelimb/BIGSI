@@ -2,7 +2,7 @@ import pytest
 import json
 from bitarray import bitarray
 
-from tests.base import CONFIGS
+from bigsi.tests.base import CONFIGS
 from bigsi import BIGSI
 from bigsi.storage import get_storage
 from bigsi.utils import seq_to_kmers

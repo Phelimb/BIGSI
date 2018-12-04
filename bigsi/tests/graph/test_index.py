@@ -4,7 +4,7 @@ from bigsi.graph.index import KmerSignatureIndex
 from bitarray import bitarray
 import pytest
 from bigsi.utils import convert_query_kmers
-from tests.base import get_test_storages
+from bigsi.tests.base import get_test_storages
 
 
 def get_storages():

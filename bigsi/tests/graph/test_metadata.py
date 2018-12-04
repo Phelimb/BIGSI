@@ -2,7 +2,7 @@ from bigsi.graph.metadata import SampleMetadata
 import pytest
 
 
-from tests.base import get_test_storages
+from bigsi.tests.base import get_test_storages
 
 
 def get_storages():
