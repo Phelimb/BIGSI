@@ -1,0 +1,31 @@
+# This file created by conda-build 2.1.17
+
+
+package:
+    name: rocksdb
+    version: 5.2.1
+source:
+    fn: v5.2.1.tar.gz
+    url: https://github.com/facebook/rocksdb/archive/v5.2.1.tar.gz
+build:
+    noarch: ''
+    noarch_python: false
+    number: '0'
+    string: '0'
+requirements:
+    build:
+        - gflags 2.1.2 0
+        - libgcc-ng 
+        - zlib 
+        - cmake 3.2.3 0
+        - snappy 1.1.7 0
+        - bzip2 
+    run:
+        - snappy
+        - zlib
+        - bzip2
+about:
+    home: https://github.com/facebook/rocksdb
+    license: BSD
+extra:
+    final: true
