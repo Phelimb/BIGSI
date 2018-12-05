@@ -33,9 +33,9 @@ requirements:
     - pyyaml
     - redis
     - redis-py 
-#    - rocksdb 
+    - rocksdb 
     - libdb
-#    - python-rocksdb
+    - python-rocksdb
     - bsddb3
   run:
     - mmh3    
@@ -51,9 +51,9 @@ requirements:
     - redis
     - redis-py 
     - mmh3    
-#    - rocksdb 
+    - rocksdb 
     - libdb
-#    - python-rocksdb
+    - python-rocksdb
     - bsddb3
 
 # test:
