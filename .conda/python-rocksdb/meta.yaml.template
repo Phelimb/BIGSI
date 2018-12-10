@@ -1,0 +1,73 @@
+package:
+  name: python-rocksdb
+  version: "0.6.7"
+
+source:
+  fn: python-rocksdb-0.6.7.tar.gz
+  url: https://pypi.python.org/packages/a2/99/382b48731aa307e5550a6bee706c13e5df73638f4188ae4fc2a455e3d26b/python-rocksdb-0.6.7.tar.gz
+  md5: f5ae12586f706f3b5bbba120da7814d4
+#  patches:
+   # List any patch files here
+   # - fix.patch
+
+build:
+  # noarch: python
+  preserve_egg_dir: True
+  # entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    # - python-rocksdb = python-rocksdb:main
+    #
+    # Would create an entry point called python-rocksdb that calls python-rocksdb.main()
+
+
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  # number: 1
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - pytest-runner
+    - rocksdb
+    - bzip2
+    - cython
+    - zlib
+
+  run:
+    - python
+    - setuptools
+    - rocksdb
+    - bzip2
+    - zlib
+
+test:
+  # Python imports
+  imports:
+    - rocksdb
+    - rocksdb.tests
+
+  # commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  requires:
+    - pytest
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: https://github.com/twmht/python-rocksdb
+  license: BSD License
+  summary: 'Python bindings for RocksDB'
+  license_family: BSD
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
