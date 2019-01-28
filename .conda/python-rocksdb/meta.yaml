@@ -1,0 +1,62 @@
+# This file created by conda-build 3.0.30
+# meta.yaml template originally from:
+# /home/vagrant/projects/ags_conda_recipes/python-rocksdb-0.6.7, last modified Tue Nov 28 17:56:42 2017
+# ------------------------------------------------
+
+package:
+    name: python-rocksdb
+    version: 0.6.7
+source:
+    fn: python-rocksdb-0.6.7.tar.gz
+    md5: f5ae12586f706f3b5bbba120da7814d4
+    url: https://pypi.python.org/packages/a2/99/382b48731aa307e5550a6bee706c13e5df73638f4188ae4fc2a455e3d26b/python-rocksdb-0.6.7.tar.gz
+build:
+    preserve_egg_dir: 'True'
+    string: py35h226b7d0_0
+requirements:
+    build:
+        - bzip2 1.0.6 h6d464ef_2
+        - ca-certificates 2017.08.26 h1d4fec5_0
+        - certifi 2017.11.5 py35h9749603_0
+        - cython 0.26.1 py35h636ebcb_0
+        - libedit 3.1 heed3624_0
+        - libffi 3.2.1 hd88cf55_4
+        - libgcc-ng 7.2.0 h7cc24e2_2
+        - libstdcxx-ng 7.2.0 h7a57d05_2
+        - ncurses 6.0 h9df7e31_2
+        - openssl 1.0.2m h26d622b_1
+        - pip 9.0.1 py35h7e7da9d_4
+        - pytest-runner 3.0 py35_0
+        - python 3.5.4 h417fded_24
+        - readline 7.0 ha6073c6_4
+        - rocksdb 5.3.6 0
+        - setuptools 36.5.0 py35ha8c1747_0
+        - setuptools_scm 1.15.6 py35_0
+        - snappy 1.1.7 0
+        - sqlite 3.20.1 hb898158_2
+        - tk 8.6.7 hc745277_3
+        - wheel 0.30.0 py35hd3883cf_1
+        - xz 5.2.3 h55aa19d_2
+        - zlib 1.2.11 ha838bed_2
+    run:
+        - bzip2
+        - bzip2 >=1.0.6,<2.0a0
+        - python >=3.5,<3.6.0a0
+        - rocksdb
+        - setuptools
+        - zlib
+        - zlib >=1.2.11,<1.3.0a0
+test:
+    imports:
+        - rocksdb
+        - rocksdb.tests
+    requires:
+        - pytest
+about:
+    home: https://github.com/twmht/python-rocksdb
+    license: BSD License
+    license_family: BSD
+    summary: Python bindings for RocksDB
+extra:
+    copy_test_source_files: true
+    final: true

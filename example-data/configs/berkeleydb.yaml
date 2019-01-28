@@ -1,0 +1,7 @@
+h: 3
+k: 31
+m: 25000000
+nproc: 1
+storage-engine: berkeleydb
+storage-config:
+  filename: test-berkeleydb

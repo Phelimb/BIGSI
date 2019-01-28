@@ -1,0 +1,8 @@
+h: 3
+k: 31
+m: 1000
+nproc: 1
+storage-engine: redis
+storage-config:
+  host: localhost
+  port: 6379
