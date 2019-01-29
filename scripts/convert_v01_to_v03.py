@@ -21,7 +21,7 @@ assert int(bigsi.version.__version__[3])==3
 def get_rows(in_db, bloom_filter_size):
     for i in range(bloom_filter_size):
         if (i % (bloom_filter_size/100))==0:
-            print(100*i/bloom_filter_size)
+            print(i, 100*i/bloom_filter_size)
         key = str.encode(str(i))
         key = (i).to_bytes(4, byteorder='big')
         val=bitarray.bitarray()

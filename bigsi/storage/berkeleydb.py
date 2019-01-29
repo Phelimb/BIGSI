@@ -3,7 +3,6 @@ from bigsi.constants import DEFAULT_BERKELEY_DB_STORAGE_CONFIG
 import bsddb3
 import os
 
-
 class BerkeleyDBStorage(BaseStorage):
     def __init__(self, storage_config=None):
         if storage_config is None:
@@ -11,8 +10,8 @@ class BerkeleyDBStorage(BaseStorage):
         self.storage_config = storage_config
         self.storage = bsddb3.hashopen(
             storage_config["filename"],
-            flag="c",
-            cachesize=storage_config.get("hashsize", 20480),
+            flag=storage_config.get("flag", 'c'),
+            cachesize=storage_config.get("hashsize", 204800),
         )
 
     def __repr__(self):

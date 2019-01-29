@@ -5,3 +5,4 @@ nproc: 1
 storage-engine: berkeleydb
 storage-config:
   filename: test-berkeleydb
+  flag: "c" ## Change to 'r' for read-only access

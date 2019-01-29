@@ -27,7 +27,8 @@ class RocksDBStorage(BaseStorage):
         options = storage_config["options"]
 
         self.storage = RocksDB(
-            self.storage_config["filename"], rocksdb.Options(**options)
+            self.storage_config["filename"], rocksdb.Options(**options),
+            read_only=self.storage_config.get("read_only", False)
         )
         self.write_batch_size = int(self.storage_config.get("write_batch_size", 10000))
 
