@@ -68,14 +68,14 @@ def test_build_cmd():
         )
         # TODO fix below
         seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-        response = hug.test.get(
+        response = hug.test.post(
             bigsi.__main__, "search", {"config": config_file, "seq": seq}
         )
 
         assert response.data
         # assert "score" in list(response.data.get(seq).get('results').values())[0]
         seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGAAAG"
-        response = hug.test.get(
+        response = hug.test.post(
             bigsi.__main__,
             "search",
             {"config": config_file, "seq": seq, "threshold": 0.1},
@@ -123,11 +123,11 @@ def test_insert_search_cmd():
         )
         assert response.data.get("result") == "success"
         seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-        response = hug.test.get(
+        response = hug.test.post(
             bigsi.__main__, "search", {"config": config_file, "seq": seq}
         )
 
-        assert "s3" in [r["sample_name"] for r in response.data]
+        assert "s3" in [r["sample_name"] for r in response.data["results"]]
         response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
@@ -167,7 +167,7 @@ def test_merge_search_cmd():
     )
     assert response.data.get("result")
     seq = "GATCGTTTGCGGCCACAGTTGCCAGAGATGA"
-    response = hug.test.get(
+    response = hug.test.post(
         bigsi.__main__, "search", {"config": CONFIG_FILES[0], "seq": seq}
     )
     assert len([r["sample_name"] for r in response.data]) == 6

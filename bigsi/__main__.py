@@ -114,12 +114,17 @@ class bigsi(object):
         return {"result": "merged %s into %s." % (merge_config, config)}
 
     @hug.object.cli
+    @hug.object.post(
+        "/search",
+        output_format=hug.output_format.json,
+        response_headers={"Access-Control-Allow-Origin": "*"},
+    )
     @hug.object.get(
         "/search",
         examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
         output_format=hug.output_format.json,
         response_headers={"Access-Control-Allow-Origin": "*"},
-    )
+    )    
     def search(
         self,
         seq: hug.types.text,
@@ -128,7 +133,7 @@ class bigsi(object):
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
-        return bigsi.search(seq, threshold)
+        return {"query":seq, "threshold":threshold,"results":bigsi.search(seq, threshold)}
 
     @hug.object.cli
     @hug.object.delete("/", output_format=hug.output_format.json)
