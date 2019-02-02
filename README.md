@@ -3,8 +3,6 @@
 
 BIGSI can search a collection of raw (fastq/bam), contigs or assembly for genes, variant alleles and arbitrary sequence. It can scale to millions of bacterial genomes requiring ~3MB of disk per sample while maintaining millisecond kmer queries in the collection.
 
-This tool was formerly named "Coloured Bloom Graph" or "CBG" in reference to the fact that it can be viewed as a coloured probabilistic de Bruijn graph.
-
 Documentation can be found at https://bigsi.readme.io/. 
 An index of the microbial ENA/SRA (Dec 2016) can be queried at http://www.bigsi.io. 
 
@@ -17,14 +15,14 @@ bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one ima
 ## Quickstart
 
 Quickstart available at [https://bigsi.readme.io/docs/your-first-bigsi](https://bigsi.readme.io/docs/your-first-bigsi)
-	
 
 ## Citation
 
 Please cite
 
-```Real-time search of all bacterial and viral genomic data
+```
+Ultra-fast search of all deposited bacterial and viral genomic data
 Phelim Bradley, Henk den Bakker, Eduardo Rocha, Gil McVean, Zamin Iqbal
-bioRxiv 234955; doi: https://doi.org/10.1101/234955 
+Nature Biotechnology; doi: http://dx.doi.org/http://dx.doi.org/ . .
 ```
 if you use BIGSI in your work.

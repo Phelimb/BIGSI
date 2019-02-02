@@ -137,6 +137,7 @@ class bigsi(object):
             "query": seq,
             "threshold": threshold,
             "results": bigsi.search(seq, threshold),
+            "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1"
         }
 
     @hug.object.cli
