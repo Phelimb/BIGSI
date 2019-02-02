@@ -29,7 +29,8 @@ class BitMatrix(object):
 
     def get_rows(self, row_indexes):
         # Takes advantage of batching in storage engine if available
-        return (ba[: self.num_cols] for ba in self.storage.get_bitarrays(row_indexes))
+        bitarrays=self.storage.get_bitarrays(row_indexes)
+        return (ba[: self.num_cols] for ba in bitarrays)
 
     def set_row(self, row_index, bitarray):
         return self.storage.set_bitarray(row_index, bitarray)

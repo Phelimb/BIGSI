@@ -5,7 +5,6 @@ import numpy as np
 from bigsi.constants import DEFAULT_CONFIG
 from bigsi.graph.metadata import SampleMetadata
 from bigsi.graph.index import KmerSignatureIndex
-from bigsi.decorators import convert_kmers_to_canonical
 from bigsi.bloom import BloomFilter
 from bigsi.utils import convert_query_kmers
 from bigsi.utils import seq_to_kmers
@@ -141,24 +140,23 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         self.__validate_search_query(seq)
         assert threshold <= 1
         kmers = set(self.seq_to_kmers(seq))
-        kmers_to_colours = self.lookup(kmers)
-        min_kmers = math.ceil(len(kmers) * threshold)
         if threshold == 1.0:
-            results = self.exact_filter(kmers_to_colours)
+            bitarray=self.lookup_all(kmers)
+            results = self.exact_filter(bitarray, num_kmers=len(kmers))
         else:
+            kmers_to_colours = self.lookup(kmers)
+            min_kmers = math.ceil(len(kmers) * threshold)            
             results = self.inexact_filter(kmers_to_colours, min_kmers)
         return results
 
-    def exact_filter(self, kmers_to_colours):
-        colours_with_all_kmers = non_zero_bitarrary_positions(
-            bitwise_and(kmers_to_colours.values())
-        )
-        samples = self.get_sample_list(colours_with_all_kmers)
+    def exact_filter(self, bitarray, num_kmers):
+        colours=[i for i,j in enumerate(bitarray) if j]
+        samples = self.get_sample_list(colours)
         return [
             BigsiQueryResult(
                 sample_name=s,
-                num_kmers=len(kmers_to_colours),
-                num_kmers_found=len(kmers_to_colours),
+                num_kmers=num_kmers,
+                num_kmers_found=num_kmers,
             ).todict()
             for s in samples
         ]
