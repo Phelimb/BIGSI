@@ -47,18 +47,6 @@ class KmerSignatureIndex:
         rows = self.__batch_get_rows(hashes)
         return self.__bitwise_and_kmers(kmer_to_hashes, rows)
 
-    def lookup_all(self, kmers):
-        if isinstance(kmers, str):
-            kmers = [kmers]
-        hashes=set()
-        for k in set(kmers):
-            hashes.update(generate_hashes(
-                    convert_query_kmer(k), self.num_hashes, self.bloomfilter_size
-                ))
-        rows = self.__batch_get_rows(hashes).values()
-        return bitwise_and(rows)             
-
-
     def insert_bloom(self, bloomfilter, column_index):
         self.bitmatrix.insert_column(bloomfilter, column_index)
 

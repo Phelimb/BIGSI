@@ -1,4 +1,3 @@
 # Optional Storage
 python-rocksdb
 bsddb3==6.2.5
-uwsgi
