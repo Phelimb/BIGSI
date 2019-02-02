@@ -69,7 +69,7 @@ class KmerSignatureIndex:
         return d
 
     def __batch_get_rows(self, row_indexes):
-        return dict(zip(row_indexes, self.bitmatrix.get_rows(row_indexes)))
+        return dict(zip(row_indexes, self.bitmatrix.get_rows(row_indexes, slice=False)))
 
     def __bitwise_and_kmers(self, kmer_to_hashes, rows):
         d = {}
