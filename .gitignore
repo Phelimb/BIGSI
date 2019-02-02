@@ -1,3 +1,5 @@
+test-rocksdb/
+test-berkeleydb
 test-data/
 example-scripts/.ipynb_checkpoints/
 prod/

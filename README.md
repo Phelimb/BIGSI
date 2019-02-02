@@ -26,7 +26,7 @@ Requires [mccortex](github.com/mcveanlab/mccortex).
 
 #### Construct the bloom filters
 
-	bigsi init test-bigsi --k 31 --m 1000 --h 1
+	bigsi init test-bigsi --k 31 --m 1000 --h 1 --force
 
 	bigsi bloom --db test-bigsi -c example-data/test1.ctx example-data/test1.bloom
 	bigsi bloom --db test-bigsi -c example-data/test2.ctx example-data/test2.bloom

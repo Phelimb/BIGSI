@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  redis:
+    image: redis:4
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: always 
+            
+  bigsi:
+    image: phelimb/bigsi:${COMMIT}
+    container_name: bigsi
+    build:
+        context: ./
+        dockerfile: Dockerfile 
+    command: tail -f /dev/null   
+    environment:
+        - REDIS_TEST_HOST=redis          
+    depends_on:
+        - redis
+
+
+volumes:
+ redis-data:
+   driver: local

@@ -32,8 +32,7 @@ def samples(sample_name, graph, delete=False):
                         # out[sample_name]["kmer_count"] = graph.count_kmers(sample_name)
         else:
             out = {sample_name: {}}
-            out[sample_name][
-                "colour"] = graph.get_colour_from_sample(sample_name)
+            out[sample_name]["colour"] = graph.get_colour_from_sample(sample_name)
             out[sample_name]["name"] = sample_name
             # out[sample_name]["kmer_count"] = graph.count_kmers(sample_name)
 

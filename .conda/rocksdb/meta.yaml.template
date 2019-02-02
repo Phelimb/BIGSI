@@ -1,0 +1,27 @@
+package:
+  name: rocksdb
+  version: 5.3.6
+
+source:
+  fn: v5.3.6.tar.gz
+  url: https://github.com/facebook/rocksdb/archive/v5.3.6.tar.gz
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - cmake
+    - gflags
+    - snappy
+    - zlib
+    - bzip2
+
+  run:
+    - snappy
+    - zlib
+    - bzip2
+
+about:
+  home: https://github.com/facebook/rocksdb
+  license:  BSD

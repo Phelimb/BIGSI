@@ -1,0 +1,86 @@
+{% set name = "bigsi" %}
+{% set version = "0.3.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+# source:
+#   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+#   sha256: 33487a8b81a9cc10f68417a81695f7451321dd2ece4ded7e4e4b23561bca57a7
+source:
+   path: ../../
+
+build:
+  number: 0
+  entry_points:
+    - bigsi = bigsi.__main__:main
+
+requirements:
+  build:
+      - python {{ python }}  
+  host:
+    - mmh3    
+#    - mccortex
+    - biopython
+    - bitarray
+    - cython
+    - hug
+    - humanfriendly
+    - numpy
+    - pip
+    - python
+    - pyyaml
+    - redis
+    - redis-py 
+    - rocksdb 
+    - libdb
+    - python-rocksdb
+    - bsddb3
+  run:
+    - mmh3    
+#    - mccortex
+    - biopython
+    - bitarray
+    - cython
+    - hug
+    - humanfriendly
+    - numpy
+    - python
+    - pyyaml
+    - redis
+    - redis-py 
+    - mmh3    
+    - rocksdb 
+    - libdb
+    - python-rocksdb
+    - bsddb3
+
+# test:
+#   imports:
+#     - bigsi
+#     - bigsi.bloom
+#     - bigsi.cmds
+#     - bigsi.graph
+#     - bigsi.matrix
+#     - bigsi.scoring
+#     - bigsi.storage
+#     - bigsi.utils
+#     - bigsi.tests
+#   requires:
+#     - pytest    
+#   commands:
+#     - py.test --pyargs bigsi
+
+about:
+  home: http://github.com/phelimb/bigsi
+  license: MIT
+  license_family: MIT
+  license_file: 
+  summary: BItsliced Genomic Signature Index - Efficient indexing and search in very large collections of WGS data
+  doc_url: 
+  dev_url: 
+
+extra:
+  recipe-maintainers:
+    - phelimb

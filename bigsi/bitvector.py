@@ -3,7 +3,6 @@ import numpy as np
 
 
 class BitArray(bitarray):
-
     def __init__(self, *args, **kwargs):
         super().__init__()
 
@@ -14,7 +13,7 @@ class BitArray(bitarray):
             self[i] = bit
             return self
         except IndexError:
-            self.extend([False]*(1+i-self.length()))
+            self.extend([False] * (1 + i - self.length()))
             return self.setbit(i, bit)
 
     def getbit(self, i):
