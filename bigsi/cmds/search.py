@@ -33,7 +33,16 @@ def parse_input(infile):
     # return gene_to_kmers
 
 
-def _search(gene_name, seq, results, threshold, graph, output_format="json", pipe=False, score=False):
+def _search(
+    gene_name,
+    seq,
+    results,
+    threshold,
+    graph,
+    output_format="json",
+    pipe=False,
+    score=False,
+):
     if pipe:
         if output_format == "tsv":
             start = time.time()
@@ -43,7 +52,12 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
                 for sample_id, percent in result.items():
                     print(
                         "\t".join(
-                            [gene_name, sample_id, str(round(percent["percent_kmers_found"], 2)), str(round(diff, 2))]
+                            [
+                                gene_name,
+                                sample_id,
+                                str(round(percent["percent_kmers_found"], 2)),
+                                str(round(diff, 2)),
+                            ]
                         )
                     )
             else:
@@ -57,7 +71,16 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
             for sample, percent in result:
                 percent = round(percent * 100, 2)
                 colour = int(graph.sample_to_colour_lookup.get(sample))
-                print(" ".join([">", gene_name, sample, "kmer-%i coverage %f" % (graph.kmer_size, percent)]))
+                print(
+                    " ".join(
+                        [
+                            ">",
+                            gene_name,
+                            sample,
+                            "kmer-%i coverage %f" % (graph.kmer_size, percent),
+                        ]
+                    )
+                )
                 presence = []
                 for kmer in seq_to_kmers(seq, graph.kmer_size):
                     kmer_presence = graph.graph.lookup(convert_query_kmer(kmer))[colour]
@@ -73,15 +96,23 @@ def _search(gene_name, seq, results, threshold, graph, output_format="json", pip
     else:
         results[gene_name] = {}
         start = time.time()
-        results[gene_name]["results"] = graph.search(seq, threshold=threshold, score=score)
+        results[gene_name]["results"] = graph.search(
+            seq, threshold=threshold, score=score
+        )
         diff = time.time() - start
         results[gene_name]["time"] = diff
     return results
 
 
-def search(seq, fasta_file, threshold, graph, output_format="json", pipe=False, score=False):
+def search(
+    seq, fasta_file, threshold, graph, output_format="json", pipe=False, score=False
+):
     if output_format == "tsv":
-        print("\t".join(["gene_name", "sample_id", str("kmer_coverage_percent"), str("time")]))
+        print(
+            "\t".join(
+                ["gene_name", "sample_id", str("kmer_coverage_percent"), str("time")]
+            )
+        )
     results = {}
     if fasta_file is not None:
         for gene, seq in parse_input(fasta_file):

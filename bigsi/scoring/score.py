@@ -34,7 +34,14 @@ def tabulate_score(ss):
 
 class Scorer:
     def __init__(
-        self, DB_SIZE, MATCH=1, MISMATCH=2, LAMBDA_UNGAPPED=1.330, K_UNGAPPED=0.621, LAMBDA_GAPPED=1.28, K_GAPPED=0.46
+        self,
+        DB_SIZE,
+        MATCH=1,
+        MISMATCH=2,
+        LAMBDA_UNGAPPED=1.330,
+        K_UNGAPPED=0.621,
+        LAMBDA_GAPPED=1.28,
+        K_GAPPED=0.46,
     ):
         self.LAMBDA_UNGAPPED = LAMBDA_UNGAPPED
         self.K_UNGAPPED = K_UNGAPPED
@@ -81,7 +88,9 @@ class Scorer:
             "max_score": round(max_score * convert, 2),
             "max_mismatches": math.ceil(max_total_N_snps),
             "min_mismatches": math.floor(min_total_N_snps),
-            "mismatches": math.ceil(math.ceil(min_total_N_snps) + (0.05 * math.floor(max_total_N_snps))),
+            "mismatches": math.ceil(
+                math.ceil(min_total_N_snps) + (0.05 * math.floor(max_total_N_snps))
+            ),
         }
 
     def score(self, s):
@@ -100,7 +109,9 @@ class Scorer:
         score_dict["length"] = seq_len
         score_dict["evalue"] = self.evalue(score_dict["score"], seq_len)
         score_dict["pvalue"] = self.pvalue(score_dict["evalue"])
-        score_dict["log_evalue"] = round(self.log_evalue(score_dict["score"], seq_len), 2)
+        score_dict["log_evalue"] = round(
+            self.log_evalue(score_dict["score"], seq_len), 2
+        )
         score_dict["log_pvalue"] = round(self.log_pvalue(score_dict["log_evalue"]), 2)
         return score_dict
 

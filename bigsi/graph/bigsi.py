@@ -206,15 +206,6 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         self.merge_indexes(bigsi)
         self.merge_metadata(bigsi)
 
-    # def __search_kmers(self, kmers, threshold=1, score=False):
-    #     if threshold == 1:
-    #         ## Special case optimisation when T==100% (we don't need to unpack the bit arrays)
-    #         return self.__search_kmers_threshold_1(kmers, score=score)
-    #     else:
-    #         return self.__search_kmers_threshold_not_1(
-    #             kmers, threshold=threshold, score=score
-    #         )
-
     def __validate_search_query(self, seq):
         kmers = set()
         for k in self.seq_to_kmers(seq):
@@ -229,37 +220,3 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
 
     def seq_to_kmers(self, seq):
         return seq_to_kmers(seq, self.kmer_size)
-
-    # def __search_kmers_threshold_not_1(self, kmers, threshold, score):
-    #     # if score:
-    #     #     return self.__search_kmers_threshold_not_1_with_scoring(kmers, threshold)
-    #     # else:
-    #     return self.__search_kmers_threshold_not_1_without_scoring(kmers, threshold)
-
-    # def __search_kmers_threshold_not_1_without_scoring(self, kmers, threshold):
-    #     out = {}
-    #     col_sum = self.storage.batch_lookup_and_sum_presence(kmers)
-    #     for i, f in enumerate(col_sum):
-    #         res = float(f) / len(kmers)
-    #         if res >= threshold:
-    #             sample = self.storage.colour_to_sample(i)
-    #             if sample != "DELETED":
-    #                 out[sample] = {}
-    #                 out[sample]["percent_kmers_found"] = 100 * res
-    #     return out
-
-    # def __search_kmers_threshold_1(self, kmers, score=False):
-    #     """Special case where the threshold is 1 (can accelerate queries with AND)"""
-    #     bitarray = self.storage.batch_lookup_and_bitwise_and_presence(kmers)
-    #     out = {}
-    #     for c in bitarray:
-    #         sample = self.storage.colour_to_sample(c)
-    #         if sample != "DELETED":
-    #             if score:
-    #                 out[sample] = self.scorer.score(
-    #                     "1" * (len(kmers) + self.kmer_size - 1)
-    #                 )  # Fix!
-    #             else:
-    #                 out[sample] = {}
-    #             out[sample]["percent_kmers_found"] = 100
-    #     return out

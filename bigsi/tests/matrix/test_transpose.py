@@ -18,7 +18,11 @@ def create_bitarrays(list_of_boolean_lists):
 SIZE = 10
 
 
-@given(booleans=st.lists(st.lists(st.booleans(), min_size=SIZE, max_size=SIZE), min_size=5, max_size=10))
+@given(
+    booleans=st.lists(
+        st.lists(st.booleans(), min_size=SIZE, max_size=SIZE), min_size=5, max_size=10
+    )
+)
 def test_transpose(booleans):
     for lowmem in [True, False]:
         npmatrix = np.array(booleans).transpose()
