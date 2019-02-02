@@ -10,7 +10,7 @@ You can read more in our preprint here: https://www.biorxiv.org/content/early/20
 
 # Install
 
-bigsi has a docker image that bundles mccortex, berkeley DB and BIGSI in one image. See: https://bigsi.readme.io/docs for install instructions. 
+See: https://bigsi.readme.io/docs for install instructions. 
 
 ## Quickstart
 
@@ -23,6 +23,6 @@ Please cite
 ```
 Ultra-fast search of all deposited bacterial and viral genomic data
 Phelim Bradley, Henk den Bakker, Eduardo Rocha, Gil McVean, Zamin Iqbal
-Nature Biotechnology; doi: http://dx.doi.org/http://dx.doi.org/ . .
+Nature Biotechnology; doi: http://dx.doi.org/10.1038/s41587-018-0010-1
 ```
 if you use BIGSI in your work.
