@@ -39,12 +39,12 @@ class KmerSignatureIndex:
         )
         return cls(storage)
 
-    def lookup(self, kmers):
+    def lookup(self, kmers, remove_trailing_zeros=True):
         if isinstance(kmers, str):
             kmers = [kmers]
         kmer_to_hashes = self.__kmers_to_hashes(kmers)
         hashes = {h for sublist in kmer_to_hashes.values() for h in sublist}
-        rows = self.__batch_get_rows(hashes)
+        rows = self.__batch_get_rows(hashes, remove_trailing_zeros)
         return self.__bitwise_and_kmers(kmer_to_hashes, rows)
 
     def insert_bloom(self, bloomfilter, column_index):
@@ -68,8 +68,8 @@ class KmerSignatureIndex:
             )  ## use canonical kmer to generate lookup, but report query kmer
         return d
 
-    def __batch_get_rows(self, row_indexes):
-        return dict(zip(row_indexes, self.bitmatrix.get_rows(row_indexes, slice=False)))
+    def __batch_get_rows(self, row_indexes, remove_trailing_zeros=False):
+        return dict(zip(row_indexes, self.bitmatrix.get_rows(row_indexes, remove_trailing_zeros=remove_trailing_zeros)))
 
     def __bitwise_and_kmers(self, kmer_to_hashes, rows):
         d = {}

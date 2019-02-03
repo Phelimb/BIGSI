@@ -27,11 +27,11 @@ class BitMatrix(object):
     def get_row(self, row_index):
         return self.storage.get_bitarray(row_index)[: self.num_cols]
 
-    def get_rows(self, row_indexes, slice=True):
+    def get_rows(self, row_indexes, remove_trailing_zeros=True):
         ## Only need to slice for merging (it's a lot slower)
         # Takes advantage of batching in storage engine if available
         bitarrays=self.storage.get_bitarrays(row_indexes)
-        if slice:
+        if remove_trailing_zeros:
             return (ba[: self.num_cols] for ba in bitarrays)
         else:
             return bitarrays
