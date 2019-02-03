@@ -50,7 +50,7 @@ def test_delete_sample():
 
     ## Ensure only one sample is return
     assert sm.samples_to_colours([sample_name1, sample_name2]) == {sample_name2: 1}
-    assert sm.colours_to_samples([0, 1]) == {0: "DELETED_SAMPLE", 1: sample_name2}
+    assert sm.colours_to_samples([0, 1]) == {0: "D3L3T3D", 1: sample_name2}
 
 
 def test_unique_sample_names():
