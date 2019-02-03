@@ -31,14 +31,8 @@ def get_rows(in_db, bloom_filter_size):
 BLOOMFILTER_SIZE_KEY = "ksi:bloomfilter_size"
 NUM_HASH_FUNCTS_KEY = "ksi:num_hashes"
 
-def main():
-    infile = sys.argv[1]
-    outfile = sys.argv[2]
 
-    in_graph = db.DB()
-    in_graph.set_cachesize(4,0)
-    in_graph.open(infile+"/graph", flags=db.DB_RDONLY)
-
+def convert_metadata(infile, config):
     in_metadata = db.DB()
     in_metadata.set_cachesize(4,0)
     in_metadata.open(infile+"/metadata", flags=db.DB_RDONLY)
@@ -46,33 +40,52 @@ def main():
     bloom_filter_size=int.from_bytes(in_metadata[b'bloom_filter_size'], 'big')
     kmer_size=int.from_bytes(in_metadata[b'kmer_size'], 'big')
     num_hashes=int.from_bytes(in_metadata[b'num_hashes'], 'big')
-
     ## Create the sample metadata
     colour_sample={}
-    for k, v in in_metadata.items():
-        if "colour" in k.decode("utf-8") and not k.decode("utf-8")=="num_colours":
-            colour=k.decode("utf-8").split("colour")[1]
-            sample=v.decode("utf-8")
-            colour_sample[colour]=sample
-    samples=list(collections.OrderedDict(sorted(colour_sample.items())).values())
-
-
+    for colour in range(num_samples):
+        key="colour%i" % colour
+        key=key.encode("utf-8")
+        sample_name=in_metadata[key].decode('utf-8')
+        colour_sample[colour]=sample_name
+    print(colour_sample)
     ## Add the sample metadata
+
+    storage=get_storage(config) 
+    sm = SampleMetadata(storage)  
+  
+    for colour, sample_name in colour_sample.items():
+        if "DELETED" in sample_name:
+            print(colour, sample_name)
+        sm._set_sample_colour(sample_name, colour)
+        sm._set_colour_sample(colour, sample_name)
+    sm._set_integer(sm.colour_count_key, num_samples)
+    in_metadata.close()
+    return num_samples
+
+def convert_index(infile, config, num_samples):
+    in_graph = db.DB()
+    in_graph.set_cachesize(4,0)
+    in_graph.open(infile+"/graph", flags=db.DB_RDONLY)
+
+    # Create the kmer signature index
+    storage=get_storage(config) 
+    storage.set_integer(BLOOMFILTER_SIZE_KEY, config["m"])
+    storage.set_integer(NUM_HASH_FUNCTS_KEY, config["h"])  
+    BitMatrix.create(storage=storage,
+        rows=get_rows(in_graph, config["m"]), num_rows=config["m"], num_cols=num_samples)
+    in_graph.close()
+    
+def main():
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
     config={
     "storage-engine": "berkeleydb",
     "storage-config": {"filename": outfile},
     "k": 31, "m": 25 * 10 ** 6, "h": 3,
-    }
-    storage=get_storage(config) 
-    sm = SampleMetadata(storage).add_samples(samples)
-    ## Create the kmer signature index
-    storage.set_integer(BLOOMFILTER_SIZE_KEY, bloom_filter_size)
-    storage.set_integer(NUM_HASH_FUNCTS_KEY, num_hashes)
-    BitMatrix.create(storage=storage,
-        rows=get_rows(in_graph, bloom_filter_size), num_rows=bloom_filter_size, num_cols=num_samples)
+    }    
+    num_samples=convert_metadata(infile, config)
+    convert_index(infile, config, num_samples)
 
 
-    in_graph.close()
-    in_metadata.close()
 
 main()
