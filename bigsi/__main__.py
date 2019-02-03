@@ -16,7 +16,6 @@ from bigsi.version import __version__
 from bigsi.graph import BIGSI
 
 from bigsi.cmds.insert import insert
-from bigsi.cmds.search import search
 from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
@@ -50,7 +49,7 @@ def get_config_from_file(config_file):
 @hug.object.urls("/", requires=())
 class bigsi(object):
     @hug.object.cli
-    @hug.object.post("/insert", output_format=hug.output_format.json)
+    @hug.object.post("/insert", output_format=hug.output_format.pretty_json)
     def insert(self, config: hug.types.text, bloomfilter, sample):
         """Inserts a bloom filter into the graph
 
@@ -77,7 +76,7 @@ class bigsi(object):
         )
 
     @hug.object.cli
-    @hug.object.post("/build", output_format=hug.output_format.json)
+    @hug.object.post("/build", output_format=hug.output_format.pretty_json)
     def build(
         self,
         bloomfilters: hug.types.multiple,
@@ -104,7 +103,7 @@ class bigsi(object):
         )
 
     @hug.object.cli
-    @hug.object.post("/merge", output_format=hug.output_format.json)
+    @hug.object.post("/merge", output_format=hug.output_format.pretty_json)
     def merge(self, config: hug.types.text, merge_config: hug.types.text):
         config = get_config_from_file(config)
         merge_config = get_config_from_file(merge_config)
@@ -116,13 +115,13 @@ class bigsi(object):
     @hug.object.cli
     @hug.object.post(
         "/search",
-        output_format=hug.output_format.json,
+        output_format=hug.output_format.pretty_json,
         response_headers={"Access-Control-Allow-Origin": "*"},
     )
     @hug.object.get(
         "/search",
         examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
-        output_format=hug.output_format.json,
+        output_format=hug.output_format.pretty_json,
         response_headers={"Access-Control-Allow-Origin": "*"},
     )
     def search(
@@ -130,18 +129,19 @@ class bigsi(object):
         seq: hug.types.text,
         threshold: hug.types.float_number = 1.0,
         config: hug.types.text = None,
+        score: hug.types.smart_boolean=False
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
         return {
             "query": seq,
             "threshold": threshold,
-            "results": bigsi.search(seq, threshold),
+            "results": bigsi.search(seq, threshold, score),
             "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1"
         }
 
     @hug.object.cli
-    @hug.object.delete("/", output_format=hug.output_format.json)
+    @hug.object.delete("/", output_format=hug.output_format.pretty_json)
     def delete(self, config: hug.types.text = None):
         config = get_config_from_file(config)
         get_storage(config).delete_all()
