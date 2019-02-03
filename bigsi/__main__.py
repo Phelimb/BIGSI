@@ -16,7 +16,6 @@ from bigsi.version import __version__
 from bigsi.graph import BIGSI
 
 from bigsi.cmds.insert import insert
-from bigsi.cmds.search import search
 from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
@@ -130,13 +129,14 @@ class bigsi(object):
         seq: hug.types.text,
         threshold: hug.types.float_number = 1.0,
         config: hug.types.text = None,
+        score: hug.types.smart_boolean=False
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
         return {
             "query": seq,
             "threshold": threshold,
-            "results": bigsi.search(seq, threshold),
+            "results": bigsi.search(seq, threshold, score),
             "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1"
         }
 

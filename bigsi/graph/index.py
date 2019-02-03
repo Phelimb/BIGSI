@@ -42,6 +42,7 @@ class KmerSignatureIndex:
     def lookup(self, kmers, remove_trailing_zeros=True):
         if isinstance(kmers, str):
             kmers = [kmers]
+        kmers=set(kmers)
         kmer_to_hashes = self.__kmers_to_hashes(kmers)
         hashes = {h for sublist in kmer_to_hashes.values() for h in sublist}
         rows = self.__batch_get_rows(hashes, remove_trailing_zeros)
