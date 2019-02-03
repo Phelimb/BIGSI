@@ -58,9 +58,10 @@ def convert_metadata(infile, config):
     for colour, sample_name in colour_sample.items():
         if "DELETED" in sample_name:
             print(colour, sample_name)
-        sm._set_sample_colour(sample_name, colour)
-        sm._set_colour_sample(colour, sample_name)
-    sm._set_integer(sm.colour_count_key, num_samples)
+            sample_name="D3L3T3D"
+    #     sm._set_sample_colour(sample_name, colour)
+    #     sm._set_colour_sample(colour, sample_name)
+    # sm._set_integer(sm.colour_count_key, num_samples)
     in_metadata.close()
     return num_samples
 
@@ -86,7 +87,7 @@ def main():
     "k": 31, "m": 25 * 10 ** 6, "h": 3,
     }    
     num_samples=convert_metadata(infile, config)
-    convert_index(infile, config, num_samples)
+    # convert_index(infile, config, num_samples)
 
 
 
