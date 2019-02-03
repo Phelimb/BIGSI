@@ -226,7 +226,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         for res in results:
             col="".join([str(i) for i in X[:,res.colour].tolist()])
             score_results=self.scorer.score(col)
-            score_results["pseudoalignment"]=col
+            score_results["kmer-presence"]=col
             res.add_score(score_results)
 
     def __colours_above_threshold(self, colours_to_percent_kmers, min_kmers):
