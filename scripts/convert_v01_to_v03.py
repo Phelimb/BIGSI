@@ -7,6 +7,7 @@ Requires v0.3 installed
 import sys
 import bsddb3.db as db
 import bitarray
+import pickle
 import bigsi.version
 from bigsi import BIGSI
 from bigsi.matrix import BitMatrix
