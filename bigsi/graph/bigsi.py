@@ -137,11 +137,11 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         storage.close()  ## Need to delete LOCK files before re init
         return cls(config)
 
-    def search(self, seq, threshold=1.0, score=False):
+    def search(self, seq, threshold=1.0):
         self.__validate_search_query(seq)
         assert threshold <= 1
         kmers = set(self.seq_to_kmers(seq))
-        kmers_to_colours = self.lookup(kmers)
+        kmers_to_colours = self.lookup(kmers, remove_trailing_zeros=False)
         min_kmers = math.ceil(len(kmers) * threshold)
         if threshold == 1.0:
             results = self.exact_filter(kmers_to_colours)

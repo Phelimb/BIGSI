@@ -80,7 +80,7 @@ def test_build_cmd():
             "search",
             {"config": config_file, "seq": seq, "threshold": 0.1},
         )
-        assert len(response.data) == 3
+        assert len(response.data) == 4
         response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
