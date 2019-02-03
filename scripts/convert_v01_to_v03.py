@@ -36,10 +36,12 @@ def convert_metadata(infile, config):
     in_metadata = db.DB()
     in_metadata.set_cachesize(4,0)
     in_metadata.open(infile+"/metadata", flags=db.DB_RDONLY)
-    num_samples=int.from_bytes(in_metadata[b'num_colours'], 'big')
     bloom_filter_size=int.from_bytes(in_metadata[b'bloom_filter_size'], 'big')
     kmer_size=int.from_bytes(in_metadata[b'kmer_size'], 'big')
     num_hashes=int.from_bytes(in_metadata[b'num_hashes'], 'big')
+    colours=pickle.loads(in_metadata[b'colours'])
+    num_samples=len(colours)
+
     ## Create the sample metadata
     colour_sample={}
     for colour in range(num_samples):
