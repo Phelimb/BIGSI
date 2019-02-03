@@ -4,6 +4,7 @@ from multiprocessing import Pool
 import numpy as np
 from bigsi.constants import DEFAULT_CONFIG
 from bigsi.graph.metadata import SampleMetadata
+from bigsi.graph.metadata import DELETION_SPECIAL_SAMPLE_NAME
 from bigsi.graph.index import KmerSignatureIndex
 from bigsi.decorators import convert_kmers_to_canonical
 from bigsi.bloom import BloomFilter
@@ -179,7 +180,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
             results = self.inexact_filter(kmers_to_colours, min_kmers)
         if score:
             self.score(kmers, kmers_to_colours, results)
-        return [r.todict() for r in results]
+        return [r.todict() for r in results if not r.sample_name==DELETION_SPECIAL_SAMPLE_NAME]
 
     def exact_filter(self, kmers_to_colours):
         colours_with_all_kmers = non_zero_bitarrary_positions(

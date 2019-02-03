@@ -57,8 +57,6 @@ class SampleMetadata:
     def colour_to_sample(self, colour):
         ## Ignores deleted samples
         sample_name = self._get_string(colour)
-        if sample_name == DELETION_SPECIAL_SAMPLE_NAME:
-            sample_name = "DELETED_SAMPLE"
         return sample_name
 
     def samples_to_colours(self, sample_names):
