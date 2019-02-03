@@ -4,6 +4,7 @@ import os
 import string
 import random
 import pytest
+import json
 from bitarray import bitarray
 
 from bigsi import BIGSI
@@ -80,7 +81,7 @@ def test_build_cmd():
             "search",
             {"config": config_file, "seq": seq, "threshold": 0.1},
         )
-        assert len(response.data) == 4
+        assert len(json.loads(response.data)) == 4
         response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
@@ -127,7 +128,7 @@ def test_insert_search_cmd():
             bigsi.__main__, "search", {"config": config_file, "seq": seq}
         )
 
-        assert "s3" in [r["sample_name"] for r in response.data["results"]]
+        assert "s3" in [r["sample_name"] for r in json.loads(response.data)["results"]]
         response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
