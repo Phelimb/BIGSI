@@ -50,7 +50,6 @@ def convert_metadata(infile, config):
         key=key.encode("utf-8")
         sample_name=in_metadata[key].decode('utf-8')
         colour_sample[colour]=sample_name
-    print(colour_sample)
     ## Add the sample metadata
 
     storage=get_storage(config) 
@@ -58,11 +57,10 @@ def convert_metadata(infile, config):
   
     for colour, sample_name in colour_sample.items():
         if "DELETED" in sample_name:
-            print(colour, sample_name)
             sample_name="D3L3T3D"
-    #     sm._set_sample_colour(sample_name, colour)
-    #     sm._set_colour_sample(colour, sample_name)
-    # sm._set_integer(sm.colour_count_key, num_samples)
+        sm._set_sample_colour(sample_name, colour)
+        sm._set_colour_sample(colour, sample_name)
+    sm._set_integer(sm.colour_count_key, num_samples)
     in_metadata.close()
     return num_samples
 
