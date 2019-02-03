@@ -49,7 +49,7 @@ def get_config_from_file(config_file):
 @hug.object.urls("/", requires=())
 class bigsi(object):
     @hug.object.cli
-    @hug.object.post("/insert", output_format=hug.output_format.json)
+    @hug.object.post("/insert", output_format=hug.output_format.pretty_json)
     def insert(self, config: hug.types.text, bloomfilter, sample):
         """Inserts a bloom filter into the graph
 
@@ -76,7 +76,7 @@ class bigsi(object):
         )
 
     @hug.object.cli
-    @hug.object.post("/build", output_format=hug.output_format.json)
+    @hug.object.post("/build", output_format=hug.output_format.pretty_json)
     def build(
         self,
         bloomfilters: hug.types.multiple,
@@ -103,7 +103,7 @@ class bigsi(object):
         )
 
     @hug.object.cli
-    @hug.object.post("/merge", output_format=hug.output_format.json)
+    @hug.object.post("/merge", output_format=hug.output_format.pretty_json)
     def merge(self, config: hug.types.text, merge_config: hug.types.text):
         config = get_config_from_file(config)
         merge_config = get_config_from_file(merge_config)
@@ -115,13 +115,13 @@ class bigsi(object):
     @hug.object.cli
     @hug.object.post(
         "/search",
-        output_format=hug.output_format.json,
+        output_format=hug.output_format.pretty_json,
         response_headers={"Access-Control-Allow-Origin": "*"},
     )
     @hug.object.get(
         "/search",
         examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
-        output_format=hug.output_format.json,
+        output_format=hug.output_format.pretty_json,
         response_headers={"Access-Control-Allow-Origin": "*"},
     )
     def search(
@@ -141,7 +141,7 @@ class bigsi(object):
         }
 
     @hug.object.cli
-    @hug.object.delete("/", output_format=hug.output_format.json)
+    @hug.object.delete("/", output_format=hug.output_format.pretty_json)
     def delete(self, config: hug.types.text = None):
         config = get_config_from_file(config)
         get_storage(config).delete_all()

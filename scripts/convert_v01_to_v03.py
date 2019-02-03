@@ -56,10 +56,14 @@ def convert_metadata(infile, config):
     sm = SampleMetadata(storage)  
   
     for colour, sample_name in colour_sample.items():
-        if "DELETED" in sample_name:
+        if "DELETE" in sample_name:
             sample_name="D3L3T3D"
-        sm._set_sample_colour(sample_name, colour)
-        sm._set_colour_sample(colour, sample_name)
+            print(colour, sample_name)
+            sm._set_colour_sample(colour, sample_name)
+            sm._set_sample_colour(sample_name, -1)
+        else:
+            sm._set_sample_colour(sample_name, colour)
+            sm._set_colour_sample(colour, sample_name)
     sm._set_integer(sm.colour_count_key, num_samples)
     in_metadata.close()
     return num_samples
