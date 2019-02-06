@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 def d_to_csv(d):
     df=[]
     results=d["results"]
-    header=results[0].keys()
+    header=sorted(results[0].keys())
     df.append(header)
 
     
