@@ -6,7 +6,7 @@ BIGSI can search a collection of raw (fastq/bam), contigs or assembly for genes,
 Documentation can be found at https://bigsi.readme.io/. 
 An index of the microbial ENA/SRA (Dec 2016) can be queried at http://www.bigsi.io. 
 
-You can read more in our preprint here: https://www.biorxiv.org/content/early/2017/12/15/234955.
+You can read more in [the publication:](http://dx.doi.org/10.1038/s41587-018-0010-1)
 
 # Install
 
