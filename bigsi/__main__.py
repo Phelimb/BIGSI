@@ -32,25 +32,26 @@ from bigsi.utils import seq_to_kmers
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 def d_to_csv(d):
-    df=[]
-    results=d["results"]
-    header=sorted(results[0].keys())
+    df = []
+    results = d["results"]
+    header = sorted(results[0].keys())
     df.append(header)
 
-    
     for res in results:
-        row=[]
+        row = []
         for key in header:
             row.append(res[key])
         df.append(row)
 
     output = io.StringIO()
-    writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)            
+    writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
     for row in df:
         writer.writerow(row)
-    csv_string=output.getvalue()
+    csv_string = output.getvalue()
     return csv_string
+
 
 API = hug.API("bigsi-%s" % str(__version__))
 
@@ -137,29 +138,31 @@ class bigsi(object):
     @hug.object.post(
         "/search",
         response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
     )
     @hug.object.get(
         "/search",
         examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
         response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
     )
     def search(
         self,
         seq: hug.types.text,
         threshold: hug.types.float_number = 1.0,
         config: hug.types.text = None,
-        score: hug.types.smart_boolean=False,
-        format: hug.types.one_of(["json", "csv"])="json"
+        score: hug.types.smart_boolean = False,
+        format: hug.types.one_of(["json", "csv"]) = "json",
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
-        d= {
+        d = {
             "query": seq,
             "threshold": threshold,
             "results": bigsi.search(seq, threshold, score),
-            "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1"
+            "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
         }
-        if format=="csv":
+        if format == "csv":
             return d_to_csv(d)
         else:
             return json.dumps(d, indent=4)
