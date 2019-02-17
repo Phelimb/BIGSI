@@ -6,6 +6,8 @@ ARG VCS_REF
 ARG ROCKSDB_REPO='https://github.com/facebook/rocksdb.git'
 ARG ROCKSDB_VERSION='5.2.1'
 ARG ROCKSDB_TAG="rocksdb-${ROCKSDB_VERSION}"
+RUN apt-get update -y
+RUN apt-get install curl -y
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
