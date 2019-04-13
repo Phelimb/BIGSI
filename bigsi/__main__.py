@@ -27,7 +27,7 @@ from bigsi.storage import get_storage
 
 from bigsi.utils.cortex import extract_kmers_from_ctx
 from bigsi.utils import seq_to_kmers
-
+from bigsi.constants import DEFAULT_CONFIG
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -101,12 +101,23 @@ class bigsi(object):
     @hug.object.post("/build", output_format=hug.output_format.pretty_json)
     def build(
         self,
-        bloomfilters: hug.types.multiple,
+        bloomfilters: hug.types.multiple = [],
         samples: hug.types.multiple = [],
+        from_file: hug.types.text = None,
         config: hug.types.text = None,
     ):
         config = get_config_from_file(config)
 
+        if from_file and bloomfilters:
+            raise ValueError("You can only specify blooms via from_file or bloomfilters, but not both")
+        elif from_file:
+            samples=[]
+            bloomfilters=[]
+            with open(from_file, 'r') as tsvfile: 
+                reader = csv.reader(tsvfile, delimiter='\t')           
+                for row in reader:
+                    bloomfilters.append(row[0])
+                    samples.append(row[1])
         if samples:
             assert len(samples) == len(bloomfilters)
         else:
