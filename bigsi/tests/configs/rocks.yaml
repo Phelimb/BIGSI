@@ -9,4 +9,5 @@ storage-config:
   options:
     create_if_missing: true
     max_open_files: 5000
+    compression: lz4 # default none
 

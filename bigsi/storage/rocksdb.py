@@ -19,16 +19,33 @@ class RocksDB(rocksdb.DB):
         return val
 
 
+COMPRESSION_TYPE_MAP = {
+    "no_compression": rocksdb.CompressionType.no_compression,
+    "snappy": rocksdb.CompressionType.snappy_compression,
+    "zlib": rocksdb.CompressionType.zlib_compression,
+    "bzip2": rocksdb.CompressionType.bzip2_compression,
+    "lz4": rocksdb.CompressionType.lz4_compression,
+    "lz4hc": rocksdb.CompressionType.lz4hc_compression,
+    "xpress": rocksdb.CompressionType.xpress_compression,
+    "zstd": rocksdb.CompressionType.zstd_compression,
+    "zstdnotfinal": rocksdb.CompressionType.zstdnotfinal_compression,
+}
+
+
 class RocksDBStorage(BaseStorage):
     def __init__(self, storage_config=None):
         if storage_config is None:
             storage_config = DEFAULT_ROCKS_DB_STORAGE_CONFIG
         self.storage_config = copy.copy(storage_config)
         options = storage_config["options"]
-
+        _options = copy.copy(options)
+        _options["compression"] = COMPRESSION_TYPE_MAP.get(
+            options.get("compression", "no_compression"),
+            rocksdb.CompressionType.no_compression,
+        )
         self.storage = RocksDB(
             self.storage_config["filename"],
-            rocksdb.Options(**options),
+            rocksdb.Options(**_options),
             read_only=self.storage_config.get("read_only", False),
         )
         self.write_batch_size = int(self.storage_config.get("write_batch_size", 10000))
