@@ -13,6 +13,8 @@ import hug
 import tempfile
 import humanfriendly
 import yaml
+from multiprocessing.pool import ThreadPool
+
 from pyfasta import Fasta
 from bigsi.version import __version__
 from bigsi.graph import BIGSI
@@ -36,9 +38,10 @@ logger = logging.getLogger(__name__)
 def d_to_csv(d, with_header=True, carriage_return=True):
     df = []
     results = d["results"]
-    header = sorted(results[0].keys())
-    if with_header:
-        df.append(["query"] + header)
+    if results:
+        header = sorted(results[0].keys())
+        if with_header:
+            df.append(["query"] + header)
 
     for res in results:
         row = [d["query"]]
@@ -55,6 +58,15 @@ def d_to_csv(d, with_header=True, carriage_return=True):
         return csv_string
     else:
         return csv_string[:-1]
+
+
+def search_bigsi(bigsi, seq, threshold, score):
+    return {
+        "query": seq,
+        "threshold": threshold,
+        "results": bigsi.search(seq, threshold, score),
+        "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
+    }
 
 
 API = hug.API("bigsi-%s" % str(__version__))
@@ -173,12 +185,7 @@ class bigsi(object):
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
-        d = {
-            "query": seq,
-            "threshold": threshold,
-            "results": bigsi.search(seq, threshold, score),
-            "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
-        }
+        d = search_bigsi(bigsi, seq, threshold, score)
         if format == "csv":
             return d_to_csv(d)
         else:
@@ -208,38 +215,44 @@ class bigsi(object):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
         fasta = Fasta(fasta)
-        dd = []
-        csv_combined = ""
-        for i, seq in enumerate(fasta.values()):
-            seq = str(seq)
-            d = {
-                "query": seq,
-                "threshold": threshold,
-                "results": bigsi.search(seq, threshold, score),
-                "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
-            }
-            dd.append(d)
-            if format == "csv":
-                if i == 0:
-                    with_header = True
-                    carriage_return = False
-                elif i == len(fasta) - 1:
-                    carriage_return = True
-                else:
-                    with_header = False
-                    carriage_return = False
-                csv_result = d_to_csv(d, with_header, carriage_return)
-                csv_combined += csv_result
-                if stream:
-                    print(csv_result)
-            else:
-                if stream:
-                    print(json.dumps(d))
         if not stream:
+            csv_combined = ""
+            nproc = config.get("nproc", 1)
+            with ThreadPool(processes=nproc) as pool:
+                args = [(bigsi, str(seq), threshold, score) for seq in fasta.values()]
+                dd = pool.starmap(search_bigsi, args)
             if format == "csv":
-                return csv_combined
+                return "\n".join([d_to_csv(d, False, False) for d in dd])
             else:
                 return json.dumps(dd, indent=4)
+        else:
+            dd = []
+            csv_combined = ""
+            for i, seq in enumerate(fasta.values()):
+                seq = str(seq)
+                d = {
+                    "query": seq,
+                    "threshold": threshold,
+                    "results": bigsi.search(seq, threshold, score),
+                    "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
+                }
+                dd.append(d)
+                if format == "csv":
+                    if i == 0:
+                        with_header = True
+                        carriage_return = False
+                    elif i == len(fasta) - 1:
+                        carriage_return = True
+                    else:
+                        with_header = False
+                        carriage_return = False
+                    csv_result = d_to_csv(d, with_header, carriage_return)
+                    csv_combined += csv_result
+                    if stream:
+                        print(csv_result)
+                else:
+                    if stream:
+                        print(json.dumps(d))
 
     @hug.object.cli
     @hug.object.delete("/", output_format=hug.output_format.pretty_json)
