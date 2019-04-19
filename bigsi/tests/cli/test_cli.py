@@ -82,6 +82,23 @@ def test_build_cmd():
             {"config": config_file, "seq": seq, "threshold": 0.1},
         )
         assert len(json.loads(response.data)) == 4
+
+        seqfile = "bigsi/tests/data/query.fasta"
+        response = hug.test.post(
+            bigsi.__main__, "bulk_search", {"config": config_file, "fasta": seqfile}
+        )
+
+        assert response.data
+        # assert "score" in list(response.data.get(seq).get('results').values())[0]
+        seqfile = "bigsi/tests/data/query.fasta"
+        response = hug.test.post(
+            bigsi.__main__,
+            "bulk_search",
+            {"config": config_file, "fasta": seqfile, "threshold": 0.1},
+        )
+        assert len(json.loads(response.data)) == 1
+        assert len(json.loads(response.data)[0]) == 4
+
         response = hug.test.delete(bigsi.__main__, "", {"config": config_file})
 
 
