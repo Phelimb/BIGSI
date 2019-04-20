@@ -24,12 +24,15 @@ from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
+from bigsi.cmds.variant_search import BIGSIVariantSearch
+from bigsi.cmds.variant_search import BIGSIAminoAcidMutationSearch
 
 from bigsi.storage import get_storage
 
 from bigsi.utils.cortex import extract_kmers_from_ctx
 from bigsi.utils import seq_to_kmers
 from bigsi.constants import DEFAULT_CONFIG
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -186,6 +189,45 @@ class bigsi(object):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
         d = search_bigsi(bigsi, seq, threshold, score)
+        if format == "csv":
+            return d_to_csv(d)
+        else:
+            return json.dumps(d, indent=4)
+
+    @hug.object.cli
+    @hug.object.post(
+        "/variant_search",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    @hug.object.get(
+        "/variant_search",
+        examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    def variant_search(
+        self,
+        reference: hug.types.text,
+        ref: hug.types.text,
+        pos: hug.types.number,
+        alt: hug.types.text,
+        gene: hug.types.text = None,
+        genbank: hug.types.text = None,
+        config: hug.types.text = None,
+        format: hug.types.one_of(["json", "csv"]) = "json",
+    ):
+        config = get_config_from_file(config)
+        bigsi = BIGSI(config)
+        if genbank and gene:
+            d = BIGSIAminoAcidMutationSearch(bigsi, reference, genbank).search(
+                gene, ref, pos, alt
+            )
+        elif genbank or gene:
+            raise ValueError("genbank and gene must be supplied together")
+        else:
+            d = BIGSIVariantSearch(bigsi, reference).search(ref, pos, alt)
+        d["citation"] = "http://dx.doi.org/10.1038/s41587-018-0010-1"
         if format == "csv":
             return d_to_csv(d)
         else:

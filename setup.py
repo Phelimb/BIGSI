@@ -5,7 +5,7 @@ import os
 
 setup(
     name="bigsi",
-    version="0.3.4",
+    version="0.3.5",
     packages=[
         "bigsi",
         "bigsi.bloom",
