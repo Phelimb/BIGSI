@@ -33,7 +33,6 @@ from bigsi.utils.cortex import extract_kmers_from_ctx
 from bigsi.utils import seq_to_kmers
 from bigsi.constants import DEFAULT_CONFIG
 
-
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
