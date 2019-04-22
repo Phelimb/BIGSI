@@ -13,7 +13,9 @@ import hug
 import tempfile
 import humanfriendly
 import yaml
+from multiprocessing.pool import ThreadPool
 
+from pyfasta import Fasta
 from bigsi.version import __version__
 from bigsi.graph import BIGSI
 
@@ -22,6 +24,8 @@ from bigsi.cmds.delete import delete
 from bigsi.cmds.bloom import bloom
 from bigsi.cmds.build import build
 from bigsi.cmds.merge import merge
+from bigsi.cmds.variant_search import BIGSIVariantSearch
+from bigsi.cmds.variant_search import BIGSIAminoAcidMutationSearch
 
 from bigsi.storage import get_storage
 
@@ -33,14 +37,16 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-def d_to_csv(d):
+def d_to_csv(d, with_header=True, carriage_return=True):
     df = []
     results = d["results"]
-    header = sorted(results[0].keys())
-    df.append(header)
+    if results:
+        header = sorted(results[0].keys())
+        if with_header:
+            df.append(["query"] + header)
 
     for res in results:
-        row = []
+        row = [d["query"]]
         for key in header:
             row.append(res[key])
         df.append(row)
@@ -50,7 +56,19 @@ def d_to_csv(d):
     for row in df:
         writer.writerow(row)
     csv_string = output.getvalue()
-    return csv_string
+    if carriage_return:
+        return csv_string
+    else:
+        return csv_string[:-1]
+
+
+def search_bigsi(bigsi, seq, threshold, score):
+    return {
+        "query": seq,
+        "threshold": threshold,
+        "results": bigsi.search(seq, threshold, score),
+        "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
+    }
 
 
 API = hug.API("bigsi-%s" % str(__version__))
@@ -109,12 +127,14 @@ class bigsi(object):
         config = get_config_from_file(config)
 
         if from_file and bloomfilters:
-            raise ValueError("You can only specify blooms via from_file or bloomfilters, but not both")
+            raise ValueError(
+                "You can only specify blooms via from_file or bloomfilters, but not both"
+            )
         elif from_file:
-            samples=[]
-            bloomfilters=[]
-            with open(from_file, 'r') as tsvfile: 
-                reader = csv.reader(tsvfile, delimiter='\t')           
+            samples = []
+            bloomfilters = []
+            with open(from_file, "r") as tsvfile:
+                reader = csv.reader(tsvfile, delimiter="\t")
                 for row in reader:
                     bloomfilters.append(row[0])
                     samples.append(row[1])
@@ -167,16 +187,112 @@ class bigsi(object):
     ):
         config = get_config_from_file(config)
         bigsi = BIGSI(config)
-        d = {
-            "query": seq,
-            "threshold": threshold,
-            "results": bigsi.search(seq, threshold, score),
-            "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
-        }
+        d = search_bigsi(bigsi, seq, threshold, score)
         if format == "csv":
             return d_to_csv(d)
         else:
             return json.dumps(d, indent=4)
+
+    @hug.object.cli
+    @hug.object.post(
+        "/variant_search",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    @hug.object.get(
+        "/variant_search",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    def variant_search(
+        self,
+        reference: hug.types.text,
+        ref: hug.types.text,
+        pos: hug.types.number,
+        alt: hug.types.text,
+        gene: hug.types.text = None,
+        genbank: hug.types.text = None,
+        config: hug.types.text = None,
+        format: hug.types.one_of(["json", "csv"]) = "json",
+    ):
+        config = get_config_from_file(config)
+        bigsi = BIGSI(config)
+        if genbank and gene:
+            d = BIGSIAminoAcidMutationSearch(bigsi, reference, genbank).search(
+                gene, ref, pos, alt
+            )
+        elif genbank or gene:
+            raise ValueError("genbank and gene must be supplied together")
+        else:
+            d = BIGSIVariantSearch(bigsi, reference).search(ref, pos, alt)
+        d["citation"] = "http://dx.doi.org/10.1038/s41587-018-0010-1"
+        if format == "csv":
+            return d_to_csv(d)
+        else:
+            return json.dumps(d, indent=4)
+
+    @hug.object.cli
+    @hug.object.post(
+        "/bulk_search",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    @hug.object.get(
+        "/bulk_search",
+        examples="seqfile=query.fasta",
+        response_headers={"Access-Control-Allow-Origin": "*"},
+        output=hug.output_format.text,
+    )
+    def bulk_search(
+        self,
+        fasta: hug.types.text,
+        threshold: hug.types.float_number = 1.0,
+        config: hug.types.text = None,
+        score: hug.types.smart_boolean = False,
+        format: hug.types.one_of(["json", "csv"]) = "json",
+        stream: hug.types.smart_boolean = False,
+    ):
+        config = get_config_from_file(config)
+        bigsi = BIGSI(config)
+        fasta = Fasta(fasta)
+        if not stream:
+            csv_combined = ""
+            nproc = config.get("nproc", 1)
+            with ThreadPool(processes=nproc) as pool:
+                args = [(bigsi, str(seq), threshold, score) for seq in fasta.values()]
+                dd = pool.starmap(search_bigsi, args)
+            if format == "csv":
+                return "\n".join([d_to_csv(d, False, False) for d in dd])
+            else:
+                return json.dumps(dd, indent=4)
+        else:
+            dd = []
+            csv_combined = ""
+            for i, seq in enumerate(fasta.values()):
+                seq = str(seq)
+                d = {
+                    "query": seq,
+                    "threshold": threshold,
+                    "results": bigsi.search(seq, threshold, score),
+                    "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
+                }
+                dd.append(d)
+                if format == "csv":
+                    if i == 0:
+                        with_header = True
+                        carriage_return = False
+                    elif i == len(fasta) - 1:
+                        carriage_return = True
+                    else:
+                        with_header = False
+                        carriage_return = False
+                    csv_result = d_to_csv(d, with_header, carriage_return)
+                    csv_combined += csv_result
+                    if stream:
+                        print(csv_result)
+                else:
+                    if stream:
+                        print(json.dumps(d))
 
     @hug.object.cli
     @hug.object.delete("/", output_format=hug.output_format.pretty_json)

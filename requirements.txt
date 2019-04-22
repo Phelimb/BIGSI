@@ -1,12 +1,13 @@
 cython
 hug
-numpy
+numpy==1.14.3
 mmh3
 bitarray
 redis
 biopython
-pyyaml
+pyyaml==3.12
 humanfriendly
+pyfasta==0.5.2
 
 # Tests
 psutil

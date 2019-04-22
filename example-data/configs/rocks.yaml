@@ -1,6 +1,7 @@
 h: 3
 k: 31
 m: 1000
+nproc: 4
 max_build_mem_bytes: "20GB"
 low_mem_build: false
 storage-engine: rocksdb
@@ -9,4 +10,5 @@ storage-config:
   options:
     create_if_missing: true
     max_open_files: 5000
+    compression: lz4 # default no_compression
   read_only: false ## Change to true for read only access
