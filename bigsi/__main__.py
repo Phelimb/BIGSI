@@ -202,7 +202,6 @@ class bigsi(object):
     )
     @hug.object.get(
         "/variant_search",
-        examples="seq=ACACAAACCATGGCCGGACGCAGCTTTCTGA",
         response_headers={"Access-Control-Allow-Origin": "*"},
         output=hug.output_format.text,
     )

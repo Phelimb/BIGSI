@@ -11,4 +11,4 @@ storage-config:
     create_if_missing: true
     max_open_files: 5000
     compression: lz4 # default no_compression
-  read_only: true ## Change to true for read only access
+  read_only: false ## Change to true for read only access

@@ -13,16 +13,15 @@ from bigsi.utils import seq_to_kmers
 
 
 def bloom_file_name(f):
-    f = os.path.realpath(f)
-    return os.path.join(f, "_".join([os.path.basename(f)]))
+    return f
 
 
 def bloom(config, outfile, kmers):
     outfile = os.path.realpath(outfile)
     bloomfilter = BIGSI.bloom(config, kmers)
     off = bloom_file_name(outfile)
-    directory = os.path.dirname(off)
+    directory = os.path.dirname(outfile)
     if not os.path.exists(directory):
         os.makedirs(directory)
-    with open(off, "wb") as of:
+    with open(outfile, "wb") as of:
         bloomfilter.tofile(of)
