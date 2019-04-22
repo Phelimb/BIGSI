@@ -40,10 +40,10 @@ def test_bloom_cmd():
             },
         )
         a = bitarray()
-        with open("/tmp/test_kmers.bloom/test_kmers.bloom", "rb") as inf:
+        with open("/tmp/test_kmers.bloom", "rb") as inf:
             a.fromfile(inf)
         assert sum(a) > 0
-        os.remove("/tmp/test_kmers.bloom/test_kmers.bloom")
+        os.remove("/tmp/test_kmers.bloom")
 
 
 def test_build_cmd():
