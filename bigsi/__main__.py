@@ -13,6 +13,7 @@ import hug
 import tempfile
 import humanfriendly
 import yaml
+import copy
 from multiprocessing.pool import ThreadPool
 
 from pyfasta import Fasta
@@ -253,9 +254,12 @@ class bigsi(object):
         stream: hug.types.smart_boolean = False,
     ):
         config = get_config_from_file(config)
-        bigsi = BIGSI(config)
+
         fasta = Fasta(fasta)
         if not stream:
+            _config = copy.copy(config)
+            _config["nproc"] = 1
+            bigsi = BIGSI(_config)
             csv_combined = ""
             nproc = config.get("nproc", 1)
             with ThreadPool(processes=nproc) as pool:
@@ -266,6 +270,7 @@ class bigsi(object):
             else:
                 return json.dumps(dd, indent=4)
         else:
+            bigsi = BIGSI(config)
             dd = []
             csv_combined = ""
             for i, seq in enumerate(fasta.values()):
