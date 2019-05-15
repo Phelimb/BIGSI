@@ -62,27 +62,27 @@ def chunks(l, n):
 
 
 def unpack_and_sum_bitarrays(bitarrays, j):
-    if j <= 1:
-        res = unpack_and_sum(bitarrays)
-        return res
-    else:
-        n = math.ceil(float(len(bitarrays)) / j)
-        p = Pool(j)
-        res = p.map(unpack_and_sum, chunks(bitarrays, n))
-        p.close()
-        return np.sum(res, axis=0)
+    return unpack_and_sum(bitarrays)
+    # if j <= 1:
+    #     return unpack_and_sum(bitarrays)
+    # else:
+    #     n = math.ceil(float(len(bitarrays)) / j)
+    #     p = Pool(j)
+    #     res = p.map(unpack_and_sum, chunks(bitarrays, n))
+    #     p.close()
+    #     return np.sum(res, axis=0)
 
 
 def unpack_and_cat_bitarrays(bitarrays, j):
-    if j == 0:
-        res = unpack_and_cat(bitarrays)
-        return res
-    else:
-        n = math.ceil(float(len(bitarrays)) / j)
-        p = Pool(j)
-        res = p.map(unpack_and_cat, chunks(bitarrays, n))
-        p.close()
-        return np.vstack(res)
+    return unpack_and_cat(bitarrays)
+    # if j <= 1:
+    #     return unpack_and_cat(bitarrays)
+    # else:
+    #     n = math.ceil(float(len(bitarrays)) / j)
+    #     p = Pool(j)
+    #     res = p.map(unpack_and_cat, chunks(bitarrays, n))
+    #     p.close()
+    #     return np.vstack(res)
 
 
 import json
