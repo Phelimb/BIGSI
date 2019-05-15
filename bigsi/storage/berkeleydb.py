@@ -1,19 +1,22 @@
 from bigsi.storage.base import BaseStorage
 from bigsi.constants import DEFAULT_BERKELEY_DB_STORAGE_CONFIG
-import bsddb3
+from bsddb3 import db
 import os
-
 
 class BerkeleyDBStorage(BaseStorage):
     def __init__(self, storage_config=None):
         if storage_config is None:
             storage_config = DEFAULT_BERKELEY_DB_STORAGE_CONFIG
         self.storage_config = storage_config
-        self.storage = bsddb3.hashopen(
-            storage_config["filename"],
-            flag=storage_config.get("flag", "c"),
-            cachesize=storage_config.get("hashsize", 204800),
-        )
+
+        self.storage = db.DB()
+
+        GB = 1024 * 1024 * 1024;
+        self.storage.set_cachesize(
+            int(storage_config.get("hashsize", 204800) / GB),
+            int(storage_config.get("hashsize", 204800) % GB))
+
+        self.storage.open(storage_config["filename"], None, db.DB_HASH, db.DB_CREATE)
 
     def __repr__(self):
         return "berkeleydb Storage"
