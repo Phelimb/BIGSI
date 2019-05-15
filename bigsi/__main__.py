@@ -15,7 +15,6 @@ import humanfriendly
 import yaml
 import copy
 import multiprocessing
-from multiprocessing.pool import ThreadPool
 
 from pyfasta import Fasta
 from bigsi.version import __version__
@@ -288,7 +287,6 @@ class bigsi(object):
                 return json.dumps(dd, indent=4)
         else:
             bigsi = BIGSI(config)
-            dd = []
             csv_combined = ""
             for i, seq in enumerate(fasta.values()):
                 seq = str(seq)
@@ -298,7 +296,6 @@ class bigsi(object):
                     "results": bigsi.search(seq, threshold, score),
                     "citation": "http://dx.doi.org/10.1038/s41587-018-0010-1",
                 }
-                dd.append(d)
                 if format == "csv":
                     if i == 0:
                         with_header = True
