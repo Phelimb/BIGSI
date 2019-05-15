@@ -43,23 +43,26 @@ def unpack_and_sum(bitarrays):
         c += 1
     return cumsum
 
+
 def unpack_and_cat(bitarrays):
-    c=0
+    c = 0
     for bitarray in bitarrays:
         if c == 0:
             X = np.fromstring(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
         else:
             l = np.fromstring(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
-            X=np.vstack([X, l])
+            X = np.vstack([X, l])
         c += 1
-    return X    
+    return X
+
 
 def chunks(l, n):
     n = max(1, n)
     return (l[i : i + n] for i in range(0, len(l), n))
 
+
 def unpack_and_sum_bitarrays(bitarrays, j):
-    if j == 0:
+    if j <= 1:
         res = unpack_and_sum(bitarrays)
         return res
     else:
@@ -81,6 +84,7 @@ def unpack_and_cat_bitarrays(bitarrays, j):
         p.close()
         return np.vstack(res)
 
+
 import json
 
 
@@ -96,16 +100,15 @@ class BigsiQueryResult:
         self.num_kmers_found = num_kmers_found
         self.num_kmers = num_kmers
         self.percent_kmers_found = round(100 * float(num_kmers_found) / num_kmers, 2)
-        self.score=None
-
+        self.score = None
 
     def todict(self):
-        outd={
+        outd = {
             self.PERCENT_KMERS_FOUND_KEY: self.percent_kmers_found,
             self.NUM_KMERS_KEY: self.num_kmers,
             self.NUM_KMERS_FOUND_KEY: self.num_kmers_found,
             self.SAMPLE_KEY: self.sample_name,
-        }        
+        }
         if self.score:
             outd.update(self.score)
         return outd
@@ -119,8 +122,8 @@ class BigsiQueryResult:
     def __eq__(self, ob):
         return self.todict() == ob.todict()
 
-    def add_score(self,score):
-        self.score=score
+    def add_score(self, score):
+        self.score = score
 
 
 class BIGSI(SampleMetadata, KmerSignatureIndex):
@@ -134,7 +137,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         self.min_unique_kmers_in_query = (
             MIN_UNIQUE_KMERS_IN_QUERY
         )  ## TODO this can be inferred and set at build time
-        self.scorer=Scorer(self.num_samples)
+        self.scorer = Scorer(self.num_samples)
 
     @property
     def kmer_size(self):
@@ -180,7 +183,11 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
             results = self.inexact_filter(kmers_to_colours, min_kmers)
         if score:
             self.score(kmers, kmers_to_colours, results)
-        return [r.todict() for r in results if not r.sample_name==DELETION_SPECIAL_SAMPLE_NAME]
+        return [
+            r.todict()
+            for r in results
+            if not r.sample_name == DELETION_SPECIAL_SAMPLE_NAME
+        ]
 
     def exact_filter(self, kmers_to_colours):
         colours_with_all_kmers = non_zero_bitarrary_positions(
@@ -194,7 +201,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
                 num_kmers=len(kmers_to_colours),
                 num_kmers_found=len(kmers_to_colours),
             )
-            for c,s in zip(colours_with_all_kmers, samples)
+            for c, s in zip(colours_with_all_kmers, samples)
         ]
 
     def get_sample_list(self, colours):
@@ -202,7 +209,9 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
         return [colours_to_samples[i] for i in colours]
 
     def inexact_filter(self, kmers_to_colours, min_kmers):
-        num_kmers = unpack_and_sum_bitarrays(list(kmers_to_colours.values()), self.nproc)
+        num_kmers = unpack_and_sum_bitarrays(
+            list(kmers_to_colours.values()), self.nproc
+        )
         colours = range(self.num_samples)
         colours_to_kmers_found = dict(zip(colours, num_kmers))
         colours_to_kmers_found_above_threshold = self.__colours_above_threshold(
@@ -218,15 +227,15 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
             for colour, num_kmers_found in colours_to_kmers_found_above_threshold.items()
         ]
         results.sort(key=lambda x: x.num_kmers_found, reverse=True)
-        return results 
+        return results
 
     def score(self, kmers, kmers_to_colours, results):
-        rows=[kmers_to_colours[kmer] for kmer in kmers]
-        X=unpack_and_cat_bitarrays(rows, self.nproc)
+        rows = [kmers_to_colours[kmer] for kmer in kmers]
+        X = unpack_and_cat_bitarrays(rows, self.nproc)
         for res in results:
-            col="".join([str(i) for i in X[:,res.colour].tolist()])
-            score_results=self.scorer.score(col)
-            score_results["kmer-presence"]=col
+            col = "".join([str(i) for i in X[:, res.colour].tolist()])
+            score_results = self.scorer.score(col)
+            score_results["kmer-presence"] = col
             res.add_score(score_results)
 
     def __colours_above_threshold(self, colours_to_percent_kmers, min_kmers):
