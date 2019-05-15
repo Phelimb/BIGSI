@@ -14,6 +14,7 @@ import tempfile
 import humanfriendly
 import yaml
 import copy
+import multiprocessing
 from multiprocessing.pool import ThreadPool
 
 from pyfasta import Fasta
@@ -72,6 +73,14 @@ def search_bigsi(bigsi, seq, threshold, score):
     }
 
 
+def search_bigsi_parallel(l):
+    bigsi = BIGSI(l[0][0])
+    results = []
+    for _, seq, threshold, score in l:
+        results.append(search_bigsi(bigsi, seq, threshold, score))
+    return results
+
+
 API = hug.API("bigsi-%s" % str(__version__))
 
 
@@ -84,6 +93,12 @@ def get_config_from_file(config_file):
     with open(config_file, "r") as infile:
         config = yaml.load(infile)
     return config
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
 
 
 @hug.object(name="bigsi", version="0.1.1", api=API)
@@ -259,12 +274,14 @@ class bigsi(object):
         if not stream:
             _config = copy.copy(config)
             _config["nproc"] = 1
-            bigsi = BIGSI(_config)
             csv_combined = ""
             nproc = config.get("nproc", 1)
-            with ThreadPool(processes=nproc) as pool:
-                args = [(bigsi, str(seq), threshold, score) for seq in fasta.values()]
-                dd = pool.starmap(search_bigsi, args)
+            with multiprocessing.Pool(processes=nproc) as pool:
+                args = [(_config, str(seq), threshold, score) for seq in fasta.values()]
+                dd = pool.map_async(
+                    search_bigsi_parallel, chunks(args, math.ceil(len(args) / nproc))
+                ).get()
+                dd = [item for sublist in dd for item in sublist]
             if format == "csv":
                 return "\n".join([d_to_csv(d, False, False) for d in dd])
             else:
