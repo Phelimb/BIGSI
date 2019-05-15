@@ -90,7 +90,7 @@ def get_config_from_file(config_file):
         else:
             return DEFAULT_CONFIG
     with open(config_file, "r") as infile:
-        config = yaml.load(infile)
+        config = yaml.load(infile, Loader=yaml.FullLoader)
     return config
 
 
