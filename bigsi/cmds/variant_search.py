@@ -30,7 +30,9 @@ class BIGSIVariantSearch(object):
                 refs.append(str(v))
             else:
                 alts.append(str(v))
-        return {"query": var_name, "results": self.genotype_alleles(refs, alts)}
+        out = {"query": var_name, "results": self.genotype_alleles(refs, alts)}
+        logger.info(out)
+        return out
 
     def search_for_alleles(self, ref_seqs, alt_seqs):
         results = {"ref": [], "alt": []}
