@@ -94,6 +94,7 @@ class BIGSIAminoAcidMutationSearch(BIGSIVariantSearch):
                 self.reference,
             ]
         )
+        logger.info(fasta_string)
         return fasta_string
 
     def search(self, gene, ref, pos, alt):
@@ -112,4 +113,6 @@ class BIGSIAminoAcidMutationSearch(BIGSIVariantSearch):
                 refs.append(str(v))
             else:
                 alts.append(str(v))
-        return {"query": gene_mut_name, "results": self.genotype_alleles(refs, alts)}
+        out = {"query": gene_mut_name, "results": self.genotype_alleles(refs, alts)}
+        logger.info(out)
+        return out
