@@ -36,9 +36,9 @@ def unpack_and_sum(bitarrays):
     c = 0
     for bitarry in bitarrays:
         if c == 0:
-            cumsum = np.fromstring(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
+            cumsum = np.frombuffer(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
         else:
-            l = np.fromstring(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
+            l = np.frombuffer(bitarry.unpack(one=B_ONE), dtype="i1").astype("i4")
             cumsum = np.add(cumsum, l)
         c += 1
     return cumsum
@@ -48,9 +48,9 @@ def unpack_and_cat(bitarrays):
     c = 0
     for bitarray in bitarrays:
         if c == 0:
-            X = np.fromstring(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
+            X = np.frombuffer(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
         else:
-            l = np.fromstring(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
+            l = np.frombuffer(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
             X = np.vstack([X, l])
         c += 1
     return X

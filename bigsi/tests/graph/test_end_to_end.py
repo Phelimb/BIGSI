@@ -131,6 +131,57 @@ def test_inexact_search():
         bigsi.delete()
 
 
+def test_search_concordance():
+    config = CONFIGS[0]
+    seq_a = "ATACACAAT"
+    seq_b = "ATACACAAC"
+    kmers_1 = seq_to_kmers(seq_a, config["k"])
+    kmers_2 = seq_to_kmers(seq_b, config["k"])
+    bloom1 = BIGSI.bloom(config, kmers_1)
+    bloom2 = BIGSI.bloom(config, kmers_2)
+
+    for config in CONFIGS:
+
+        get_storage(config).delete_all()
+        bigsi = BIGSI.build(config, [bloom1, bloom2], ["a", "b"])
+
+        exp_result_a = {
+            "percent_kmers_found": 100.0,
+            "num_kmers": 6,
+            "num_kmers_found": 6,
+            "sample_name": "a"
+        }
+        inexact_results_a = sorted(bigsi.search(seq_a, 0.5),
+                                   key=lambda x: x["num_kmers_found"],
+                                   reverse=True)
+        assert len(inexact_results_a) == 2
+        assert inexact_results_a[0] == exp_result_a
+        exact_results_a = sorted(bigsi.search(seq_a, 1.0),
+                                 key=lambda x: x["num_kmers_found"],
+                                 reverse=True)
+        assert len(exact_results_a) == 1
+        assert exact_results_a[0] == exp_result_a
+
+        exp_result_b = {
+            "percent_kmers_found": 100.0,
+            "num_kmers": 6,
+            "num_kmers_found": 6,
+            "sample_name": "b"
+        }
+        inexact_results_b = sorted(bigsi.search(seq_b, 0.5),
+                                   key=lambda x: x["num_kmers_found"],
+                                   reverse=True)
+        assert len(inexact_results_b) == 2
+        assert inexact_results_b[0] == exp_result_b
+        exact_results_b = sorted(bigsi.search(seq_b, 1.0),
+                                 key=lambda x: x["num_kmers_found"],
+                                 reverse=True)
+        assert len(exact_results_b) == 1
+        assert exact_results_b[0] == exp_result_b
+
+        bigsi.delete()
+
+
 ##
 @pytest.mark.skip(reason="TODO, fix test to work on single config")
 def test_merge():

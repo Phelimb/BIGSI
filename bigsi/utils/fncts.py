@@ -26,7 +26,10 @@ def bitwise_and(bitarrays):
 
 
 def non_zero_bitarrary_positions(bitarray):
-    return np.where(bitarray)[0].tolist()
+    B_ONE = (1).to_bytes(1, byteorder="big")
+    unpacked_bitarray = np.frombuffer(bitarray.unpack(one=B_ONE), dtype="i1").astype("i4")
+    return np.where(unpacked_bitarray)[0].tolist()
+
 
 
 def chunks(l, n):
