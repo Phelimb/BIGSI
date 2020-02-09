@@ -1,6 +1,7 @@
 h: 3
 k: 31
 m: 1000
+sequence_type: nucleotides
 storage-engine: redis
 storage-config:
   host: localhost

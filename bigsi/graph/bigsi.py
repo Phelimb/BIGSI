@@ -149,7 +149,7 @@ class BIGSI(SampleMetadata, KmerSignatureIndex):
 
     @classmethod
     def bloom(cls, config, kmers):
-        kmers = convert_query_kmers(kmers)  ## Convert to canonical kmers
+        kmers = convert_query_kmers(kmers, config["sequence_type"])  ## Convert to canonical kmers
         bloomfilter = BloomFilter(m=config["m"], h=config["h"])
         bloomfilter.update(kmers)
         return bloomfilter.bitarray

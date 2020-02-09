@@ -39,13 +39,20 @@ def reverse_comp(s):
     return "".join([COMPLEMENT.get(base, base) for base in reversed(s)])
 
 
-def convert_query_kmers(kmers):
-    for k in kmers:
-        yield convert_query_kmer(k)
+def convert_query_kmers(kmers, seq_type):
+    if seq_type == "nucleotides":
+        for k in kmers:
+            yield convert_query_kmer(k, seq_type)
+    else:
+        for k in kmers:
+            yield k
+    
 
-
-def convert_query_kmer(kmer):
-    return canonical(kmer)
+def convert_query_kmer(kmer, seq_type):
+    if seq_type == "nucleotides":
+        return canonical(kmer)
+    else:
+        return kmer
 
 
 def canonical(k):
@@ -63,3 +70,6 @@ def min_lexo(k):
 def seq_to_kmers(seq, kmer_size):
     for i in range(len(seq) - kmer_size + 1):
         yield seq[i : i + kmer_size]
+        
+        
+    

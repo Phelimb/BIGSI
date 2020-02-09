@@ -2,6 +2,7 @@ h: 3
 k: 31
 m: 1000
 nproc: 1
+sequence_type: nucleotides
 storage-engine: berkeleydb
 storage-config:
   filename: test-berkeleydb

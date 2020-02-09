@@ -8,6 +8,7 @@ biopython
 pyyaml>=4.2b1
 humanfriendly
 pyfasta==0.5.2
+pyfastx==0.6.5
 
 # Tests
 psutil
