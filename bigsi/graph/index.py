@@ -6,10 +6,25 @@ from bigsi.matrix import transpose
 from bigsi.matrix import BitMatrix
 from bigsi.utils import convert_query_kmer
 from bigsi.utils import bitwise_and
+from bigsi.constants import DEFAULT_CONFIG
+import os
+import yaml
+
 
 BLOOMFILTER_SIZE_KEY = "ksi:bloomfilter_size"
 NUM_HASH_FUNCTS_KEY = "ksi:num_hashes"
 logger = logging.getLogger(__name__)
+
+
+def get_config_from_file(config_file):
+    if config_file is None:
+        if os.environ.get("BIGSI_CONFIG"):
+            config_file = os.environ.get("BIGSI_CONFIG")
+        else:
+            return DEFAULT_CONFIG
+    with open(config_file, "r") as infile:
+        config = yaml.load(infile, Loader=yaml.FullLoader)
+    return config
 
 
 class KmerSignatureIndex:
@@ -59,12 +74,13 @@ class KmerSignatureIndex:
             self.bitmatrix.set_row(i, r1)
         self.bitmatrix.set_num_cols(self.bitmatrix.num_cols + ksi.bitmatrix.num_cols)
 
-    def __kmers_to_hashes(self, kmers):
+    def __kmers_to_hashes(self, kmers, config = None):
         d = {}
+        config = get_config_from_file(config)
         for k in set(kmers):
             d[k] = set(
                 generate_hashes(
-                    convert_query_kmer(k), self.num_hashes, self.bloomfilter_size
+                    convert_query_kmer(k, config["sequence_type"]), self.num_hashes, self.bloomfilter_size
                 )
             )  ## use canonical kmer to generate lookup, but report query kmer
         return d

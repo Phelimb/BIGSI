@@ -30,9 +30,8 @@ from bigsi.cmds.variant_search import BIGSIAminoAcidMutationSearch
 
 from bigsi.storage import get_storage
 
-from bigsi.utils.cortex import extract_kmers_from_ctx
-from bigsi.utils import seq_to_kmers
 from bigsi.constants import DEFAULT_CONFIG
+from bigsi.utils.sequence_reader import check_file_type
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -117,19 +116,22 @@ class bigsi(object):
 
     @hug.object.cli
     @hug.object.post("/bloom")
-    def bloom(self, ctx, outfile, config=None):
-        """Creates a bloom filter from a sequence file or cortex graph. (fastq,fasta,bam,ctx)
+    def bloom(self, infile, outfile, config=None):
+        """Creates a bloom filter from a sequence file (fasta, fastq) or cortex graph or text file.
 
-        e.g. index insert ERR1010211.ctx
+        BIGSI can build index for both nucleotide and aminoacid sequences.
+        To index aminoacid sequences change the value of sequence_type to aminoacids in the config yaml file\n
+
+        e.g. bigsi bloom ERR1010211.ctx ERR1010211.bloom
 
         """
-        config = get_config_from_file(config)
+        config = get_config_from_file(config)        
         bf = bloom(
             config=config,
             outfile=outfile,
-            kmers=extract_kmers_from_ctx(ctx, config["k"]),
+            kmers=check_file_type(infile, config["k"], config["sequence_type"]),
         )
-
+        
     @hug.object.cli
     @hug.object.post("/build", output_format=hug.output_format.pretty_json)
     def build(
