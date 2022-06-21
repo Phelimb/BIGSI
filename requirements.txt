@@ -1,6 +1,6 @@
 cython
 hug
-numpy==1.14.3
+numpy==1.22.0
 mmh3
 bitarray
 redis
