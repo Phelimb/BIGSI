@@ -1,4 +1,4 @@
 # Optional Storage
 python-rocksdb
 bsddb3==6.2.5
-uWSGI==2.0.18
+uWSGI==2.0.22
